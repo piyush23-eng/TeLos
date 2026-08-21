@@ -1,0 +1,56 @@
+.roadmap-card{padding:0!important;background:linear-gradient(135deg,#181622 0%,#2b2546 100%)!important;color:white}
+.roadmap-card .panel-label{border-color:rgba(255,255,255,.26)!important;color:#f6f2ff}
+.roadmap-card .panel-label span:first-child{display:flex;align-items:center;gap:7px}
+.roadmap-intro{margin:0;padding:18px 20px 5px;color:#d8d4e5;font:13px/1.6 Manrope,sans-serif}
+.roadmap-weeks{padding:12px 20px 20px;display:grid;gap:0}
+.roadmap-week{display:grid;grid-template-columns:38px minmax(0,1fr) 22px;gap:13px;align-items:start;padding:14px 0;border-top:1px solid rgba(255,255,255,.2)}
+.roadmap-number{display:grid;place-items:center;width:30px;height:30px;background:var(--coral);color:var(--ink);font:500 10px 'DM Mono',monospace}
+.roadmap-week strong{display:block;color:#fff;font:600 12px Manrope,sans-serif}
+.roadmap-week p{margin:5px 0 0;color:#d8d4e5;font:11px/1.55 Manrope,sans-serif}
+.roadmap-week svg{margin-top:6px;color:var(--mint)}
+.curated-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.26)}
+.curated-item{min-height:136px;padding:17px;border-right:1px solid rgba(255,255,255,.26);display:flex;flex-direction:column;gap:8px}
+.curated-item:last-child{border-right:0}
+.curated-item>span{width:max-content;background:var(--mint);color:var(--ink);padding:4px 6px;font:500 8px 'DM Mono',monospace;letter-spacing:.05em}
+.curated-item strong{font:600 12px Manrope,sans-serif}
+.curated-item p{margin:0;color:#d8d4e5;font:11px/1.5 Manrope,sans-serif}
+
+@media(max-width:920px){.curated-grid{grid-template-columns:1fr}.curated-item{border-right:0;border-bottom:1px solid rgba(255,255,255,.26)}.curated-item:last-child{border-bottom:0}}
+
+/* Interview and drill refinements */
+.context-dock{position:relative;overflow:hidden;box-shadow:0 12px 30px rgba(16,16,24,.08)}
+.context-dock::before{content:'PERSONALISE';position:absolute;right:18px;top:50%;transform:translateY(-50%);font:500 9px 'DM Mono',monospace;letter-spacing:.16em;color:var(--violet);pointer-events:none}
+.context-dock summary{padding:19px 18px!important;background:linear-gradient(90deg,#eeeaff,rgba(255,255,255,.65));font-size:11px!important;color:var(--ink)!important}
+.context-dock[open] summary{background:var(--ink);color:#fff!important}
+.context-dock[open]::before{color:var(--mint)}
+.context-fields{animation:context-reveal .38s cubic-bezier(.2,.8,.2,1) both}
+.context-fields label:focus-within{color:var(--violet)!important}
+.context-fields input:focus,.context-fields select:focus,.context-fields textarea:focus{outline:2px solid var(--violet);outline-offset:1px}
+
+.voice-box{margin:0!important;padding:0!important;grid-template-columns:64px minmax(0,1fr)!important;background:linear-gradient(135deg,#201c2c,#15131e)!important;align-items:stretch!important}
+.voice-box>button:first-child{width:auto!important;height:auto!important;border-radius:0!important;grid-row:span 2!important;align-self:stretch;background:var(--coral)!important}
+.voice-box .voice-details{padding:17px 18px 12px!important;gap:13px!important;min-width:0}
+.voice-box .voice-header>div{align-items:center!important}
+.voice-box .voice-header b,.voice-box .voice-controls label{color:#fff!important}
+.voice-box .voice-header span,.voice-box .voice-copy{color:#ddd7e7!important}
+.voice-box .voice-controls{grid-template-columns:1fr 1fr!important;gap:9px!important}
+.voice-box select{background:#fff!important;color:#191725!important;border-color:#fff!important;min-width:0}
+.voice-box .speak-button{grid-column:2!important;margin:0!important;border-top:1px solid #504c5f!important;background:var(--mint)!important;transition:background .2s ease,letter-spacing .2s ease}
+.voice-box .speak-button:hover{background:var(--coral)!important;letter-spacing:.04em}
+
+.drill-prompt-card{animation:card-rise .36s cubic-bezier(.2,.8,.2,1) both}
+.problem-statement{max-width:880px;margin:18px 0 0;font:400 15px/1.7 Manrope,sans-serif}
+.problem-io{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:22px;border:1px solid var(--line)}
+.problem-io div{padding:14px;border-right:1px solid var(--line);display:grid;gap:6px;background:rgba(255,255,255,.52)}
+.problem-io div:last-child{border-right:0;background:var(--mint)}
+.problem-io strong,.constraint-card>strong,.example-card>strong{font:500 9px 'DM Mono',monospace;letter-spacing:.06em}
+.problem-io span{font:12px/1.5 Manrope,sans-serif}
+.problem-details-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:12px;padding-top:12px}
+.example-stack{display:grid;gap:12px}.example-card,.constraint-card{border:1px solid var(--line);background:rgba(255,255,255,.65);padding:16px}
+.example-card{display:grid;gap:9px}.example-card code{display:block;background:#171520;color:#f4edff;padding:9px 10px;font:11px/1.45 'DM Mono',monospace;overflow:auto}.example-card p{margin:0;font:12px/1.5 Manrope,sans-serif;color:#454350}
+.constraint-card{display:grid;align-content:start;gap:10px}.constraint-card ul{margin:0;padding-left:17px;font:12px/1.65 Manrope,sans-serif}.hint-callout{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px}.hint-callout b{font:500 9px 'DM Mono',monospace;color:var(--violet)}.hint-callout span{font:12px/1.5 Manrope,sans-serif}
+.prep-card,.pill-chip,.black-button,.brand-button,.ghost-button,.follow-up,.response-box button{transition:transform .18s ease,box-shadow .18s ease,background .18s ease!important}.prep-card:hover{transform:translateX(4px)}.pill-chip:hover,.ghost-button:hover,.black-button:hover,.brand-button:hover,.follow-up:hover{transform:translateY(-2px);box-shadow:0 5px 0 rgba(16,16,24,.15)}
+.detail-card{animation:card-rise .36s cubic-bezier(.2,.8,.2,1) both}.detail-card:nth-child(2){animation-delay:.05s}.detail-card:nth-child(3){animation-delay:.1s}
+@keyframes card-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes context-reveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:920px){.context-dock::before{display:none}.voice-box{grid-template-columns:58px minmax(0,1fr)!important;margin:0!important}.voice-box .voice-controls,.problem-io,.problem-details-grid{grid-template-columns:1fr!important}.voice-box .speak-button{grid-column:1/-1!important}.voice-box>button:first-child{grid-row:span 1!important}.problem-io div{border-right:0;border-bottom:1px solid var(--line)}.problem-io div:last-child{border-bottom:0}}

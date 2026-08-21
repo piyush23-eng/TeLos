@@ -1,0 +1,49 @@
+.voice-box select {
+  grid-column: 1 / -1;
+  width: 100%;
+  background: #f6f3e9;
+  color: #111;
+  border: 2px solid #ecff00;
+  border-radius: 0;
+  padding: 7px;
+  font: 11px 'IBM Plex Mono';
+  outline: none;
+}
+
+.voice-box button,
+.mic-button,
+.follow-up,
+.black-button,
+.response-box button {
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.voice-box button:hover,
+.mic-button:hover,
+.follow-up:hover,
+.black-button:hover,
+.response-box button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+.live-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  min-height: 34px;
+}
+
+.live-meter i {
+  width: 3px;
+  background: #111;
+  border-radius: 999px;
+  opacity: 0.72;
+}
+
+.live-meter.hot i {
+  background: #ecff00;
+  opacity: 1;
+}
+
+.context-dock{border:4px solid #111;background:#f6f3e9;margin-bottom:20px}.context-dock summary{cursor:pointer;padding:12px 14px;font:12px "Archivo Black";list-style:none}.context-dock summary::-webkit-details-marker{display:none}.context-dock summary::after{content:"+";float:right;font-size:18px}.context-dock[open] summary{border-bottom:3px solid #111}.context-dock[open] summary::after{content:"−"}.context-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px}.context-fields label{font:10px "IBM Plex Mono";display:flex;flex-direction:column;gap:6px}.context-fields label:nth-last-child(-n+2){grid-column:span 1}.context-fields input,.context-fields textarea{width:100%;border:2px solid #111;border-radius:0;background:#fff;padding:9px;font:13px "Space Grotesk"}.context-fields textarea{min-height:106px;resize:vertical}@media(max-width:860px){.context-fields{grid-template-columns:1fr}.context-fields label:nth-last-child(-n+2){grid-column:auto}}
