@@ -1,64 +1,242 @@
-# TeLos
+# TeLos • Real-Time AI Technical Interview Studio
 
-A premium placement-prep product for students: live mock interviews, curated company prep, proctored company assessments, coding drills, analytics, and a community feed.
+<div align="center">
 
-## What is included
-
-- Electron + React + TypeScript desktop shell, with Tailwind available for incremental utility styling and a bespoke application stylesheet for the polished studio layout.
-- Express REST seam (`server/index.ts`) designed to be replaced by a Spring Boot service without changing the desktop UI contract.
-- Practice Studio: streaming-style rolling transcript, behavioral coaching, pace/filler metrics, adaptive follow-up endpoint, and end-of-session report card.
-- Proctored Assessments: company-specific timed screens, visible camera consent, browser focus and clipboard controls, two-event flagging with third-event auto-submit, and an integrity event record.
-- Account access: persistent email/password accounts through Prisma, plus verified Google Identity Services sign-in when `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` are configured.
-- Real device interaction in Practice Studio: the **Enable Mic** control requests microphone permission through Electron/Chromium and uses built-in speech recognition where available; **Interviewer Voice** uses browser speech synthesis to read each panel question aloud. Typed responses remain the accessible fallback.
-- Analytics dashboard with real API-provided session data rendered through Recharts.
-- Seed-ready Prisma/SQLite schema for sessions, questions, scoring snapshots, and a five-problem JusPay N-ary/resource-locking set.
-- A seeded `JusPay Hackathon Panelist` persona with an adaptive systems/correctness rubric.
-- Problem library for the custom tree-locking practice bank.
-
-## Architecture
-
-```mermaid
-flowchart LR
-  mic[Microphone / system audio] --> ingest[Audio ingest adapter]
-  ingest --> dg[Deepgram streaming STT]
-  dg --> buffer[Rolling transcript + diarization]
-  buffer --> classify[Haiku classifier]
-  classify --> context[Shared context engine]
-  resume[Resume + JD + role context] --> context
-  context --> claude[Claude Sonnet response engine]
-  claude --> studio[Practice studio]
-  buffer --> metrics[Pace / filler / STAR metrics]
-  metrics --> report[Report card + Recharts analytics]
-  report --> sqlite[(SQLite / Prisma)]
-  studio --> api[Express REST + WebSocket seam]
+```
+  _______   ______ _      ____   _____ 
+ |__   __| / _____| |    / __ \ / ____|
+    | |___| |__   | |   | |  | | (___  
+    | / _ \  __|  | |   | |  | |\___ \ 
+    | |  __/ |____| |___| |__| |____) |
+    |_|\___|______|______\____/|_____/ 
 ```
 
-## Run it
+**Real Systems. Deep Trade-Offs. Zero Canned Trivia.**
 
-1. Install Node.js 20+ and copy `.env.example` to `.env`.
-2. Run `npm install`.
-3. For local persistence, run `npm run db:push && npm run seed`.
-4. Start the desktop application with `npm run dev`.
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19.0-61dafb.svg?style=flat-square)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.4-646cff.svg?style=flat-square)](https://vitejs.dev/)
+[![Express](https://img.shields.io/badge/Express-4.21-000000.svg?style=flat-square)](https://expressjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-6.4-2D3748.svg?style=flat-square)](https://www.prisma.io/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-The Express service starts at `http://localhost:8787`, Vite at `http://localhost:5173`, and Electron opens the product window. Use `npm run build` to type-check and build the web bundle.
+[Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [Quick Start](#-quick-start) • [Environment Setup](#-environment-configuration) • [Debrief Rubric](#-calibrated-scoring-rubric)
 
-## Cloud adapter contract
+</div>
 
-`DEEPGRAM_API_KEY` and `ANTHROPIC_API_KEY` are deliberately optional so the prototype works offline in demo mode. Production adapters should:
+---
 
-1. send PCM frames through the Deepgram streaming client and broadcast partial/final diarized turns over WebSocket;
-2. call Haiku with the latest finalized interviewer turn for category tagging;
-3. combine the persisted resume/JD context, classifier result, and rolling transcript in a mode-specific Sonnet prompt;
-4. persist timestamps and scoring snapshots through Prisma.
+## ⚡ Overview
 
-The UI API boundary already covers `/api/classify`, `/api/interviewer/next`, `/api/report`, `/api/analytics`, and `/api/problems`.
+**TeLos** is an open-source, proctored AI technical interview simulator engineered for senior software engineering candidates. 
 
-## Ethics & intended use
+Unlike generic LLM wrappers that ask canned LeetCode trivia, TeLos actively parses your **real resume projects, distributed systems stack, and target job description** to challenge architectural trade-offs, $P99$ latency SLAs, idempotency, failure modes, and database partitioning strategies in real time.
 
-**Practice Mode is the shipped product:** an open, permissioned mock-interview environment for rehearsal, feedback, coding practice, and portfolio demonstrations.
+---
 
-**Live Assist is technical R&D only:** this repository does not ship an invisible overlay, bypass platform protections, or attempt to evade proctoring/detection systems. Any future assistive tooling should be used only where explicitly permitted, remain visible/consent-based, and prioritize accessibility coaching over answer generation.
+## 🏛️ Architecture Blueprint
 
-## Data model
+```mermaid
+flowchart TD
+    subgraph Client ["Frontend Client (React 19 + TypeScript + Vite)"]
+        Webcam["Webcam & Canvas (Proctoring & Stream)"]
+        Mic["Microphone Audio Stream"]
+        HUD["Live Telemetry HUD (WPM + Filler Decay)"]
+        Scratchpad["Distributed Arch Scratchpad (Envoy / Kafka / Redis)"]
+        Subtitles["Frosted Subtitle Strip & Voice Equalizer"]
+        DebriefView["Debrief Modal (Radial SVG Gauges + Markdown Export)"]
+    end
 
-`Session` records the context and aggregate outcome. `Question` preserves individual prompts/answers. `Score` records time-series speaking and answer metrics. `Problem` holds the seeded N-ary locking curriculum. See `prisma/schema.prisma`.
+    subgraph Server ["Orchestration Engine (Node.js + Express + TypeScript)"]
+        SSE["SSE Token Streamer (/api/interviewer/next/stream)"]
+        ContextEngine["Candidate Grounding Context Engine (CV + JD Injection)"]
+        DebriefEngine["Bar Raiser Evaluation Pipeline (/api/interview/debrief)"]
+        CodeRunner["Sandboxed Code Executor (/api/code/run)"]
+        PrismaORM["Prisma Client (SQLite / PostgreSQL)"]
+    end
+
+    subgraph Intelligence ["Multi-Model Fallback Cascade (OpenRouter)"]
+        Primary["google/gemini-2.0-flash-001 (Fast Latency ~400ms)"]
+        Fallback1["meta-llama/llama-3.3-70b-instruct (Deep Reasoning)"]
+        Fallback2["deepseek/deepseek-chat (Coding & System Architecture)"]
+        Fallback3["mistralai/mistral-small-24b-instruct-2501"]
+    end
+
+    subgraph SpeechServices ["Voice & Audio Infrastructure"]
+        Deepgram["Deepgram Nova-2 (Real-Time Audio Ingest)"]
+        BrowserTTS["Web Speech Synthesis & Voice Profile Engine"]
+    end
+
+    Mic --> Deepgram
+    Deepgram --> HUD
+    Mic --> HUD
+    ContextEngine --> Primary
+    Primary -. Fallback .-> Fallback1
+    Fallback1 -. Fallback .-> Fallback2
+    Fallback2 -. Fallback .-> Fallback3
+    Primary --> SSE
+    SSE --> Subtitles
+    SSE --> BrowserTTS
+    Scratchpad --> CodeRunner
+    DebriefEngine --> PrismaORM
+    PrismaORM --> DebriefView
+```
+
+---
+
+## 🚀 Core Capabilities
+
+### 1. 🎙️ Real-Time Project Grounding & Conversational Stage
+* **Zero Scripted Trivia**: Alex dynamically extracts your actual CV achievements (e.g. *Lucas RAG pipeline*, *Qwen fine-tuning*, *PySpark batch jobs*, *Kafka cluster partitioning*) and targets your specific architectural bottlenecks.
+* **Natural Barge-In Interruptibility (`✋ INTERRUPT ALEX`)**: Cut TTS playback at any millisecond to naturally interject, clarify assumptions, or pivot your answer without desyncing the session.
+* **Voice Activity Equalizer**: Replaced legacy graphics with a sleek 5-bar sinusoidal voice visualizer indicating live audio energy and mute state.
+
+### 2. 📊 Live Speech Telemetry HUD
+* **Speaking Pace (WPM)**: Live words-per-minute meter categorized into:
+  * `Optimal (130–160 WPM)`
+  * `Deliberate / Slow (<115 WPM)`
+  * `Fast / Rushed (>170 WPM)`
+* **Vocal Filler Counter**: Real-time identification and tallying of verbal ticks (*"um"*, *"like"*, *"basically"*, *"you know"*).
+
+### 3. 🏗️ Distributed Systems Architecture Scratchpad
+Collapsible on-demand scratchpad with 1-click distributed architecture templates:
+* `+ API Gateway` *(Envoy / Kong token-bucket rate limiting & JWT auth)*
+* `+ Kafka Queue` *(Partitioned event streams & consumer lag handling)*
+* `+ Redis Cache` *(Multi-tier write-through cache with TTLs)*
+* `+ Sharded DB` *(Consistent hashing router & read replicas)*
+* `+ Worker` *(Idempotent distributed transaction saga coordinators)*
+* `+ Load Balancer` *(L4/L7 health-checked traffic routing)*
+
+### 4. 📈 Post-Interview Debrief & Senior Ideal Answer Diff
+* **Radial SVG Score Gauges**: Linear/Apple-style circular gauges for *Overall Readiness*, *Technical Depth*, *Problem Solving*, and *Communication*.
+* **"What You Said" vs "What You Should Say"**: Granular side-by-side comparison showing how to elevate junior explanations into high-bar senior architectural reasoning.
+* **What NOT To Say**: Anti-pattern detector highlighting hedging, vague terminology, or unaddressed single points of failure.
+* **1-Click Export**: Download clean `.md` Markdown scorecards or generate printable recruiter-ready PDFs.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite | Zero-latency reactive user interface |
+| **Styling** | Custom Editorial Brutalist CSS | Precision typography (`DM Serif Display`, `Manrope`, `DM Mono`) |
+| **Backend** | Express 4, TypeScript, `tsx` | High-throughput streaming REST & SSE gateway |
+| **Database** | Prisma ORM with SQLite (Dev) / Postgres (Prod) | Structured session transcripts & telemetry persistence |
+| **AI Layer** | OpenRouter (`gemini-2.0-flash`, `llama-3.3-70b`, `deepseek`) | Multi-model fallback intelligence & candidate grounding |
+| **Speech** | Web Speech API, Deepgram Nova-2 | Bidirectional streaming speech recognition & synthesis |
+| **Charts** | Recharts | Answer quality trends and filler word decay curves |
+
+---
+
+## 🚦 Quick Start
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/piyush23-eng/TeLos.git
+cd TeLos
+```
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Configure Environment
+Create a `.env` file in the project root:
+```env
+PORT=8787
+VITE_API_BASE_URL=http://localhost:8787
+
+# OpenRouter Multi-Model Intelligence (Recommended)
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_MODEL=google/gemini-2.0-flash-001
+
+# Deepgram Speech-to-Text (Optional for enhanced voice accuracy)
+DEEPGRAM_API_KEY=your_deepgram_api_key_here
+
+# Google OAuth (Optional)
+GOOGLE_CLIENT_ID=your_google_client_id_here
+VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
+```
+
+### 4. Initialize Database
+```bash
+npx prisma db push
+npm run seed
+```
+
+### 5. Launch Development Server
+```bash
+npm run dev
+```
+* **Frontend Web App**: `http://localhost:5173`
+* **Backend API Gateway**: `http://localhost:8787`
+
+---
+
+## 📁 Repository Structure
+
+```
+TeLos/
+├── server/
+│   ├── index.ts              # Express API gateway, auth, & SSE streaming routes
+│   ├── intelligence.ts       # OpenRouter client & multi-model fallback cascade
+│   └── mockData.ts           # Practice catalog, seeded personas & analytics
+├── src/
+│   ├── components/
+│   │   └── VoiceOrbVisualizer.tsx # Multi-layer acoustic voice visualizer
+│   ├── App.tsx               # Main application orchestration & state container
+│   ├── Assessment.tsx        # Proctored technical assessment interface
+│   ├── AuthModal.tsx         # OAuth2 (Google / Email) authentication modal
+│   ├── UserDashboard.tsx     # Candidate interview ledger & telemetry stats
+│   ├── companyPrepData.ts    # Curated company interview playbooks
+│   ├── voiceMetrics.ts       # WPM cadence math, filler word parser & MD exporter
+│   ├── roadmap.css           # Editorial brutalist design system
+│   └── styles.css            # Base utility styles
+├── prisma/
+│   └── schema.prisma         # Session, Question, Score, and User schemas
+├── package.json              # Project scripts & dependency declarations
+└── tsconfig.json             # Strict TypeScript compiler configuration
+```
+
+---
+
+## 📊 Calibrated Scoring Rubric
+
+Candidates are evaluated against four core senior competency dimensions:
+
+```
+┌──────────────────────────────┬───────────────┬────────────────────────────────────────────────────────┐
+│ Dimension                    │ Target Bar    │ Evaluation Criteria                                    │
+├──────────────────────────────┼───────────────┼────────────────────────────────────────────────────────┤
+│ 1. Technical Depth           │ ≥ 85%         │ Concrete mechanism details, memory/CPU trade-offs, TTL │
+│ 2. System Architecture       │ ≥ 80%         │ Partitioning, backpressure, idempotency, failure modes │
+│ 3. Communication & Structure │ ≥ 85%         │ Cadence (130-160 WPM), STAR format, zero filler drift  │
+│ 4. Problem Solving           │ ≥ 80%         │ Edge-case handling, proactive bottleneck discovery     │
+└──────────────────────────────┴───────────────┴────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are warmly welcomed! To get started:
+
+1. Fork the Project.
+2. Create your Feature Branch (`git checkout -b feat/DistributedTracingHUD`).
+3. Commit your Changes (`git commit -m 'feat: add distributed tracing visualizer'`).
+4. Push to the Branch (`git push origin feat/DistributedTracingHUD`).
+5. Open a Pull Request.
+
+---
+
+## 📜 License
+
+Distributed under the **MIT License**. See `LICENSE` for more information.
+
+---
+
+<div align="center">
+<sub>Built with precision for systems engineers. © 2026 TeLos Studio.</sub>
+</div>
