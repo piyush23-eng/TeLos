@@ -210,62 +210,37 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                  <button
-                    type="button"
-                    className="oauth-account-item"
-                    onClick={() => void complete('/api/auth/google', { email: 'piyushpankaj60@gmail.com', name: 'Piyush Pankaj' })}
-                    disabled={busy}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className="oauth-avatar-circle">P</div>
-                      <div>
-                        <strong style={{ display: 'block', fontSize: 13, color: 'var(--ink)' }}>Piyush Pankaj</strong>
-                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>piyushpankaj60@gmail.com</span>
-                      </div>
-                    </div>
-                    <ArrowRight size={15} color="var(--muted)" />
-                  </button>
+                <form onSubmit={handleSocialSubmit} style={{ display: 'grid', gap: 12, marginTop: 8 }}>
+                  <label>
+                    YOUR FULL NAME
+                    <input
+                      required
+                      value={socialName}
+                      onChange={e => setSocialName(e.target.value)}
+                      placeholder="e.g. Alex Morgan"
+                    />
+                  </label>
 
-                  <button
-                    type="button"
-                    className="oauth-account-item"
-                    onClick={() => void complete('/api/auth/google', { email: 'candidate@gmail.com', name: 'SDE Candidate' })}
-                    disabled={busy}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className="oauth-avatar-circle" style={{ background: '#fef3c7', color: '#b45309' }}>S</div>
-                      <div>
-                        <strong style={{ display: 'block', fontSize: 13, color: 'var(--ink)' }}>SDE Candidate</strong>
-                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>candidate@gmail.com</span>
-                      </div>
-                    </div>
-                    <ArrowRight size={15} color="var(--muted)" />
-                  </button>
-                </div>
-
-                <form onSubmit={handleSocialSubmit} style={{ display: 'grid', gap: 10, marginTop: 6 }}>
-                  <label style={{ fontSize: 11 }}>
-                    OR SIGN IN WITH ANOTHER GOOGLE EMAIL:
+                  <label>
+                    GOOGLE EMAIL ADDRESS
                     <input
                       required
                       type="email"
                       value={socialEmail}
                       onChange={e => setSocialEmail(e.target.value)}
-                      placeholder="name@gmail.com"
-                      style={{ marginTop: 4, padding: '9px 12px', fontSize: 12 }}
+                      placeholder="you@gmail.com"
                     />
                   </label>
+
                   {error && <p className="auth-error">{error}</p>}
-                  {socialEmail && (
-                    <button className="auth-submit" disabled={busy} type="submit" style={{ padding: '10px' }}>
-                      {busy ? 'CONNECTING GOOGLE…' : 'SIGN IN WITH THIS GOOGLE ACCOUNT'} <ArrowRight size={14} />
-                    </button>
-                  )}
+
+                  <button className="auth-submit" disabled={busy} type="submit">
+                    {busy ? 'CONNECTING GOOGLE…' : 'CONTINUE WITH GOOGLE'} <ArrowRight size={16} />
+                  </button>
                 </form>
 
                 <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0, lineHeight: 1.4 }}>
-                  To continue, Google will share your name, email address, and profile picture with TeLos.
+                  To continue, Google will share your verified name, email address, and profile picture with TeLos.
                 </p>
 
                 <button
@@ -289,42 +264,33 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                  <button
-                    type="button"
-                    className="oauth-account-item"
-                    onClick={() => void complete('/api/auth/linkedin', { email: 'piyushpankaj60@gmail.com', name: 'Piyush Pankaj', linkedinUrl: 'https://linkedin.com/in/piyush-pankaj' })}
-                    disabled={busy}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className="oauth-avatar-circle linkedin">in</div>
-                      <div>
-                        <strong style={{ display: 'block', fontSize: 13, color: 'var(--ink)' }}>Piyush Pankaj</strong>
-                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>linkedin.com/in/piyush-pankaj</span>
-                      </div>
-                    </div>
-                    <ArrowRight size={15} color="var(--muted)" />
-                  </button>
-                </div>
+                <form onSubmit={handleSocialSubmit} style={{ display: 'grid', gap: 12, marginTop: 8 }}>
+                  <label>
+                    YOUR FULL NAME
+                    <input
+                      required
+                      value={socialName}
+                      onChange={e => setSocialName(e.target.value)}
+                      placeholder="e.g. Jordan Lee"
+                    />
+                  </label>
 
-                <form onSubmit={handleSocialSubmit} style={{ display: 'grid', gap: 10, marginTop: 6 }}>
-                  <label style={{ fontSize: 11 }}>
-                    OR ENTER YOUR LINKEDIN EMAIL / PROFILE:
+                  <label>
+                    LINKEDIN EMAIL ADDRESS
                     <input
                       required
                       type="email"
                       value={socialEmail}
                       onChange={e => setSocialEmail(e.target.value)}
-                      placeholder="your.linkedin@domain.com"
-                      style={{ marginTop: 4, padding: '9px 12px', fontSize: 12 }}
+                      placeholder="you@linkedin.com"
                     />
                   </label>
+
                   {error && <p className="auth-error">{error}</p>}
-                  {socialEmail && (
-                    <button className="auth-submit" disabled={busy} type="submit" style={{ padding: '10px' }}>
-                      {busy ? 'SYNCING LINKEDIN…' : 'AUTHORIZE WITH LINKEDIN'} <ArrowRight size={14} />
-                    </button>
-                  )}
+
+                  <button className="auth-submit" disabled={busy} type="submit">
+                    {busy ? 'SYNCING LINKEDIN…' : 'AUTHORIZE WITH LINKEDIN'} <ArrowRight size={16} />
+                  </button>
                 </form>
 
                 <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0, lineHeight: 1.4 }}>
