@@ -78,7 +78,8 @@ export function Assessment({ user, onRequireAuth, onActivityChange }: Props) {
   const runCurrentCode = async () => {
     setRunning(true); setRunOutput('Running your solution…');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787'}/api/run`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: currentCode, language, problemId: currentQuestion.slug }) });
+      const API = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
+      const response = await fetch(`${API}/api/run`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: currentCode, language, problemId: currentQuestion.slug }) });
       const payload = await response.json();
       setRunOutput(payload.output || 'No output.');
     } catch { setRunOutput('Runner unavailable. Start the TeLos server, then try again.'); }

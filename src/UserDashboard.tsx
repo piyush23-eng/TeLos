@@ -3,7 +3,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { ArrowRight, BadgeCheck, BrainCircuit, CalendarDays, CheckCircle2, Clock3, Code2, Edit3, Flame, Github, Layers3, Link, Linkedin, Save, ShieldCheck, Sparkles, Target, TrendingUp, Trophy, UserRound } from 'lucide-react';
 import type { AuthUser } from './AuthModal';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787';
+const API = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
 type PageTarget = 'studio' | 'assessment' | 'bank' | 'analytics';
 type Props = { user: AuthUser | null; onNavigate: (page: PageTarget) => void; onRequireAuth: () => void; onUserUpdated: (user: AuthUser) => void };
 const fallback = [{ date: 'JUL 03', star: 62, accuracy: 68, fillers: 9.2 }, { date: 'JUL 08', star: 66, accuracy: 71, fillers: 7.4 }, { date: 'JUL 14', star: 73, accuracy: 76, fillers: 5.6 }, { date: 'JUL 19', star: 77, accuracy: 79, fillers: 4.1 }, { date: 'JUL 26', star: 84, accuracy: 82, fillers: 3.2 }];

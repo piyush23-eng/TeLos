@@ -11,6 +11,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8787
 
+RUN apk add --no-cache python3 g++ gcc openjdk17-jre
+
 COPY package*.json ./
 RUN npm ci --omit=dev && npm install -g tsx prisma
 COPY --from=builder /app/prisma ./prisma

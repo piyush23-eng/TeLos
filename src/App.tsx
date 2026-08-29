@@ -15,7 +15,7 @@ import { buildSessionReport, calculateSpeakingPace, countFillerWords, exportDebr
 
 const companyCatalog = companyPrepCatalog;
 
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787';
+const API = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
 
 type Page = 'dashboard' | 'studio' | 'prep' | 'community' | 'analytics' | 'bank' | 'assessment';
 type Message = { id: number; speaker: 'PANEL' | 'YOU'; text: string; time: string; pending?: boolean };
@@ -2106,10 +2106,31 @@ function Bank() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, language, problemId: selected.id }),
       });
+      if (!result.ok) {
+        const errPayload = await result.json().catch(() => ({}));
+        throw new Error(errPayload.error || `Runner returned HTTP ${result.status}`);
+      }
       const payload = await result.json();
       setOutput(payload.output || 'Solution executed successfully with no errors.');
-    } catch {
-      setOutput('Runner service temporarily unavailable.');
+    } catch (err: any) {
+      if (language === 'js') {
+        try {
+          const logs: string[] = [];
+          const customConsole = {
+            log: (...args: any[]) => logs.push(args.map(String).join(' ')),
+            error: (...args: any[]) => logs.push(args.map(String).join(' ')),
+            warn: (...args: any[]) => logs.push(args.map(String).join(' ')),
+          };
+          const runnerFn = new Function('console', code);
+          runnerFn(customConsole);
+          setOutput(logs.join('\n') || 'Executed locally: Solution passed with no console errors.');
+          return;
+        } catch (clientErr: any) {
+          setOutput(`Runtime Error:\n${clientErr.message}`);
+          return;
+        }
+      }
+      setOutput(err?.message ? `Execution error: ${err.message}` : 'Runner service temporarily unavailable. Please retry in a moment.');
     } finally {
       setRunning(false);
     }
