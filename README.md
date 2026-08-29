@@ -1,4 +1,4 @@
-# TeLos® • Real-Time AI Technical Interview & Verified Assessment Platform
+# TeLos • Technical Interview Practice & Proctored Assessment Platform
 
 <div align="center">
 
@@ -11,7 +11,7 @@
     |_|\___|______|______\____/|_____/ 
 ```
 
-**Real Systems. Deep Trade-Offs. Multi-Language Execution. Zero Canned Trivia.**
+**Voice-enabled technical interview simulation, company prep roadmaps, polyglot code execution, and proctored coding assessments.**
 
 [![CI](https://github.com/piyush23-eng/TeLos/actions/workflows/ci.yml/badge.svg)](https://github.com/piyush23-eng/TeLos/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
@@ -19,280 +19,214 @@
 [![Vite](https://img.shields.io/badge/Vite-6.4-646cff.svg?style=flat-square)](https://vitejs.dev/)
 [![Express](https://img.shields.io/badge/Express-4.21-000000.svg?style=flat-square)](https://expressjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-6.2-2D3748.svg?style=flat-square)](https://www.prisma.io/)
-[![OpenJDK](https://img.shields.io/badge/Java-OpenJDK%2021-orange.svg?style=flat-square)](https://adoptium.net/)
-[![GCC](https://img.shields.io/badge/C%2B%2B-GCC%2013-blue.svg?style=flat-square)](https://gcc.gnu.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-[Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [47 Company Blueprints](#-47-company-prep-blueprints) • [Polyglot Runner](#-polyglot-execution-engine) • [System Limitations](#-system-limitations--engineering-constraints) • [Quick Start](#-quick-start)
+[Architecture](#architecture) • [Features](#features) • [Company Catalog](#company-prep-catalog) • [Code Execution](#code-execution-engine) • [System Limitations](#system-limitations--constraints) • [Local Setup](#local-development-setup) • [Project Structure](#project-structure)
 
 </div>
 
 ---
 
-## ⚡ Overview
+## Overview
 
-**TeLos®** is an intelligent, voice-first technical interview simulation and verified candidate assessment platform. Engineered for software engineers, university candidates, and system architects, TeLos bridges the gap between solitary LeetCode grinding and high-stakes technical screens at top global tech companies and product unicorns.
+TeLos is a full-stack web application designed for software engineering interview preparation and technical assessment. It provides:
 
-Unlike standard chatbots or generic LLM wrappers, TeLos actively grounds the conversation in **your real resume projects, architecture choices, and target job descriptions**—challenging concurrency models, distributed bottlenecks, failure modes, and speaking cadence in real time.
+1. **AI-Driven Voice Interviews:** Dynamic technical discussions with an AI interviewer using streaming LLMs and speech synthesis/recognition.
+2. **Speech & Delivery Telemetry:** Client-side tracking of speaking rate (WPM) and filler word frequency.
+3. **Structured Calibration Reports:** Automated session debriefs providing evaluation across 6 dimensions, answer comparisons, and structured feedback.
+4. **47 Company Preparation Guides:** Multi-week preparation schedules and past interview questions categorized by company.
+5. **Polyglot Code Runner:** Single-file execution sandbox supporting Python, Java, C++, C, and JavaScript with local and remote compiler fallbacks.
+6. **Proctored Coding Assessments:** Timed technical problem sets with client-side gaze/face monitoring (MediaPipe), clipboard restrictions, and event logging.
 
 ---
 
-## 🏛️ Architecture Blueprint
+## Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Frontend Client (React 18 + TypeScript + Vite)"]
-        Dashboard["Candidate Dashboard & Readiness Trajectory"]
-        Studio["Live Voice Studio & Voice Orb Visualizer"]
-        Prep["47 Company Prep Hub (6-Week Blueprints & PYQs)"]
-        Drills["Practice Drills IDE (Python / Java / C++ / JS)"]
-        Proctor["Proctored Assessment (MediaPipe Attention & Focus)"]
-        Community["Community Discuss (Debriefs & Offers)"]
+    subgraph Frontend ["Client Layer (React 18 + TypeScript + Vite)"]
+        Studio["Voice Studio & Acoustic Orb Visualizer"]
+        Dashboard["Candidate Dashboard & Telemetry Ledger"]
+        Prep["47 Company Prep Catalog (6-Week Guides)"]
+        Drills["Coding Drills Workbench"]
+        Assessment["Proctored Assessment Workspace (MediaPipe Vision)"]
+        Community["Discussion & Offer Sharing Hub"]
     end
 
-    subgraph Server ["Backend Gateway (Node.js + Express + TypeScript)"]
-        SSEStreamer["SSE Token Streamer (/api/interviewer/next/stream)"]
-        ContextEngine["Candidate Grounding Engine (CV + JD Ingest)"]
-        DebriefEngine["6-Dimension Calibration Pipeline (/api/interview/debrief)"]
-        RunnerEngine["Polyglot Execution Engine (/api/code/run)"]
-        AuthService["Authentication & Session Store (Prisma & SQLite)"]
-        PrismaORM["Prisma Client (SQLite / PostgreSQL)"]
+    subgraph BackendGateway ["Backend Gateway (Node.js + Express + TypeScript)"]
+        Auth["Auth & Session Controller (HMAC Token + Scrypt)"]
+        StreamHandler["SSE Token Streamer (/api/interviewer/next/stream)"]
+        DebriefService["Debrief & Calibration Service (/api/interview/debrief)"]
+        CodeRunner["Polyglot Execution Controller (/api/run)"]
+        PrismaStore["Prisma ORM (SQLite / PostgreSQL) + Memory Fallback"]
     end
 
-    subgraph Intelligence ["Multi-Model Fallback Cascade (OpenRouter)"]
-        PrimaryLLM["meta-llama/llama-3.3-70b-instruct (Deep Reasoning)"]
-        FallbackLLM1["google/gemini-2.0-flash-001 (Fast Latency ~400ms)"]
-        FallbackLLM2["deepseek/deepseek-chat (Systems & Coding)"]
+    subgraph ExternalServices ["External APIs & LLM Providers"]
+        OpenRouter["OpenRouter (meta-llama/llama-3.3-70b-instruct, gemini-2.0-flash)"]
+        Deepgram["Deepgram Nova-3 STT (Optional WebSocket/HTTP)"]
+        WandboxAPI["Wandbox Cloud Compiler API (GCC 13, OpenJDK 21)"]
     end
 
-    subgraph ExecutionLayer ["Code Runner Subsystem"]
-        LocalHost["Native Compilers (javac, g++, python3, vm)"]
-        WandboxCloud["Wandbox Cloud Compiler (GCC 13, OpenJDK 21, C11)"]
-    end
-
-    subgraph AudioSpeech ["Voice Infrastructure"]
-        DeepgramSTT["Deepgram Nova-3 (Sub-second Audio Ingest)"]
-        BrowserTTS["Web Speech Synthesis & Natural Voice Engine"]
-    end
-
-    Studio <--> DeepgramSTT
-    Studio <--> BrowserTTS
-    Studio --> ContextEngine
-    ContextEngine --> PrimaryLLM
-    PrimaryLLM -. Fallback .-> FallbackLLM1
-    FallbackLLM1 -. Fallback .-> FallbackLLM2
-    PrimaryLLM --> SSEStreamer
-    SSEStreamer --> Studio
-    Drills --> RunnerEngine
-    RunnerEngine --> LocalHost
-    LocalHost -. Host Fallback .-> WandboxCloud
-    DebriefEngine --> PrismaORM
-    PrismaORM --> Dashboard
+    Studio <--> StreamHandler
+    StreamHandler --> OpenRouter
+    DebriefService --> OpenRouter
+    Drills --> CodeRunner
+    Assessment --> CodeRunner
+    CodeRunner --> WandboxAPI
+    Auth --> PrismaStore
 ```
 
 ---
 
-## 🚀 Core Capabilities
+## Features
 
-### 1. 🎙️ Live Conversational Interview Studio with Alex
-* **Zero Scripted Trivia**: Alex dynamically extracts your actual CV achievements and targets your specific architectural bottlenecks.
-* **Sub-Second Latency**: Bidirectional streaming speech recognition via Deepgram Nova-3 combined with fast LLM token streaming.
-* **Barge-In Interruptibility (`✋ INTERRUPT ALEX`)**: Cut audio playback at any millisecond to naturally clarify assumptions or pivot your explanation.
-* **Acoustic Voice Orb**: High-fidelity 3D/canvas multi-layer visualizer indicating real-time audio energy and speaking states.
+### 1. Conversational Voice Studio
+* **Adaptive Questioning:** Generates follow-up questions based on the candidate\'s resume, target company, focus domain, and previous answers in the transcript.
+* **Server-Sent Events (SSE):** Streams LLM token responses for reduced perceived latency.
+* **Barge-In Interrupt:** Allows candidates to stop the interviewer\'s audio playback at any point to speak or clarify requirements.
+* **Acoustic Visualizer:** Canvas-rendered multi-layer audio visualizer showing current microphone and speaker states.
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│  LIVE STUDIO • ALEX AI (STAFF INTERVIEWER)                         00:14:22 [LIVE]     │
-├────────────────────────────────────────┬───────────────────────────────────────────────┤
-│  [CANDIDATE WEBCAM STREAM]             │  [ALEX AI ACOUSTIC VOICE ORB]                 │
-│  Resolution: 1080p WebRTC              │  Speaking: "Walk me through atomic token      │
-│  Eye-Contact Tracking: 94%             │  decrements under multi-region replication."  │
-├────────────────────────────────────────┴───────────────────────────────────────────────┤
-│  LIVE TELEMETRY HUD: 148 WPM (Optimal) │ Filler Density: 0.8% │ Talk-Time: 68% Cand.   │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-```
+### 2. Delivery Telemetry & Calibration Debriefs
+* **Pacing & Cadence:** Measures words-per-minute (WPM) throughout answers.
+* **Filler Word Tracking:** Identifies verbal hesitation markers (*"um"*, *"like"*, *"basically"*, *"you know"*).
+* **6-Dimension Evaluation:** Scores sessions across Overall Readiness, Technical Depth, Systems Architecture, Communication, Edge Cases, and Speaking Cadence.
+* **Answer Comparisons:** Provides structured before/after examples contrasting common responses with more detailed architectural answers.
+* **Markdown Export:** Generates downloadable session summaries formatted as `.md`.
 
-### 2. 📊 Live Speech Telemetry HUD
-* **Speaking Pace (WPM)**: Live words-per-minute meter categorized into `Optimal (130–160 WPM)`, `Deliberate (<115 WPM)`, and `Fast (>170 WPM)`.
-* **Vocal Filler Decay**: Real-time identification and tallying of verbal ticks (*"um"*, *"like"*, *"basically"*, *"you know"*).
-* **Talk-to-Listen Ratio**: Balances candidate explanation vs interviewer prompts.
+### 3. Company Prep Catalog
+Includes curated 6-week preparation roadmaps and past interview topics across **47 tech companies**:
+* **17 Global Technology Companies:** Google, Amazon, Meta, Microsoft, Apple, Netflix, Uber, Stripe, Atlassian, Adobe, Salesforce, Databricks, Snowflake, OpenAI, Airbnb, ByteDance, Palantir.
+* **30 Indian Product & Fintech Companies:** Razorpay, Flipkart, Swiggy, Zomato, PhonePe, Cred, Zerodha, Zoho, Meesho, Ola, Juspay, Groww, Urban Company, InMobi, Postman, BrowserStack, Delhivery, Nykaa, Zepto, Blinkit, PayU, Slice, Navi, Clevertap, Khatabook, Sprinklr, Dream11, ShareChat, Cars24, Porter.
 
-### 3. 📈 6-Dimension Calibration Debrief & Scorecard
-* **Hiring Verdict Badge**: Instant recommendation (*Strong Hire*, *Hire*, *Leaning Hire*, *No Hire*) with rationale.
-* **6-Gauge Radar Scorecard**: *Overall Readiness*, *Technical Depth*, *Systems Architecture*, *Communication*, *Edge Cases*, and *Speaking Cadence*.
-* **"What You Said" vs "Ideal High-Bar Response"**: Side-by-side diff showing how to elevate junior answers into Staff-level architectural reasoning.
-* **Anti-Pattern Traps**: Flags vague buzzwords, unaddressed single points of failure, or premature optimizations.
-* **48-Hour Action Roadmap**: Prioritized 3-day recovery plan with target practice problems.
-* **1-Click Markdown Export**: Download session scorecards directly as `.md`.
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│  6-DIMENSION CALIBRATION SCORECARD                    VERDICT: STRONG HIRE (84%)       │
-├──────────────────────┬──────────────────────┬──────────────────────┬───────────────────┤
-│  Readiness: 84%      │  Tech Depth: 80%     │  System Arch: 82%    │  Cadence: 90%     │
-├──────────────────────┴──────────────────────┴──────────────────────┴───────────────────┤
-│  "WHAT YOU SAID" vs "HIGH-BAR STAFF RESPONSE"                                          │
-│  [-] "We just put Kafka in front because it scales well."                              │
-│  [+] "We partitioned Kafka on user_id to ensure FIFO ordering with exponential retries."│
-└────────────────────────────────────────────────────────────────────────────────────────┘
-```
+### 4. Proctored Coding Assessments
+* **Hardware Preflight:** Verifies camera and microphone access prior to entering the assessment.
+* **Client-Side Landmark Tracking:** Uses MediaPipe FaceLandmarker in WebAssembly to track head orientation and eye gaze locally in the browser.
+* **Integrity Constraints:** Restricts clipboard copy/paste, tracks tab/window focus losses, and logs events for session auditing.
+* **Multi-Question Environment:** Timed coding interface supporting C, C++, Java, Python 3, and JavaScript.
 
 ---
 
-## 🏢 47 Company Prep Blueprints
+## Code Execution Engine
 
-TeLos includes 47 deep-dive preparation roadmaps with authentic hiring round breakdowns, collapsible 6-week milestones, deliverables, and authentic past year questions (PYQs):
+The platform includes a sandboxed execution engine for algorithmic problems:
 
-```
-├── Global Tech Giants (17 Companies)
-│   ├── Google, Amazon, Meta, Microsoft, Apple, Netflix
-│   ├── Uber, Stripe, Atlassian, Adobe, Salesforce
-│   ├── Databricks, Snowflake, OpenAI, Airbnb, ByteDance (TikTok), Palantir
-│
-└── Indian Tech & Fintech Product Giants (30 Companies)
-    ├── Razorpay, Flipkart, Swiggy, Zomato, PhonePe, Cred, Zerodha, Zoho
-    ├── Meesho, Ola, Juspay, Groww, Urban Company, InMobi, Postman, BrowserStack
-    ├── Delhivery, Nykaa, Zepto, Blinkit, PayU, Slice, Navi, Clevertap
-    └── Khatabook, Sprinklr, Dream11, ShareChat, Cars24, Porter
-```
+| Language | Local Runtime | Cloud Fallback | Sandbox Mechanism |
+| :--- | :--- | :--- | :--- |
+| **JavaScript** | Node.js `node:vm` | — | Isolated V8 context with memory limits & console proxy |
+| **Python 3** | `python3` subprocess | Wandbox API | Child process with timeout constraints |
+| **C++** | `g++` / `clang++` (`-std=c++17 -O2`) | Wandbox GCC 13.2 | Compilation subprocess with execution wrapper |
+| **C** | `gcc` / `clang` (`-std=c11 -O2`) | Wandbox GCC 13.2 | Compilation subprocess with execution wrapper |
+| **Java** | `javac` / OpenJDK 17/21 | Wandbox OpenJDK 21 | Source-file execution via subprocess |
+
+* **Execution Timeout:** All runs are constrained to a 6,000 ms execution window.
+* **Fallback Strategy:** If local compilers are unavailable on the host system, execution automatically routes to the Wandbox Cloud API.
 
 ---
 
-## 💻 Polyglot Execution Engine
+## System Limitations & Constraints
 
-The Drills Workbench (`/bank`) provides 24 curated company algorithmic challenges backed by a zero-configuration polyglot runner:
+1. **Browser Speech Recognition:**
+   - Client-side transcription depends on browser support for the Web Speech API (primarily Chrome, Edge, and Chromium-based browsers) or the optional Deepgram Nova-3 API.
+   - Safari and Firefox fall back to standard Web Speech Synthesis and native audio controls.
 
-| Language | Environment | Execution Strategy |
-| :--- | :--- | :--- |
-| **Python 3** | Python 3.10+ | Native subprocess with timeout & sandbox limits |
-| **Java** | OpenJDK 21 | Native single-file launch / `javac` with automated cloud compiler fallback |
-| **C++** | GCC 13.2 / Clang | `-std=c++17 -O2` with multi-binary alias probing & cloud compiler fallback |
-| **C** | GCC 13.2 / Clang | `-std=c11 -O2` compilation |
-| **JavaScript** | V8 VM Engine | Sandboxed in-process V8 VM with console logger proxy |
+2. **Client-Side Attention Monitoring:**
+   - Facial landmark processing runs in WebAssembly via MediaPipe. Detection accuracy depends on candidate lighting, camera quality, and client CPU/GPU capabilities.
+   - It is intended as an ambient integrity metric, not biometric verification.
 
-> [!TIP]
-> **Zero Host Dependency Errors:** If deployed on a minimal container without native `g++` or `javac` installed, the runner automatically delegates to the **Wandbox High-Speed Compiler API**, ensuring code executes with zero configuration.
+3. **Code Execution Scope:**
+   - The execution sandbox is built for single-file algorithmic programs and standard library modules (`math`, `collections`, `java.util.*`, C++ STL).
+   - Network access, filesystem persistence, long-running processes, and OS-level syscalls are restricted within user code.
 
----
-
-## 🛡️ Verified Proctored Assessment
-
-For recruiting teams and candidates seeking verified skill validation:
-* **Hardware Preflight**: Real-time microphone and camera check-in.
-* **Focus & Attention Tracking**: Head pose and gaze tracking via MediaPipe vision tasks.
-* **Clipboard Protection**: Intercepts unauthorized copy/cut/paste attempts.
-* **Immutable Signal Audit**: Logs focus-loss events and window blurs for verifiable assessment reports.
+4. **Evaluation Calibration:**
+   - Interview scores and feedback are synthesized by LLMs using structured rubrics. They should be treated as automated practice metrics rather than official hiring decisions.
 
 ---
 
-## ⚠️ System Limitations & Engineering Constraints
+## Local Development Setup
 
-To ensure transparent expectations, the following architectural and runtime constraints are inherent to the platform:
+### Prerequisites
+* **Node.js**: `v20.x` or later
+* **npm**: `v10.x` or later
+* **Compilers (Optional for local code runs):** `python3`, `g++`, `javac` (otherwise Wandbox fallback is used)
 
-1. **Browser Speech & Microphone Compatibility:**
-   - Real-time in-browser speech recognition relies on the **Web Speech API** (which has the highest stability on Chromium-based browsers like Chrome, Edge, and Brave) or the **Deepgram Nova-3 API**.
-   - Safari and Firefox utilize standard Web Speech Synthesis and fallback audio mechanisms.
-
-2. **Proctoring & Vision AI Environment:**
-   - MediaPipe head-pose and gaze attention monitoring execute **entirely client-side** using WebAssembly and WebGL.
-   - Attention accuracy can vary depending on local lighting, camera angle, and hardware acceleration capabilities. It is designed as an ambient integrity metric rather than biometric forensic surveillance.
-
-3. **Sandboxed Code Execution Scope:**
-   - The code runner is scoped specifically for single-file algorithmic problems and standard libraries (`STL`, `java.util.*`, `collections`, `math`).
-   - For security, network sockets, file system writes, multi-threaded server listening, and subprocess execution from within candidate code are disallowed and constrained by a **6,000 ms timeout**.
-
-4. **LLM Evaluation & Rubric Variance:**
-   - Post-interview scorecards, radar metrics, and feedback diffs are synthesized using large language models grounded on company rubrics.
-   - While tightly calibrated, candidates should use evaluations as high-signal deliberate practice rather than a legally binding hiring committee outcome.
-
----
-
-## 🚦 Quick Start
-
-### 1. Clone & Install
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/piyush23-eng/TeLos.git
 cd TeLos
 npm install
 ```
 
-### 2. Environment Configuration
+### 2. Configure Environment Variables
 Create a `.env` file in the root directory:
 ```env
 PORT=8787
-VITE_API_BASE_URL=http://localhost:8787
+DATABASE_URL="file:./dev.db"
 
-# OpenRouter Multi-Model Key (Required for live AI interviews)
+# OpenRouter API Key (for LLM interviewer & debrief generation)
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct
 
-# Deepgram Speech-to-Text (Optional for enhanced voice accuracy)
+# Deepgram STT (Optional)
 DEEPGRAM_API_KEY=your_deepgram_api_key_here
 ```
 
-### 3. Database Initialization
+### 3. Initialize Database Schema
 ```bash
 npx prisma db push
 npm run seed
 ```
 
-### 4. Run Locally
+### 4. Run Automated Tests
 ```bash
+npm test
+```
+
+### 5. Start Development Server
+```bash
+# Starts both frontend (Vite :5173) and backend API (Express :8787)
 npm run dev
 ```
-* **Frontend Web App**: `http://localhost:5173`
-* **Backend Gateway**: `http://localhost:8787`
 
 ---
 
-## 📁 Repository Structure
+## Project Structure
 
 ```
 TeLos/
 ├── server/
-│   ├── index.ts              # Express API gateway, auth, & SSE streaming routes
-│   ├── intelligence.ts       # OpenRouter client & multi-model fallback cascade
-│   ├── runner.ts             # Polyglot code runner (Python, Java, C++, JS + Cloud fallback)
-│   └── mockData.ts           # Practice catalog, personas & analytics
+│   ├── index.ts              # Express API router, auth handlers, & SSE streaming
+│   ├── intelligence.ts       # LLM provider orchestration & multi-model fallback
+│   ├── runner.ts             # Polyglot sandbox runner & Wandbox cloud fallback
+│   ├── intelligence.test.ts  # Tests for model selection & classification
+│   ├── runner.test.ts        # Tests for polyglot code execution
+│   └── mockData.ts           # Problem catalog, personas & analytics
 ├── src/
 │   ├── components/
-│   │   └── VoiceOrbVisualizer.tsx  # Multi-layer acoustic voice visualizer
-│   ├── App.tsx               # Main application orchestration & state container
-│   ├── Assessment.tsx        # Proctored technical assessment interface
-│   ├── AuthModal.tsx         # Authentication modal & candidate profile access
-│   ├── UserDashboard.tsx     # Candidate interview ledger & telemetry stats
-│   ├── companyPrepData.ts    # 47 Curated company interview playbooks & PYQs
-│   ├── voiceMetrics.ts       # WPM cadence math, filler parser & MD exporter
-│   ├── roadmap.css           # Modern brutalist design system & dark mode
-│   └── styles.css            # Base utility styles
+│   │   └── VoiceOrbVisualizer.tsx  # Canvas-based acoustic voice orb visualizer
+│   ├── App.tsx               # Primary application UI & routing container
+│   ├── Assessment.tsx        # Proctored coding assessment interface
+│   ├── AuthModal.tsx         # User authentication & candidate profile dialog
+│   ├── UserDashboard.tsx     # Candidate telemetry history & profile management
+│   ├── apiConfig.ts          # Centralized API URL resolution & safe storage
+│   ├── companyPrepData.ts    # 47 Curated company interview playbooks
+│   ├── problemCatalog.ts     # 24 Practice problems with test cases
+│   ├── voiceMetrics.ts       # WPM cadence math, filler parser & report exporter
+│   ├── voiceMetrics.test.ts  # Tests for WPM math and filler word parsing
+│   ├── roadmap.css           # UI styling, layouts, and dark mode theme
+│   └── styles.css            # Base styles and reset
 ├── prisma/
-│   ├── schema.prisma         # User, Session, Question, Score schemas
-│   └── seed.ts               # Starter candidate telemetry seed data
-├── scripts/
-│   └── setup-jdk.mjs         # OpenJDK 17 automated Linux bootstrapper
-├── Dockerfile                # Multi-stage production container with GCC & OpenJDK
-├── render.yaml               # Render infrastructure blueprint
-└── package.json              # Project dependencies & build scripts
+│   ├── schema.prisma         # Data models for User, Session, Question, Score
+│   └── seed.ts               # Telemetry and problem dataset seeder
+├── .github/
+│   └── workflows/
+│       └── ci.yml            # CI workflow for automated testing and typechecks
+├── Dockerfile                # Multi-stage production container definition
+├── render.yaml               # Render cloud deployment blueprint
+└── package.json              # Dependencies, build, and test scripts
 ```
 
 ---
 
-## 🤝 Contributing
+## License
 
-Contributions are warmly welcomed! To contribute:
-
-1. Fork the repository.
-2. Create your Feature Branch (`git checkout -b feat/NewCompanyBlueprint`).
-3. Commit your Changes (`git commit -m 'feat: add Netflix distributed systems roadmap'`).
-4. Push to the Branch (`git push origin feat/NewCompanyBlueprint`).
-5. Open a Pull Request.
-
----
-
-## 📜 License
-
-Distributed under the **MIT License**. See `LICENSE` for more information.
-
-<div align="center">
-<sub>Built with precision for engineers launching breakthrough tech careers. © 2026 TeLos Studio.</sub>
-</div>
+This project is licensed under the [MIT License](LICENSE).
