@@ -2138,7 +2138,9 @@ function CompanyPrep() {
                     <p className="kicker">COMPANY PLAYBOOK / {selectedCompany.region}</p>
                     <h2>{selectedCompany.name}</h2>
                   </div>
-                  <span className="metric-pill">{activeRoadmap?.duration || '6-WEEK SPRINT'}</span>
+                  <span className="metric-pill" style={{ background: 'var(--ink, #101018)', color: '#fff', border: '1px solid var(--ink, #101018)', fontWeight: 700, padding: '8px 14px' }}>
+                    {activeRoadmap?.duration || '6-WEEK SPRINT'}
+                  </span>
                 </div>
                 <p style={{ margin: '8px 0 14px', fontSize: 13, lineHeight: 1.6 }}>{selectedCompany.interviewStyle}</p>
                 <div className="detail-meta-row">
@@ -2255,9 +2257,11 @@ function CompanyPrep() {
                 <div className="info-grid">
                   {selectedCompany.sampleQuestions?.map((q: string, idx: number) => (
                     <div key={idx} className="info-card" style={{ position: 'relative' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', color: 'var(--violet, #6e54f6)' }}>PYQ #{idx + 1}</span>
-                        <span style={{ font: "700 8px/1 'DM Mono', monospace", letterSpacing: '1px', padding: '2px 6px', border: '1px solid var(--ink)', background: q.toLowerCase().includes('hard') ? 'var(--coral, #f3a184)' : q.toLowerCase().includes('easy') ? 'var(--mint, #d6f4d1)' : 'rgba(255,255,255,0.6)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', background: '#ece8ff', color: 'var(--violet, #6e54f6)', border: '1px solid var(--ink, #101018)', padding: '3px 7px' }}>
+                          PYQ #{idx + 1}
+                        </span>
+                        <span style={{ font: "700 8.5px/1 'DM Mono', monospace", letterSpacing: '1px', padding: '3px 7px', border: '1px solid var(--ink, #101018)', color: 'var(--ink, #101018)', background: q.toLowerCase().includes('hard') ? 'var(--coral, #f3a184)' : q.toLowerCase().includes('easy') ? 'var(--mint, #d6f4d1)' : '#f2f0ea' }}>
                           {q.toLowerCase().includes('hard') ? 'HARD' : q.toLowerCase().includes('easy') ? 'EASY' : 'MEDIUM'}
                         </span>
                       </div>
@@ -2283,8 +2287,10 @@ function CompanyPrep() {
                   <div className="info-grid">
                     {selectedCompany.systemDesignArchetypes.map((arch: string, idx: number) => (
                       <div className="info-card" key={idx}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                          <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', color: 'var(--coral, #f3a184)' }}>SYSTEM DRILL 0{idx + 1}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', background: 'var(--coral, #f3a184)', color: 'var(--ink, #101018)', border: '1px solid var(--ink, #101018)', padding: '3px 7px' }}>
+                            SYSTEM DRILL 0{idx + 1}
+                          </span>
                         </div>
                         <strong>{arch}</strong>
                         <span>Focus on component trade-offs, data models, scale calculations (QPS &amp; Storage), and failure modes.</span>
@@ -2304,8 +2310,10 @@ function CompanyPrep() {
                   <div className="info-grid">
                     {selectedCompany.culturalValues.map((val: string, idx: number) => (
                       <div className="info-card" key={idx}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                          <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', color: 'var(--mint, #d6f4d1)' }}>CORE VALUE 0{idx + 1}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', background: 'var(--mint, #d6f4d1)', color: 'var(--ink, #101018)', border: '1px solid var(--ink, #101018)', padding: '3px 7px' }}>
+                            CORE VALUE 0{idx + 1}
+                          </span>
                         </div>
                         <strong>{val.split(':')[0]}</strong>
                         {val.includes(':') && <span>{val.split(':')[1]}</span>}
