@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'node:path';
+import fs from 'node:fs';
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { PrismaClient } from '@prisma/client';
@@ -311,4 +313,15 @@ app.post('/api/report', async (req, res, next) => {
 });
 
 const port = Number(process.env.PORT || 8787);
+
+// Serve static frontend build if dist/ exists (production monolith / container mode)
+const distPath = path.resolve(process.cwd(), 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/health') return next();
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 app.listen(port, () => console.log(`TeLos API listening on http://localhost:${port}`));
