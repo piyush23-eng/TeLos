@@ -54,7 +54,7 @@ flowchart TD
         ContextEngine["Candidate Grounding Engine (CV + JD Ingest)"]
         DebriefEngine["6-Dimension Calibration Pipeline (/api/interview/debrief)"]
         RunnerEngine["Polyglot Execution Engine (/api/code/run)"]
-        AuthService["OAuth2 & Session Store (Google / LinkedIn / Email)"]
+        AuthService["Authentication & Session Store (Prisma & SQLite)"]
         PrismaORM["Prisma Client (SQLite / PostgreSQL)"]
     end
 
@@ -189,10 +189,6 @@ To ensure transparent expectations, the following architectural and runtime cons
    - Post-interview scorecards, radar metrics, and feedback diffs are synthesized using large language models grounded on company rubrics.
    - While tightly calibrated, candidates should use evaluations as high-signal deliberate practice rather than a legally binding hiring committee outcome.
 
-5. **Third-Party OAuth Configuration:**
-   - 1-Click Google and LinkedIn authentication require valid `GOOGLE_CLIENT_ID` and `LINKEDIN_CLIENT_ID` credentials in production.
-   - In development or unconfigured environments, the application gracefully falls back to the in-app candidate credential sync dialog and email authentication.
-
 ---
 
 ## 🚦 Quick Start
@@ -216,11 +212,6 @@ OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct
 
 # Deepgram Speech-to-Text (Optional for enhanced voice accuracy)
 DEEPGRAM_API_KEY=your_deepgram_api_key_here
-
-# OAuth & Social Sign-In (Optional)
-GOOGLE_CLIENT_ID=your_google_client_id_here
-VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
-LINKEDIN_CLIENT_ID=your_linkedin_client_id_here
 ```
 
 ### 3. Database Initialization
@@ -252,7 +243,7 @@ TeLos/
 │   │   └── VoiceOrbVisualizer.tsx  # Multi-layer acoustic voice visualizer
 │   ├── App.tsx               # Main application orchestration & state container
 │   ├── Assessment.tsx        # Proctored technical assessment interface
-│   ├── AuthModal.tsx         # OAuth2 (Google / LinkedIn / Email) authentication
+│   ├── AuthModal.tsx         # Authentication modal & candidate profile access
 │   ├── UserDashboard.tsx     # Candidate interview ledger & telemetry stats
 │   ├── companyPrepData.ts    # 47 Curated company interview playbooks & PYQs
 │   ├── voiceMetrics.ts       # WPM cadence math, filler parser & MD exporter
