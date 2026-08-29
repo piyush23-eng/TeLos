@@ -2535,117 +2535,9 @@ function CompanyPrep() {
   );
 }
 
-const initialCommunityPosts: CommunityPost[] = [
-  {
-    id: 'post-1',
-    author: 'Aria Sharma',
-    role: 'SWE II (Incoming Google L4)',
-    title: 'Google L4 Full-Loop Debrief — 3 Coding Rounds + 1 Googleyness [Offer]',
-    postType: 'debrief',
-    company: 'Google',
-    outcome: 'Offer',
-    level: 'L4 (Bangalore)',
-    message: 'Just wrapped up my Google loop and received the offer! Round 1: Graph BFS with state tracking (Shortest path in matrix with k obstacle eliminations). Round 2: Tree DP with memoization on tree diameters and sub-tree query aggregation. Round 3: Live Rate Limiter design with sliding window log algorithm and distributed token bucket trade-offs.\n\nKey Tip: Clarify all edge cases (empty input, negative weights, scale limits) before writing any code. The interviewer cared heavily about clean variable naming and modular decomposition.',
-    tags: ['google', 'interview experiences', 'dsa & algorithms', 'system design'],
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    upvotes: 48,
-    helpfulCount: 39,
-    replies: [
-      { id: 'rep-1', author: 'Rohan V.', role: 'SDE-1 @ Swiggy', message: 'Congrats Aria! For the Tree DP question, did they ask you to write iterative code or was recursive with memoization acceptable?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-      { id: 'rep-2', author: 'Aria Sharma', role: 'SWE II (Incoming Google L4)', message: 'Recursive with memo dict was completely acceptable as long as you can trace call-stack space complexity accurately.', timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString() }
-    ]
-  },
-  {
-    id: 'post-2',
-    author: 'Devendra Patel',
-    role: 'Backend SDE @ Razorpay',
-    title: 'Amazon SDE-2 Bar Raiser Experience: LP Deep Dive + Minimum Fulfillment Window',
-    postType: 'debrief',
-    company: 'Amazon',
-    outcome: 'Offer',
-    level: 'SDE II (Seattle / Remote)',
-    message: 'For Amazon SDE-2, the Bar Raiser round lasted 60 minutes with 35 minutes dedicated purely to Leadership Principles (Customer Obsession, Bias for Action, Have Backbone). Every LP story was scrutinized using the STAR framework.\n\nThe coding question was a variation of Minimum Fulfillment Window with deque-based sliding window. Explaining the O(N) invariant step-by-step made all the difference.',
-    tags: ['amazon', 'interview experiences', 'dsa & algorithms', 'career advice'],
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 7).toISOString(),
-    upvotes: 36,
-    helpfulCount: 28,
-    replies: [
-      { id: 'rep-3', author: 'Karthik N.', role: 'Student @ BITS', message: 'Did you prepare structured STAR metrics beforehand?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString() },
-      { id: 'rep-4', author: 'Devendra Patel', role: 'Backend SDE @ Razorpay', message: 'Yes! Write down 5 versatile projects and map 2 LP principles to each with measurable metrics.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString() }
-    ]
-  },
-  {
-    id: 'post-3',
-    author: 'Pooja Iyer',
-    role: 'Senior Platform Engineer',
-    title: 'Flipkart Machine Coding Round: Strategy & Clean Architecture Tips',
-    postType: 'question',
-    company: 'Flipkart',
-    level: 'SDE II / III (Bangalore)',
-    message: 'In the 90-minute Machine Coding round at Flipkart (Cab Booking / Ride-Sharing Engine), what is the best way to structure interfaces under time pressure?\n\nI recommend: 1) Model entities first (Driver, Rider, Trip, Location). 2) Service layer with Strategy Pattern for DriverMatchingStrategy and PricingStrategy. 3) In-memory repository with thread-safe maps. Don\'t spend time on REST endpoints until core logic passes all test cases.',
-    tags: ['flipkart', 'system design', 'interview experiences', 'dsa & algorithms'],
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
-    upvotes: 42,
-    helpfulCount: 35,
-    replies: [
-      { id: 'rep-5', author: 'Ankit G.', role: 'Tech Lead @ PhonePe', message: 'Spot on. Demonstrating clean separation of concerns and extensible SOLID principles gets you through.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString() }
-    ]
-  },
-  {
-    id: 'post-4',
-    author: 'Siddharth Roy',
-    role: 'SDE-2 Candidate',
-    title: 'Offer Review & Negotiation: Google L4 vs Razorpay SDE-2 vs Microsoft L61',
-    postType: 'offer',
-    company: 'Google',
-    level: 'SDE II',
-    compensation: '₹48 LPA vs ₹44 LPA vs ₹42 LPA',
-    message: 'Currently holding 3 offers for SDE-2 backend in Bangalore. Google L4 base ₹32L + ₹16L RSUs, Razorpay ₹34L base + ₹10L ESOPs + ₹4L joining, Microsoft L61 ₹29L base + stock. Priority is high-scale distributed systems ownership and career growth over the next 2-3 years. How do stock refreshers compare at Google vs Razorpay?',
-    tags: ['career advice', 'google', 'razorpay', 'interview experiences'],
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
-    upvotes: 53,
-    helpfulCount: 31,
-    replies: [
-      { id: 'rep-6', author: 'Vikram M.', role: 'Staff Eng @ Swiggy', message: 'At Google L4, refreshers are consistent and liquidity is guaranteed. Razorpay will give you massive ownership on payment rails. Both are top tier.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString() }
-    ]
-  },
-  {
-    id: 'post-5',
-    author: 'Sneha Chawla',
-    role: 'Final Year CS @ NITK',
-    title: 'TCS Prime & Innovator Coding Round PYQs & Tips for College Students',
-    postType: 'debrief',
-    company: 'TCS',
-    outcome: 'Offer',
-    level: 'TCS Prime (9 LPA)',
-    message: 'For college students preparing for TCS National Qualifier & Prime/Innovator test: Section A was medium graph traversal and bitwise subset generation. Section B had an Interval Scheduling DP problem. Scoring 100% test cases without time-limit-exceeded is essential for the 9-11 LPA Prime/Innovator bands.',
-    tags: ['tcs', 'interview experiences', 'dsa & algorithms', 'career advice'],
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-    upvotes: 64,
-    helpfulCount: 52,
-    replies: [
-      { id: 'rep-7', author: 'Rahul D.', role: 'College Grad', message: 'Thank you Sneha! Were the test cases strict on memory limits?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString() }
-    ]
-  },
-  {
-    id: 'post-6',
-    author: 'Kunal Mehra',
-    role: 'Full Stack Engineer',
-    title: 'Looking for Peer Mock Partner for L5 / Senior System Design (Distributed Caching)',
-    postType: 'mock',
-    company: 'General',
-    level: 'Senior SWE (L5)',
-    message: 'Preparing for Meta E5 / Uber L5 interviews in the next 6 weeks. Looking for a serious peer mock partner to do 2x weekly 60-min sessions on System Design (Distributed Caching, Notification Engine, Live Leaderboards, Rate Limiters) with thorough mutual rubric feedback. Available evenings IST and weekends.',
-    tags: ['mock interviews', 'system design', 'peer mock'],
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 42).toISOString(),
-    upvotes: 24,
-    helpfulCount: 19,
-    replies: []
-  }
-];
-
 function Community() {
-  const [posts, setPosts] = useState<CommunityPost[]>(initialCommunityPosts);
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTopic, setActiveTopic] = useState('All topics');
   const [companyFilter, setCompanyFilter] = useState('All');
   const [postTypeFilter, setPostTypeFilter] = useState<'all' | PostType>('all');
@@ -2661,7 +2553,7 @@ function Community() {
   const [composerType, setComposerType] = useState<PostType>('question');
   const [author, setAuthor] = useState('TeLos User');
   const [role, setRole] = useState('SWE Candidate');
-  const [targetCompany, setTargetCompany] = useState('Google');
+  const [targetCompany, setTargetCompany] = useState(companyCatalog[0]?.name || 'Google');
   const [levelOrRound, setLevelOrRound] = useState('L4 / SDE II');
   const [outcome, setOutcome] = useState<'Offer' | 'Reject' | 'Pending' | 'N/A'>('Offer');
   const [title, setTitle] = useState('');
@@ -2672,37 +2564,73 @@ function Community() {
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
 
   const topics = ['All topics', 'Interview experiences', 'DSA & algorithms', 'System design', 'Career advice', 'Mock interviews'];
-  const trendingCompanies = ['All', 'Google', 'Amazon', 'Meta', 'Microsoft', 'Flipkart', 'Swiggy', 'Razorpay', 'TCS', 'Netflix', 'Uber'];
+
+  // Dynamically compute trending companies from catalog and active posts
+  const trendingCompanies = useMemo(() => {
+    const map = new Map<string, number>();
+    posts.forEach(p => {
+      if (p.company) map.set(p.company, (map.get(p.company) || 0) + 1);
+    });
+    const sortedActive = Array.from(map.entries()).sort((a, b) => b[1] - a[1]).map(([name]) => name);
+    const topCatalog = companyCatalog.map(c => c.name);
+    const combined = Array.from(new Set([...sortedActive, ...topCatalog])).slice(0, 14);
+    return ['All', ...combined];
+  }, [posts]);
+
+  // Dynamically compute signal metrics
+  const uniqueAuthorsCount = useMemo(() => {
+    const set = new Set<string>();
+    posts.forEach(p => {
+      if (p.author) set.add(p.author);
+      (p.replies || []).forEach(r => { if (r.author) set.add(r.author); });
+    });
+    return set.size;
+  }, [posts]);
+
+  const totalPYQsCount = useMemo(() => {
+    return posts.filter(p => p.postType === 'debrief' || p.outcome || p.tags?.includes('interview experiences')).length;
+  }, [posts]);
+
+  const totalRepliesCount = useMemo(() => {
+    return posts.reduce((acc, p) => acc + (p.replies?.length || 0), 0);
+  }, [posts]);
+
+  const trackedCompaniesCount = useMemo(() => {
+    return new Set([...companyCatalog.map(c => c.name), ...posts.map(p => p.company).filter(Boolean)]).size;
+  }, [posts]);
 
   useEffect(() => {
+    setLoading(true);
     fetch(`${API}/api/community`)
       .then(r => r.json())
       .then(d => {
-        if (d.posts && Array.isArray(d.posts) && d.posts.length > 0) {
-          // Merge with initial rich seed posts
-          setPosts(prev => {
-            const ids = new Set(prev.map(p => p.id));
-            const incoming = d.posts.filter((p: any) => !ids.has(p.id));
-            return [...prev, ...incoming];
-          });
+        if (d.posts && Array.isArray(d.posts)) {
+          setPosts(d.posts);
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
   }, []);
 
-  const toggleVote = (id: string) => {
+  const toggleVote = async (id: string) => {
+    const isUpvoted = upvotedPosts.has(id);
+    const delta = isUpvoted ? -1 : 1;
     setUpvotedPosts(prev => {
       const next = new Set(prev);
-      const isUpvoted = next.has(id);
-      if (isUpvoted) {
-        next.delete(id);
-        setVotes(v => ({ ...v, [id]: (v[id] || 0) - 1 }));
-      } else {
-        next.add(id);
-        setVotes(v => ({ ...v, [id]: (v[id] || 0) + 1 }));
-      }
+      if (isUpvoted) next.delete(id);
+      else next.add(id);
       return next;
     });
+    setVotes(v => ({ ...v, [id]: (v[id] || 0) + delta }));
+    try {
+      await fetch(`${API}/api/community/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: id, delta })
+      });
+    } catch {
+      // offline fallback
+    }
   };
 
   const toggleHelpful = (id: string) => {
@@ -2732,7 +2660,7 @@ function Community() {
     });
   };
 
-  const submitReply = (postId: string) => {
+  const submitReply = async (postId: string) => {
     const text = (replyDrafts[postId] || '').trim();
     if (!text) return;
     const newReply: CommunityReply = {
@@ -2753,6 +2681,16 @@ function Community() {
     }));
     setReplyDrafts(prev => ({ ...prev, [postId]: '' }));
     setExpandedReplies(prev => new Set(prev).add(postId));
+
+    try {
+      await fetch(`${API}/api/community/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, reply: newReply })
+      });
+    } catch {
+      // offline fallback
+    }
   };
 
   const submitPost = async () => {
@@ -2783,16 +2721,21 @@ function Community() {
     };
 
     try {
-      await fetch(`${API}/api/community`, {
+      const res = await fetch(`${API}/api/community`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPost)
       });
+      const data = await res.json();
+      if (data.posts) {
+        setPosts(data.posts);
+      } else {
+        setPosts(prev => [newPost, ...prev]);
+      }
     } catch {
-      // offline fallback
+      setPosts(prev => [newPost, ...prev]);
     }
 
-    setPosts(prev => [newPost, ...prev]);
     setMessage('');
     setTitle('');
     setSubmitting(false);
@@ -2903,19 +2846,19 @@ function Community() {
             </div>
             <div className="community-stats-grid">
               <div className="community-stat-cell">
-                <span className="community-stat-val">1.8k+</span>
-                <span className="community-stat-lbl">Active Candidates</span>
+                <span className="community-stat-val">{uniqueAuthorsCount}</span>
+                <span className="community-stat-lbl">Active Contributors</span>
               </div>
               <div className="community-stat-cell">
-                <span className="community-stat-val">480+</span>
-                <span className="community-stat-lbl">PYQs Logged</span>
+                <span className="community-stat-val">{totalPYQsCount}</span>
+                <span className="community-stat-lbl">Debriefs &amp; PYQs</span>
               </div>
               <div className="community-stat-cell">
-                <span className="community-stat-val">96%</span>
-                <span className="community-stat-lbl">Response Rate</span>
+                <span className="community-stat-val">{totalRepliesCount}</span>
+                <span className="community-stat-lbl">Community Answers</span>
               </div>
               <div className="community-stat-cell">
-                <span className="community-stat-val">47</span>
+                <span className="community-stat-val">{trackedCompaniesCount}</span>
                 <span className="community-stat-lbl">Companies Tracked</span>
               </div>
             </div>
@@ -3049,16 +2992,9 @@ function Community() {
                   onChange={e => setTargetCompany(e.target.value)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <option value="Google">Google</option>
-                  <option value="Amazon">Amazon</option>
-                  <option value="Meta">Meta</option>
-                  <option value="Microsoft">Microsoft</option>
-                  <option value="Flipkart">Flipkart</option>
-                  <option value="Swiggy">Swiggy</option>
-                  <option value="Razorpay">Razorpay</option>
-                  <option value="TCS">TCS</option>
-                  <option value="Netflix">Netflix</option>
-                  <option value="Uber">Uber</option>
+                  {companyCatalog.map(comp => (
+                    <option key={comp.id} value={comp.name}>{comp.name}</option>
+                  ))}
                   <option value="General">General / Other</option>
                 </select>
               </div>
@@ -3135,7 +3071,12 @@ function Community() {
 
           {/* Discussion Thread Feed */}
           <div className="thread-list">
-            {visiblePosts.length === 0 ? (
+            {loading ? (
+              <div className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
+                <Sparkles size={24} style={{ margin: '0 auto 12px', color: 'var(--violet)' }} />
+                <h2>Loading discussions...</h2>
+              </div>
+            ) : visiblePosts.length === 0 ? (
               <div className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
                 <MessageCircle size={28} style={{ margin: '0 auto 12px', color: 'var(--muted)' }} />
                 <h2>No discussions found for this view.</h2>

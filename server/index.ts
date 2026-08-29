@@ -4,7 +4,7 @@ import cors from 'cors';
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { PrismaClient } from '@prisma/client';
-import { demoSessions, personas, problems } from './mockData';
+import { demoSessions, personas, problems, communitySeedPosts } from './mockData';
 import { IntelligenceProvider } from './intelligence';
 import { runCodeSnippet } from './runner';
 
@@ -36,10 +36,7 @@ const authenticatedUser = async (authorization?: string) => {
   } catch { return null; }
 };
 
-const communityPosts = [
-  { id: 'post-1', author: 'Aria', role: 'SWE Candidate', message: 'Just finished a Google loop. They asked a systems design question about caching invalidation and wanted latency vs correctness trade-offs.', tags: ['google', 'design', 'signal'], timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString() },
-  { id: 'post-2', author: 'Dev', role: 'Backend Intern', message: 'Shared my response to the behavioral question: I focused on impact, metrics, and owning failure recovery. Recruiter said it landed well.', tags: ['behavioral', 'feedback'], timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString() }
-];
+const communityPosts: any[] = [...communitySeedPosts];
 
 app.get('/health', (_req, res) =>
   res.json({ status: 'ok', mode: intelligence.mode, llm: intelligence.llm, deepgram: Boolean(process.env.DEEPGRAM_API_KEY) })
@@ -106,7 +103,36 @@ app.post('/api/community', async (req, res, next) => {
     const newPost = req.body;
     if (newPost && newPost.id && newPost.message) {
       communityPosts.unshift(newPost);
-      if (communityPosts.length > 50) communityPosts.pop();
+      if (communityPosts.length > 100) communityPosts.pop();
+    }
+    res.json({ posts: communityPosts });
+  } catch (error) {
+    next(error);
+  }
+});
+app.post('/api/community/reply', async (req, res, next) => {
+  try {
+    const { postId, reply } = req.body;
+    if (postId && reply && reply.message) {
+      const target = communityPosts.find(p => p.id === postId);
+      if (target) {
+        if (!target.replies) target.replies = [];
+        target.replies.push(reply);
+      }
+    }
+    res.json({ posts: communityPosts });
+  } catch (error) {
+    next(error);
+  }
+});
+app.post('/api/community/vote', async (req, res, next) => {
+  try {
+    const { postId, delta } = req.body;
+    if (postId) {
+      const target = communityPosts.find(p => p.id === postId);
+      if (target) {
+        target.upvotes = Math.max(0, (target.upvotes || 0) + (Number(delta) || 1));
+      }
     }
     res.json({ posts: communityPosts });
   } catch (error) {
