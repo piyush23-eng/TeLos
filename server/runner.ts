@@ -13,12 +13,24 @@ export type RunnerResult = {
 };
 
 function safeSpawn(command: string, args: string[], cwd?: string) {
-  return spawnSync(command, args, {
-    cwd,
-    encoding: 'utf8',
-    timeout: 5000,
-    maxBuffer: 10 * 1024 * 1024,
-  });
+  try {
+    return spawnSync(command, args, {
+      cwd,
+      encoding: 'utf8',
+      timeout: 5000,
+      maxBuffer: 10 * 1024 * 1024,
+    });
+  } catch (err: any) {
+    return {
+      status: -1,
+      stdout: '',
+      stderr: err.message,
+      error: err,
+      pid: 0,
+      output: ['', '', err.message],
+      signal: null,
+    };
+  }
 }
 
 function runJs(code: string): RunnerResult {
@@ -26,22 +38,32 @@ function runJs(code: string): RunnerResult {
   const consoleProxy = {
     log: (...args: unknown[]) => output.push(args.map(String).join(' ')),
     error: (...args: unknown[]) => output.push(args.map(String).join(' ')),
+    warn: (...args: unknown[]) => output.push(args.map(String).join(' ')),
   };
   const sandbox = { console: consoleProxy, setTimeout, clearTimeout, Math, Date, JSON, Array, Object, String, Number, Boolean, RegExp };
   try {
-    vm.runInNewContext(code, sandbox, { timeout: 2000 });
-    return { status: 'ok', output: output.join('\n') || 'No output.' };
+    vm.runInNewContext(code, sandbox, { timeout: 2500 });
+    return { status: 'ok', output: output.join('\n') || 'Program executed with no console output.' };
   } catch (error) {
     return { status: 'error', output: error instanceof Error ? error.message : String(error) };
   }
 }
 
 function runPython(code: string): RunnerResult {
-  const python = process.platform === 'win32' ? 'python' : 'python3';
-  const result = safeSpawn(python, ['-c', code]);
-  if (result.error) return { status: 'error', output: String(result.error.message) };
-  if (result.status !== 0) return { status: 'error', output: (result.stderr || result.stdout || `Python exited with code ${result.status}`).trim() };
-  return { status: 'ok', output: (result.stdout || 'No output.').trim() };
+  let result = safeSpawn('python3', ['-c', code]);
+  if (result.error && (result.error as any).code === 'ENOENT') {
+    result = safeSpawn('python', ['-c', code]);
+  }
+  if (result.error) {
+    return {
+      status: 'error',
+      output: 'Python interpreter (python3) is not installed on this host environment. Switch to JavaScript for instant execution.'
+    };
+  }
+  if (result.status !== 0) {
+    return { status: 'error', output: (result.stderr || result.stdout || `Python exited with code ${result.status}`).trim() };
+  }
+  return { status: 'ok', output: (result.stdout || 'Program executed with no output.').trim() };
 }
 
 async function runCpp(code: string): Promise<RunnerResult> {
@@ -50,17 +72,28 @@ async function runCpp(code: string): Promise<RunnerResult> {
   const binaryPath = path.join(tempDir, 'main');
   await fs.writeFile(sourcePath, code, 'utf8');
 
-  const compile = safeSpawn('g++', ['-std=c++17', sourcePath, '-O2', '-o', binaryPath], tempDir);
-  if (compile.error || compile.status !== 0) {
+  let compile = safeSpawn('g++', ['-std=c++17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+  if (compile.error && (compile.error as any).code === 'ENOENT') {
+    compile = safeSpawn('clang++', ['-std=c++17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+  }
+
+  if (compile.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    return { status: 'error', output: (compile.stderr || compile.stdout || String(compile.error?.message || 'C++ compilation failed')).trim() };
+    return {
+      status: 'error',
+      output: 'C++ compiler (g++ / clang++) is not available on this host. Switch to JavaScript or Python for instant execution.'
+    };
+  }
+  if (compile.status !== 0) {
+    await fs.rm(tempDir, { recursive: true, force: true });
+    return { status: 'error', output: (compile.stderr || compile.stdout || 'C++ compilation failed').trim() };
   }
 
   const runResult = safeSpawn(binaryPath, [], tempDir);
   await fs.rm(tempDir, { recursive: true, force: true });
   if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
   if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `C++ execution exited with code ${runResult.status}`).trim() };
-  return { status: 'ok', output: (runResult.stdout || 'No output.').trim() };
+  return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
 }
 
 async function runC(code: string): Promise<RunnerResult> {
@@ -69,35 +102,68 @@ async function runC(code: string): Promise<RunnerResult> {
   const binaryPath = path.join(tempDir, 'main');
   await fs.writeFile(sourcePath, code, 'utf8');
 
-  const compile = safeSpawn('gcc', ['-std=c17', sourcePath, '-O2', '-o', binaryPath], tempDir);
-  if (compile.error || compile.status !== 0) {
+  let compile = safeSpawn('gcc', ['-std=c17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+  if (compile.error && (compile.error as any).code === 'ENOENT') {
+    compile = safeSpawn('clang', ['-std=c17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+  }
+
+  if (compile.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    return { status: 'error', output: (compile.stderr || compile.stdout || String(compile.error?.message || 'C compilation failed')).trim() };
+    return {
+      status: 'error',
+      output: 'C compiler (gcc / clang) is not available on this host. Switch to JavaScript or Python for instant execution.'
+    };
+  }
+  if (compile.status !== 0) {
+    await fs.rm(tempDir, { recursive: true, force: true });
+    return { status: 'error', output: (compile.stderr || compile.stdout || 'C compilation failed').trim() };
   }
 
   const runResult = safeSpawn(binaryPath, [], tempDir);
   await fs.rm(tempDir, { recursive: true, force: true });
   if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
   if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `C exited with code ${runResult.status}`).trim() };
-  return { status: 'ok', output: (runResult.stdout || 'No output.').trim() };
+  return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
 }
 
 async function runJava(code: string): Promise<RunnerResult> {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'telos-java-'));
-  const sourcePath = path.join(tempDir, 'Main.java');
+  
+  // Extract public class name or default to Solution / Main
+  const match = code.match(/public\s+class\s+([A-Za-z0-9_]+)/);
+  const className = match ? match[1] : 'Solution';
+  const sourcePath = path.join(tempDir, `${className}.java`);
   await fs.writeFile(sourcePath, code, 'utf8');
 
-  const compile = safeSpawn('javac', [sourcePath], tempDir);
-  if (compile.error || compile.status !== 0) {
+  // Try direct single-file source launch (supported in Java 11+)
+  let directRun = safeSpawn('java', [sourcePath], tempDir);
+  if (!directRun.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    return { status: 'error', output: (compile.stderr || compile.stdout || String(compile.error?.message || 'Java compilation failed')).trim() };
+    if (directRun.status !== 0) {
+      return { status: 'error', output: (directRun.stderr || directRun.stdout || `Java exited with code ${directRun.status}`).trim() };
+    }
+    return { status: 'ok', output: (directRun.stdout || 'Program executed with no output.').trim() };
   }
 
-  const runResult = safeSpawn('java', ['-cp', tempDir, 'Main'], tempDir);
+  // Fallback to javac compilation
+  const compile = safeSpawn('javac', [sourcePath], tempDir);
+  if (compile.error) {
+    await fs.rm(tempDir, { recursive: true, force: true });
+    return {
+      status: 'error',
+      output: 'Java runtime / JDK is not available on this host. Switch to JavaScript or Python for instant in-browser execution, or install OpenJDK.'
+    };
+  }
+  if (compile.status !== 0) {
+    await fs.rm(tempDir, { recursive: true, force: true });
+    return { status: 'error', output: (compile.stderr || compile.stdout || 'Java compilation failed').trim() };
+  }
+
+  const runResult = safeSpawn('java', ['-cp', tempDir, className], tempDir);
   await fs.rm(tempDir, { recursive: true, force: true });
   if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
   if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `Java execution exited with code ${runResult.status}`).trim() };
-  return { status: 'ok', output: (runResult.stdout || 'No output.').trim() };
+  return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
 }
 
 export async function runCodeSnippet(code: string, language: string, _problemId: string): Promise<RunnerResult> {
@@ -115,3 +181,4 @@ export async function runCodeSnippet(code: string, language: string, _problemId:
   }
   return runJs(code);
 }
+
