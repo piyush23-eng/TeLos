@@ -1912,13 +1912,13 @@ function Bank() {
         </div>
         <div className="session-meta">
           <b>{problems.length} CURATED DRILLS</b>
-          <span>LEETCODE-STYLE SPLIT IDE</span>
+          <span>2-COLUMN SPLIT IDE</span>
           <span>MULTI-LANGUAGE SANDBOX</span>
         </div>
       </section>
 
-      {/* 2-Column LeetCode-Style Workbench */}
-      <div className="leetcode-workbench-wrapper">
+      {/* 2-Column Practice Workbench */}
+      <div className="practice-workbench-wrapper">
         {/* Top Workbench Controls Bar */}
         <div className="workbench-top-bar">
           <div className="workbench-top-left">

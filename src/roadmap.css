@@ -2307,8 +2307,8 @@
   color: var(--violet, #6e54f6);
 }
 
-/* LeetCode Style 2-Column IDE Workbench */
-.leetcode-workbench-wrapper {
+/* 2-Column IDE Practice Workbench */
+.practice-workbench-wrapper {
   margin-top: 24px;
   display: flex;
   flex-direction: column;
