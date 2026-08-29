@@ -2180,6 +2180,159 @@
   }
 }
 
+/* Site Footer & GitHub Repo Link */
+.telos-site-footer {
+  margin-top: 60px;
+  background: var(--paper, #f7f5ef);
+  border-top: 1px solid var(--ink, #101018);
+  padding: 44px 32px 24px;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr;
+  gap: 36px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(16, 16, 24, 0.15);
+}
+
+.footer-brand-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.footer-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
+  border: 1px solid var(--ink, #101018);
+  object-fit: cover;
+}
+.footer-brand-title {
+  font: 400 24px/1 'DM Serif Display', serif;
+  color: var(--ink, #101018);
+}
+
+.footer-tagline {
+  margin: 0;
+  font: 500 13px/1.6 Manrope, sans-serif;
+  color: var(--muted, #686771);
+  max-width: 380px;
+}
+
+.footer-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid var(--ink, #101018);
+  padding: 5px 10px;
+  font: 700 10px 'DM Mono', monospace;
+  color: var(--ink, #101018);
+  width: fit-content;
+}
+.footer-status-pill .live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.footer-links-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.footer-col-head {
+  font: 700 10px 'DM Mono', monospace;
+  letter-spacing: 0.08em;
+  color: var(--muted, #686771);
+  margin-bottom: 4px;
+}
+.footer-links-col button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: 600 12px Manrope, sans-serif;
+  color: var(--ink, #101018);
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.footer-links-col button:hover {
+  color: var(--violet, #6e54f6);
+  transform: translateX(3px);
+}
+
+.footer-github-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid var(--ink, #101018);
+  padding: 12px 14px;
+  color: var(--ink, #101018);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.footer-github-card:hover {
+  background: var(--coral, #f3a184);
+  transform: translateY(-2px);
+  box-shadow: 2px 2px 0 var(--ink, #101018);
+}
+.footer-github-card div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.footer-github-card b {
+  font: 700 12px 'DM Mono', monospace;
+}
+.footer-github-card small {
+  font: 500 11px Manrope, sans-serif;
+  color: var(--muted, #686771);
+}
+
+.footer-bottom-bar {
+  max-width: 1200px;
+  margin: 18px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  font: 600 11px 'DM Mono', monospace;
+  color: var(--muted, #686771);
+}
+.footer-bottom-gh-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink, #101018);
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.15s ease;
+}
+.footer-bottom-gh-link:hover {
+  color: var(--violet, #6e54f6);
+}
+
+@media (max-width: 768px) {
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
 /* Override legacy live-meter completely */
 .live-meter {
   display: inline-flex !important;

@@ -3,7 +3,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, ChevronUp, Code2, Copy, Download, FileText, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldCheck, Sparkles, Square, Sun, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, ChevronUp, Code2, Copy, Download, ExternalLink, FileText, Github, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldCheck, Sparkles, Square, Sun, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import { companyPrepCatalog } from './companyPrepData';
 import { Assessment } from './Assessment';
 import { AuthModal, type AuthUser } from './AuthModal';
@@ -1973,6 +1973,64 @@ function Community() {
   </main>;
 }
 
+function SiteFooter({ onNavigate }: { onNavigate: (page: Page) => void }) {
+  return (
+    <footer className="telos-site-footer">
+      <div className="footer-inner">
+        <div className="footer-brand-col">
+          <div className="footer-logo-row">
+            <img src={telosLogo} alt="TeLos Logo" className="footer-logo-img" />
+            <span className="footer-brand-title">TeLos</span>
+          </div>
+          <p className="footer-tagline">
+            High-signal AI technical interview calibration studio grounded in real candidate project context, multi-model intelligence, and live telemetry.
+          </p>
+          <div className="footer-status-pill">
+            <span className="live-dot" />
+            <span>AI INTERVIEW ENGINE • OPENROUTER ACTIVE</span>
+          </div>
+        </div>
+
+        <div className="footer-links-col">
+          <span className="footer-col-head">STUDIO TRACKS</span>
+          <button type="button" onClick={() => onNavigate('studio')}>01 / Live Mock Interview</button>
+          <button type="button" onClick={() => onNavigate('prep')}>02 / Company Prep Playbooks</button>
+          <button type="button" onClick={() => onNavigate('bank')}>03 / System &amp; DSA Drills</button>
+          <button type="button" onClick={() => onNavigate('analytics')}>04 / Cadence &amp; Analytics</button>
+        </div>
+
+        <div className="footer-links-col">
+          <span className="footer-col-head">OPEN SOURCE REPO</span>
+          <a
+            href="https://github.com/piyush23-eng/TeLos"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-github-card"
+          >
+            <Github size={20} />
+            <div>
+              <b>piyush23-eng / TeLos</b>
+              <small>View source code &amp; star on GitHub <ExternalLink size={11} style={{ display: 'inline', marginLeft: 2 }} /></small>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div className="footer-bottom-bar">
+        <span>© {new Date().getFullYear()} TELOS INTERVIEW STUDIO • BUILT FOR SENIOR CANDIDATE CALIBRATION</span>
+        <a
+          href="https://github.com/piyush23-eng/TeLos"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer-bottom-gh-link"
+        >
+          <Github size={14} /> github.com/piyush23-eng/TeLos
+        </a>
+      </div>
+    </footer>
+  );
+}
+
 export default function App(){
   const [page,setPage] = useState<Page>('studio');
   const [authOpen,setAuthOpen] = useState(false);
@@ -2000,5 +2058,6 @@ export default function App(){
     <div className="page-stage">
       {currentPage}
     </div>
+    {!assessmentLocked && <SiteFooter onNavigate={setPage} />}
     {authOpen && <AuthModal onClose={()=>setAuthOpen(false)} onAuthenticated={nextUser=>{ syncUser(nextUser); setPage('dashboard'); setAuthOpen(false); }}/>} 
   </div>}
