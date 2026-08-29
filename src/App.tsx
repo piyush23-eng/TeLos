@@ -153,7 +153,7 @@ async function speak(text: string, enabled: boolean, requestedVoice = 'coral', p
 
 const pageOrder: Page[] = ['dashboard', 'studio', 'prep', 'community', 'analytics', 'bank'];
 
-function TopNav({page,setPage,user,onAuth,onLogout,locked}:{page:Page;setPage:(p:Page)=>void;user:AuthUser|null;onAuth:()=>void;onLogout:()=>void;locked:boolean}) { const [menuOpen,setMenuOpen] = useState(false); const [darkMode,setDarkMode] = useState(() => localStorage.getItem('telos-theme') === 'dark'); useEffect(() => { document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'; localStorage.setItem('telos-theme', darkMode ? 'dark' : 'light'); }, [darkMode]); const go=(next:Page)=>{if(!locked){setPage(next);setMenuOpen(false)}}; const accountAction=()=>{if(!locked){if(user)setMenuOpen(open => !open);else onAuth()}}; const logout=()=>{setMenuOpen(false);onLogout()}; return <header className={`top-nav ${locked?'assessment-nav-locked':''}`}><button className="wordmark" aria-label="Go to TeLos interview practice" disabled={locked} onClick={()=>go('studio')}><img className="brand-logo" src={telosLogo} alt="TeLos logo"/><span className="brand-name">TeLos</span><sup>®</sup></button><nav className="nav-links" aria-label="Main navigation"><button disabled={locked} className={page==='studio'?'selected':''} onClick={()=>go('studio')}>Interview</button><button disabled={locked} className={page==='prep'?'selected':''} onClick={()=>go('prep')}>Company prep</button><button className={page==='assessment'?'selected':''} onClick={()=>go('assessment')}>Assessment</button><button disabled={locked} className={page==='community'?'selected':''} onClick={()=>go('community')}>Community</button><button disabled={locked} className={page==='analytics'?'selected':''} onClick={()=>go('analytics')}>Results</button><button disabled={locked} className={page==='bank'?'selected':''} onClick={()=>go('bank')}>Drills</button></nav><div className="account-actions"><button className="theme-toggle" type="button" onClick={()=>setDarkMode(value => !value)} aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} title={darkMode ? 'Light mode' : 'Dark mode'}>{darkMode ? <Sun size={16}/> : <Moon size={16}/>}</button><div className="account-menu"><button className="nav-cta account-cta" disabled={locked} onClick={accountAction}>{locked?'Assessment locked':user ? <><span className="account-initial">{user.name.slice(0,1).toUpperCase()}</span>{user.name.split(' ')[0]}<ChevronDown size={14} className={menuOpen?'rotated':''}/></> : <>Sign in <ArrowRight size={15}/></>}</button>{user && menuOpen && <div className="account-popover" role="menu"><div className="account-popover-head"><span>{user.name.slice(0,1).toUpperCase()}</span><div><b>{user.name}</b><small>{user.email}</small></div></div><button onClick={()=>go('dashboard')}><LayoutDashboard size={16}/><span><b>My dashboard</b><small>Profile, progress, and practice plan</small></span></button><button onClick={()=>go('analytics')}><BarChart3 size={16}/><span><b>Performance</b><small>Readiness and interview results</small></span></button><button onClick={()=>go('bank')}><Code2 size={16}/><span><b>Practice library</b><small>Drills and coding patterns</small></span></button><button className="popover-logout" onClick={logout}><LogOut size={16}/>Log out</button></div>}</div></div></header> }
+function TopNav({page,setPage,user,onAuth,onLogout,locked}:{page:Page;setPage:(p:Page)=>void;user:AuthUser|null;onAuth:()=>void;onLogout:()=>void;locked:boolean}) { const [menuOpen,setMenuOpen] = useState(false); const [darkMode,setDarkMode] = useState(() => localStorage.getItem('telos-theme') === 'dark'); useEffect(() => { document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'; localStorage.setItem('telos-theme', darkMode ? 'dark' : 'light'); }, [darkMode]); const go=(next:Page)=>{if(!locked){setPage(next);setMenuOpen(false)}}; const accountAction=()=>{if(!locked){if(user)setMenuOpen(open => !open);else onAuth()}}; const logout=()=>{setMenuOpen(false);onLogout()}; return <header className={`top-nav ${locked?'assessment-nav-locked':''}`}><button className="wordmark" aria-label="Go to TeLos interview practice" disabled={locked} onClick={()=>go('studio')}><img className="brand-logo" src={telosLogo} alt="TeLos logo"/><span className="brand-name">TeLos</span><sup>®</sup></button><nav className="nav-links" aria-label="Main navigation"><button disabled={locked} className={page==='studio'?'selected':''} onClick={()=>go('studio')}>Interview</button><button disabled={locked} className={page==='prep'?'selected':''} onClick={()=>go('prep')}>Company prep</button><button className={page==='assessment'?'selected':''} onClick={()=>go('assessment')}>Assessment</button><button disabled={locked} className={page==='community'?'selected':''} onClick={()=>go('community')}>Discuss</button><button disabled={locked} className={page==='analytics'?'selected':''} onClick={()=>go('analytics')}>Results</button><button disabled={locked} className={page==='bank'?'selected':''} onClick={()=>go('bank')}>Drills</button></nav><div className="account-actions"><button className="theme-toggle" type="button" onClick={()=>setDarkMode(value => !value)} aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} title={darkMode ? 'Light mode' : 'Dark mode'}>{darkMode ? <Sun size={16}/> : <Moon size={16}/>}</button><div className="account-menu"><button className="nav-cta account-cta" disabled={locked} onClick={accountAction}>{locked?'Assessment locked':user ? <><span className="account-initial">{user.name.slice(0,1).toUpperCase()}</span>{user.name.split(' ')[0]}<ChevronDown size={14} className={menuOpen?'rotated':''}/></> : <>Sign in <ArrowRight size={15}/></>}</button>{user && menuOpen && <div className="account-popover" role="menu"><div className="account-popover-head"><span>{user.name.slice(0,1).toUpperCase()}</span><div><b>{user.name}</b><small>{user.email}</small></div></div><button onClick={()=>go('dashboard')}><LayoutDashboard size={16}/><span><b>My dashboard</b><small>Profile, progress, and practice plan</small></span></button><button onClick={()=>go('analytics')}><BarChart3 size={16}/><span><b>Performance</b><small>Readiness and interview results</small></span></button><button onClick={()=>go('bank')}><Code2 size={16}/><span><b>Practice library</b><small>Drills and coding patterns</small></span></button><button className="popover-logout" onClick={logout}><LogOut size={16}/>Log out</button></div>}</div></div></header> }
 
 function LiveMeter({ active }: { active: boolean }) {
   return (
@@ -2769,7 +2769,7 @@ function Community() {
   }, [posts, activeTopic, companyFilter, postTypeFilter, searchQuery, sort, votes, helpfulPosts]);
 
   return (
-    <main className="shell community-shell prep-shell">
+    <main className="shell">
       <section className="studio-head">
         <div>
           <p className="kicker">03 / LEARN WITH THE COMMUNITY</p>
@@ -2782,8 +2782,9 @@ function Community() {
         </div>
       </section>
 
-      {/* LEFT COLUMN: Sidebar matching prep-sidebar */}
-      <aside className="prep-sidebar community-sidebar">
+      <section className="prep-shell community-shell">
+        {/* LEFT COLUMN: Sidebar matching prep-sidebar */}
+        <aside className="prep-sidebar community-sidebar">
         {/* Card 1: Topics Directory */}
         <div className="detail-card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="panel-label">
@@ -2881,7 +2882,7 @@ function Community() {
       </aside>
 
       {/* RIGHT COLUMN: Feed matching Company Prep Detail Workspace */}
-      <section className="prep-detail community-board">
+      <div className="prep-detail community-board">
         {/* Hero Card matching Company Prep Hero Gradient */}
         <article className="detail-card hero-card">
           <div className="detail-header">
@@ -3267,9 +3268,10 @@ function Community() {
             })
           )}
         </div>
-      </section>
-    </main>
-  );
+      </div>
+    </section>
+  </main>
+);
 }
 
 function SiteFooter({ onNavigate }: { onNavigate: (page: Page) => void }) {
@@ -3292,6 +3294,7 @@ function SiteFooter({ onNavigate }: { onNavigate: (page: Page) => void }) {
           <button type="button" onClick={() => onNavigate('prep')}>02 / Company Prep Playbooks</button>
           <button type="button" onClick={() => onNavigate('bank')}>03 / System &amp; DSA Drills</button>
           <button type="button" onClick={() => onNavigate('analytics')}>04 / Cadence &amp; Analytics</button>
+          <button type="button" onClick={() => onNavigate('community')}>05 / Discuss &amp; Community</button>
         </div>
 
         <div className="footer-links-col">

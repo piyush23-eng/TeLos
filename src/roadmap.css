@@ -760,9 +760,22 @@
 .community-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   position: sticky;
   top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  min-width: 320px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.community-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.community-sidebar::-webkit-scrollbar-thumb {
+  background: var(--ink, #101018);
 }
 
 .community-topic-list {
