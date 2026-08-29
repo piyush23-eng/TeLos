@@ -28,9 +28,9 @@
 
 ## ⚡ Overview
 
-**TeLos** is an open-source, proctored AI technical interview simulator engineered for senior software engineering candidates. 
+**TeLos** is an open-source, proctored AI technical interview studio engineered for **college students, new grads, campus placement seekers, and software engineering candidates at every stage**—from cracking your dream tech internship or entry-level SDE-1 role to leveling up into core systems and senior architecture.
 
-Unlike generic LLM wrappers that ask canned LeetCode trivia, TeLos actively parses your **real resume projects, distributed systems stack, and target job description** to challenge architectural trade-offs, $P99$ latency SLAs, idempotency, failure modes, and database partitioning strategies in real time.
+Unlike generic LLM wrappers that ask canned interview trivia, TeLos actively parses your **real resume projects, college hackathon builds, tech stack choices, and target job descriptions** to challenge core CS fundamentals, algorithms, system design trade-offs, and behavioral experiences in real time.
 
 ---
 
@@ -204,16 +204,16 @@ TeLos/
 
 ## 📊 Calibrated Scoring Rubric
 
-Candidates are evaluated against four core senior competency dimensions:
+Candidates are evaluated adaptively across four core engineering dimensions:
 
 ```
 ┌──────────────────────────────┬───────────────┬────────────────────────────────────────────────────────┐
 │ Dimension                    │ Target Bar    │ Evaluation Criteria                                    │
 ├──────────────────────────────┼───────────────┼────────────────────────────────────────────────────────┤
-│ 1. Technical Depth           │ ≥ 85%         │ Concrete mechanism details, memory/CPU trade-offs, TTL │
-│ 2. System Architecture       │ ≥ 80%         │ Partitioning, backpressure, idempotency, failure modes │
-│ 3. Communication & Structure │ ≥ 85%         │ Cadence (130-160 WPM), STAR format, zero filler drift  │
-│ 4. Problem Solving           │ ≥ 80%         │ Edge-case handling, proactive bottleneck discovery     │
+│ 1. Technical Depth & CS Core │ ≥ 80%         │ Mechanism details, DSA complexity (O(N)), cache & DBs │
+│ 2. Practical Implementation  │ ≥ 80%         │ Tech stack choices, API contracts, failure handling    │
+│ 3. Communication & Structure │ ≥ 85%         │ Cadence (130-160 WPM), STAR framework, zero fillers   │
+│ 4. Problem Solving Instincts │ ≥ 80%         │ Clarifying assumptions, edge cases, structured design  │
 └──────────────────────────────┴───────────────┴────────────────────────────────────────────────────────┘
 ```
 
@@ -224,9 +224,9 @@ Candidates are evaluated against four core senior competency dimensions:
 Contributions are warmly welcomed! To get started:
 
 1. Fork the Project.
-2. Create your Feature Branch (`git checkout -b feat/DistributedTracingHUD`).
-3. Commit your Changes (`git commit -m 'feat: add distributed tracing visualizer'`).
-4. Push to the Branch (`git push origin feat/DistributedTracingHUD`).
+2. Create your Feature Branch (`git checkout -b feat/CampusPlacementPlaybooks`).
+3. Commit your Changes (`git commit -m 'feat: add campus placement interview tracks'`).
+4. Push to the Branch (`git push origin feat/CampusPlacementPlaybooks`).
 5. Open a Pull Request.
 
 ---
@@ -238,5 +238,5 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 ---
 
 <div align="center">
-<sub>Built with precision for systems engineers. © 2026 TeLos Studio.</sub>
+<sub>Built with precision for students & engineers launching breakthrough tech careers. © 2026 TeLos Studio.</sub>
 </div>

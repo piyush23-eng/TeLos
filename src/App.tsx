@@ -1983,7 +1983,7 @@ function SiteFooter({ onNavigate }: { onNavigate: (page: Page) => void }) {
             <span className="footer-brand-title">TeLos</span>
           </div>
           <p className="footer-tagline">
-            High-signal AI technical interview calibration studio grounded in real candidate project context, multi-model intelligence, and live telemetry.
+            High-signal technical interview calibration studio built for college students, new grads, and software engineers aiming for breakthrough careers in tech.
           </p>
         </div>
 
