@@ -2050,21 +2050,43 @@ function Bank() {
 }
 function CompanyPrep() {
   const [query, setQuery] = useState('');
-  const [faangOnly, setFaangOnly] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<'all' | 'india' | 'global' | 'faang' | 'fintech' | 'service'>('all');
   const [selectedCompany, setSelectedCompany] = useState<CompanyPrepItem>(
     () => companyPrepCatalog.find(company => company.id === 'google') || companyPrepCatalog[0]
   );
 
+  const globalIds = useMemo(() => new Set([
+    'google', 'microsoft', 'amazon', 'meta', 'apple', 'netflix', 'uber', 'adobe', 
+    'salesforce', 'oracle', 'linkedin', 'atlassian', 'stripe', 'bloomberg', 
+    'goldman-sachs', 'jpmorgan', 'visa', 'mastercard', 'nvidia', 'servicenow', 'openai'
+  ]), []);
+
   const filteredCompanies = useMemo(() => {
     return companyPrepCatalog.filter(company => {
+      const q = query.trim().toLowerCase();
       const matchesQuery =
-        !query ||
-        company.name.toLowerCase().includes(query.toLowerCase()) ||
-        company.pyqTopics.some(topic => topic.toLowerCase().includes(query.toLowerCase()));
-      const matchesFaang = !faangOnly || company.category === 'faang' || Boolean(company.faangRoadmap);
-      return matchesQuery && matchesFaang;
+        !q ||
+        company.name.toLowerCase().includes(q) ||
+        company.region.toLowerCase().includes(q) ||
+        company.pyqTopics.some(topic => topic.toLowerCase().includes(q)) ||
+        company.sampleQuestions.some(sq => sq.toLowerCase().includes(q));
+
+      let matchesCategory = true;
+      if (activeCategory === 'global') {
+        matchesCategory = globalIds.has(company.id);
+      } else if (activeCategory === 'india') {
+        matchesCategory = !globalIds.has(company.id);
+      } else if (activeCategory === 'faang') {
+        matchesCategory = company.category === 'faang';
+      } else if (activeCategory === 'fintech') {
+        matchesCategory = company.category === 'fintech';
+      } else if (activeCategory === 'service') {
+        matchesCategory = company.category === 'service-based';
+      }
+
+      return matchesQuery && matchesCategory;
     });
-  }, [query, faangOnly]);
+  }, [query, activeCategory, globalIds]);
 
   const activeRoadmap = selectedCompany?.roadmap || selectedCompany?.faangRoadmap;
 
@@ -2087,23 +2109,35 @@ function CompanyPrep() {
         <div className="prep-sidebar">
           <div className="panel-label">
             <span>SEARCH COMPANIES</span>
-            <span>{faangOnly ? 'FAANG ROADMAPS' : 'HIGH SIGNAL'}</span>
+            <span>{filteredCompanies.length} PLAYBOOKS MATCHING</span>
           </div>
 
           <label className="search-field">
             <input
               value={query}
               onChange={event => setQuery(event.target.value)}
-              placeholder="Search Google, Meta, Apple, Amazon, OpenAI..."
+              placeholder="Search TCS, Google, Flipkart, Swiggy, Uber, OpenAI..."
             />
           </label>
 
           <div className="pill-row">
-            <button className={`pill-chip ${!faangOnly ? 'active' : ''}`} onClick={() => setFaangOnly(false)}>
-              All companies
+            <button className={`pill-chip ${activeCategory === 'all' ? 'active' : ''}`} onClick={() => setActiveCategory('all')}>
+              All ({companyPrepCatalog.length})
             </button>
-            <button className={`pill-chip ${faangOnly ? 'active' : ''}`} onClick={() => setFaangOnly(true)}>
-              FAANG roadmaps
+            <button className={`pill-chip ${activeCategory === 'india' ? 'active' : ''}`} onClick={() => setActiveCategory('india')}>
+              India Tech (26)
+            </button>
+            <button className={`pill-chip ${activeCategory === 'global' ? 'active' : ''}`} onClick={() => setActiveCategory('global')}>
+              Global (21)
+            </button>
+            <button className={`pill-chip ${activeCategory === 'faang' ? 'active' : ''}`} onClick={() => setActiveCategory('faang')}>
+              FAANG
+            </button>
+            <button className={`pill-chip ${activeCategory === 'fintech' ? 'active' : ''}`} onClick={() => setActiveCategory('fintech')}>
+              Fintech
+            </button>
+            <button className={`pill-chip ${activeCategory === 'service' ? 'active' : ''}`} onClick={() => setActiveCategory('service')}>
+              IT Services
             </button>
           </div>
 
