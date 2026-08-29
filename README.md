@@ -18,6 +18,7 @@
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg?style=flat-square)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.4-646cff.svg?style=flat-square)](https://vitejs.dev/)
 [![Express](https://img.shields.io/badge/Express-4.21-000000.svg?style=flat-square)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?style=flat-square)](https://www.postgresql.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-6.2-2D3748.svg?style=flat-square)](https://www.prisma.io/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
@@ -58,7 +59,11 @@ flowchart TD
         StreamHandler["SSE Token Streamer (/api/interviewer/next/stream)"]
         DebriefService["Debrief & Calibration Service (/api/interview/debrief)"]
         CodeRunner["Polyglot Execution Controller (/api/run)"]
-        PrismaStore["Prisma ORM (SQLite / PostgreSQL) + Memory Fallback"]
+        PrismaStore["Prisma ORM (PostgreSQL) + Fault-Tolerant Fallback"]
+    end
+
+    subgraph Persistence ["Database Layer"]
+        PostgresDB[("PostgreSQL Database (Supabase / Neon / Cloud)")]
     end
 
     subgraph ExternalServices ["External APIs & LLM Providers"]
@@ -74,6 +79,7 @@ flowchart TD
     Assessment --> CodeRunner
     CodeRunner --> WandboxAPI
     Auth --> PrismaStore
+    PrismaStore --> PostgresDB
 ```
 
 ---
@@ -157,14 +163,17 @@ npm install
 ```
 
 ### 2. Configure Environment Variables
-Copy the example environment file and add your OpenRouter API key:
+Copy the example environment file and configure your keys:
 ```bash
 cp .env.example .env
 ```
 
 ```env
-# Required for AI interview and evaluation features
+# Required for AI interview features
 OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# PostgreSQL Database Connection URL (e.g. Supabase, Neon, Render Postgres)
+DATABASE_URL="postgresql://username:password@host:5432/postgres?sslmode=require"
 
 # Optional: Enhanced Speech-to-Text
 # DEEPGRAM_API_KEY=your_deepgram_api_key_here
@@ -215,7 +224,7 @@ TeLos/
 │   ├── roadmap.css           # UI styling, layouts, and dark mode theme
 │   └── styles.css            # Base styles and reset
 ├── prisma/
-│   ├── schema.prisma         # Data models for User, Session, Question, Score
+│   ├── schema.prisma         # PostgreSQL data models (User, Session, Question, Score)
 │   └── seed.ts               # Telemetry and problem dataset seeder
 ├── .github/
 │   └── workflows/
