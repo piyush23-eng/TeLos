@@ -157,17 +157,17 @@ npm install
 ```
 
 ### 2. Configure Environment Variables
-Create a `.env` file in the root directory:
+Copy the example environment file and add your OpenRouter API key:
+```bash
+cp .env.example .env
+```
+
 ```env
-PORT=8787
-DATABASE_URL="file:./dev.db"
-
-# OpenRouter API Key (for LLM interviewer & debrief generation)
+# Required for AI interview and evaluation features
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct
 
-# Deepgram STT (Optional)
-DEEPGRAM_API_KEY=your_deepgram_api_key_here
+# Optional: Enhanced Speech-to-Text
+# DEEPGRAM_API_KEY=your_deepgram_api_key_here
 ```
 
 ### 3. Initialize Database Schema
