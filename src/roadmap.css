@@ -53,29 +53,66 @@
 .detail-card{animation:card-rise .36s cubic-bezier(.2,.8,.2,1) both}.detail-card:nth-child(2){animation-delay:.05s}.detail-card:nth-child(3){animation-delay:.1s}
 @keyframes card-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes context-reveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
-/* Drill Workspace Shell (Left Editor, Right Question) */
+/* Drill Workspace Shell (Left Question, Right Editor) */
 .drill-selector-dock {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.55);
   border: 1px solid var(--ink, #101018);
-  padding: 12px 16px;
+  padding: 10px 18px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+}
+.drill-dock-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
+}
+.drill-dock-label {
+  font: 700 9px/1 'DM Mono', monospace;
+  letter-spacing: 1.2px;
+  color: var(--muted, #686771);
+  white-space: nowrap;
+}
+.drill-dock-divider {
+  display: inline-block;
+  width: 1px;
+  height: 18px;
+  background: var(--ink, #101018);
+  opacity: 0.25;
+  margin: 0 4px;
+}
+.drill-dock-right {
+  display: flex;
+  align-items: center;
+}
+.drill-dock-count {
+  font: 700 9px/1 'DM Mono', monospace;
+  letter-spacing: 1px;
+  color: var(--ink, #101018);
+  background: var(--mint, #d6f4d1);
+  border: 1px solid var(--ink, #101018);
+  padding: 5px 10px;
+  white-space: nowrap;
 }
 .drill-picker-select {
   border: 1px solid var(--ink, #101018);
   background: #ffffff;
-  padding: 7px 12px;
-  font: 600 11px 'DM Mono', monospace;
+  padding: 6px 10px;
+  font: 600 10px/1.2 'DM Mono', monospace;
   color: var(--ink, #101018);
   cursor: pointer;
+  max-width: 320px;
+}
+.drill-picker-select:focus {
+  outline: 2px solid var(--violet, #6e54f6);
+  outline-offset: 1px;
 }
 .drill-workspace-shell {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
+  grid-template-columns: 1fr 1.15fr;
   gap: 20px;
   align-items: start;
 }
@@ -83,6 +120,11 @@
   .drill-workspace-shell {
     grid-template-columns: 1fr;
   }
+  .drill-selector-dock {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .drill-dock-divider { display: none; }
 }
 
 .code-zone-editor {
@@ -90,6 +132,8 @@
   flex-direction: column;
   gap: 0;
   overflow: hidden;
+  position: sticky;
+  top: 24px;
 }
 .code-zone-editor .code-input {
   min-height: 360px;
@@ -97,6 +141,7 @@
   line-height: 1.6 !important;
   padding: 16px !important;
 }
+
 
 /* ========================================================
    REAL AI VIDEO INTERVIEW ROOM STYLES

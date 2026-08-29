@@ -1854,30 +1854,30 @@ function Bank() {
         </div>
       </section>
 
-      {/* Top Filter & Drill Switcher Bar */}
+      {/* Drill Selector Dock */}
       <div className="drill-selector-dock">
-        <div className="pill-row" style={{ margin: 0 }}>
-          {companyFilters.map(filter => (
-            <button
-              key={filter}
-              className={`pill-chip ${companyFilter === filter ? 'active' : ''}`}
-              onClick={() => {
-                setCompanyFilter(filter);
-                const nextList = filter === 'all' ? problems : problems.filter(p => p.company === filter);
-                if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
-                  openProblem(nextList[0]);
-                }
-              }}
-            >
-              {filter === 'all' ? 'All companies' : filter}
-            </button>
-          ))}
-        </div>
+        <div className="drill-dock-left">
+          <span className="drill-dock-label">FILTER</span>
+          <select
+            className="drill-picker-select"
+            value={companyFilter}
+            onChange={e => {
+              const next = e.target.value;
+              setCompanyFilter(next);
+              const nextList = next === 'all' ? problems : problems.filter(p => p.company === next);
+              if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
+                openProblem(nextList[0]);
+              }
+            }}
+          >
+            {companyFilters.map(f => (
+              <option key={f} value={f}>{f === 'all' ? 'All Companies' : f}</option>
+            ))}
+          </select>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ font: "500 10px 'DM Mono', monospace", color: 'var(--muted, #686771)' }}>
-            SELECT DRILL:
-          </span>
+          <span className="drill-dock-divider" />
+
+          <span className="drill-dock-label">DRILL</span>
           <select
             className="drill-picker-select"
             value={selected?.id || ''}
@@ -1885,89 +1885,24 @@ function Bank() {
               const target = problems.find(p => p.id === e.target.value);
               if (target) openProblem(target);
             }}
+            style={{ minWidth: 240 }}
           >
             {filteredProblems.map((p, idx) => (
               <option key={p.id} value={p.id}>
-                {String(idx + 1).padStart(2, '0')}. {p.title} ({p.difficulty} • {p.company})
+                {String(idx + 1).padStart(2, '0')}. {p.title} ({p.difficulty})
               </option>
             ))}
           </select>
         </div>
+
+        <div className="drill-dock-right">
+          <span className="drill-dock-count">{filteredProblems.length} DRILLS</span>
+        </div>
       </div>
 
-      {/* Main Split: Left Coding Workspace, Right Question Screen */}
+      {/* Main Split: Left Question, Right Coding */}
       <section className="drill-workspace-shell">
-        {/* LEFT COLUMN: Coding Screen / Workspace */}
-        <div className="prep-detail">
-          <article className="detail-card code-zone-editor">
-            <div className="panel-label">
-              <span>
-                <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
-                WORKSPACE • {language.toUpperCase()}
-              </span>
-              <span>AUTO-INDENT (TAB: 2 SPACES)</span>
-            </div>
-
-            <div className="code-toolbar">
-              <label>
-                LANGUAGE
-                <select
-                  value={language}
-                  onChange={e => {
-                    const next = e.target.value as CodeLanguage;
-                    setLanguage(next);
-                    if (selected) {
-                      setCode(codeTemplate(selected, next));
-                      setOutput('Starter reset for ' + next.toUpperCase() + '.');
-                    }
-                  }}
-                >
-                  <option value="python">Python 3</option>
-                  <option value="js">JavaScript (Node.js)</option>
-                  <option value="cpp">C++</option>
-                  <option value="java">Java</option>
-                </select>
-              </label>
-              <span className="runtime-label">
-                {language === 'python'
-                  ? 'Python 3.11 Sandboxed'
-                  : language === 'js'
-                  ? 'Node.js 20 Sandboxed'
-                  : language === 'cpp'
-                  ? 'GCC C++20 Sandbox'
-                  : 'OpenJDK 17 Sandbox'}
-              </span>
-            </div>
-
-            <textarea
-              className="code-input"
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              onKeyDown={handleKeyDown}
-              spellCheck={false}
-              placeholder="// Write your solution here..."
-            />
-
-            <div className="action-row" style={{ padding: '14px 18px', borderTop: '1px solid var(--ink)' }}>
-              <button className="brand-button" onClick={runCode} disabled={running}>
-                <Play size={16} fill="currentColor" /> {running ? 'RUNNING SOLUTION...' : 'RUN SOLUTION'}
-              </button>
-              <button className="ghost-button" onClick={() => selected && openProblem(selected)}>
-                <RotateCcw size={13} style={{ display: 'inline', marginRight: 4 }} /> RESET STARTER
-              </button>
-            </div>
-
-            <div className="panel-label" style={{ borderTop: '1px solid var(--ink)' }}>
-              <span>SANDBOX EXECUTION CONSOLE</span>
-              <span>{running ? 'RUNNING' : 'IDLE'}</span>
-            </div>
-            <pre className="output-box" style={{ margin: 0, border: 0 }}>
-              {output || '// Click "RUN SOLUTION" to test your code in the sandbox.'}
-            </pre>
-          </article>
-        </div>
-
-        {/* RIGHT COLUMN: Question & Specifications */}
+        {/* LEFT COLUMN: Question & Specifications */}
         <div className="prep-detail">
           {selected ? (
             <>
@@ -2035,9 +1970,79 @@ function Bank() {
             <article className="detail-card empty-state-card">
               <p className="kicker">READY</p>
               <h2>Select a drill to view specifications.</h2>
-              <p>Every drill includes prompt, I/O specifications, constraints, examples, and interview hints.</p>
+              <p>Every drill includes prompt, I/O specs, constraints, examples, and interview hints.</p>
             </article>
           )}
+        </div>
+
+        {/* RIGHT COLUMN: Coding Screen / Workspace */}
+        <div className="prep-detail">
+          <article className="detail-card code-zone-editor">
+            <div className="panel-label">
+              <span>
+                <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
+                WORKSPACE • {language.toUpperCase()}
+              </span>
+              <span>TAB: 2 SPACES</span>
+            </div>
+
+            <div className="code-toolbar">
+              <label>
+                LANGUAGE
+                <select
+                  value={language}
+                  onChange={e => {
+                    const next = e.target.value as CodeLanguage;
+                    setLanguage(next);
+                    if (selected) {
+                      setCode(codeTemplate(selected, next));
+                      setOutput('Starter reset for ' + next.toUpperCase() + '.');
+                    }
+                  }}
+                >
+                  <option value="python">Python 3</option>
+                  <option value="js">JavaScript (Node.js)</option>
+                  <option value="cpp">C++</option>
+                  <option value="java">Java</option>
+                </select>
+              </label>
+              <span className="runtime-label">
+                {language === 'python'
+                  ? 'Python 3.11 Sandboxed'
+                  : language === 'js'
+                  ? 'Node.js 20 Sandboxed'
+                  : language === 'cpp'
+                  ? 'GCC C++20 Sandbox'
+                  : 'OpenJDK 17 Sandbox'}
+              </span>
+            </div>
+
+            <textarea
+              className="code-input"
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              onKeyDown={handleKeyDown}
+              spellCheck={false}
+              placeholder="// Write your solution here..."
+            />
+
+            <div className="action-row" style={{ padding: '14px 18px', borderTop: '1px solid var(--ink)' }}>
+              <button className="brand-button" onClick={runCode} disabled={running}>
+                <Play size={16} fill="currentColor" /> {running ? 'RUNNING...' : 'RUN SOLUTION'}
+              </button>
+              <button className="ghost-button" onClick={() => selected && openProblem(selected)}>
+                <RotateCcw size={13} style={{ display: 'inline', marginRight: 4 }} /> RESET
+              </button>
+            </div>
+
+            <div className="panel-label" style={{ borderTop: '1px solid var(--ink)' }}>
+              <span>CONSOLE</span>
+              <span>{running ? 'RUNNING' : 'IDLE'}</span>
+            </div>
+            <pre className="output-box" style={{ margin: 0, border: 0 }}>
+              {output || '// Click "RUN SOLUTION" to test your code.'}
+            </pre>
+          </article>
         </div>
       </section>
     </main>
