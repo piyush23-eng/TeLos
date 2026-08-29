@@ -4,11 +4,11 @@
 
 ```
   _______   ______ _      ____   _____ 
- |__   __| / _____| |    / __  / ____|
+ |__   __| / _____| |    / __ \ / ____|
     | |___| |__   | |   | |  | | (___  
-    | / _   __|  | |   | |  | |___  
+    | / _ \  __|  | |   | |  | |\___ \ 
     | |  __/ |____| |___| |__| |____) |
-    |_|___|______|__________/|_____/ 
+    |_|\___|______|______\____/|_____/ 
 ```
 
 **Real Systems. Deep Trade-Offs. Multi-Language Execution. Zero Canned Trivia.**
@@ -22,7 +22,7 @@
 [![GCC](https://img.shields.io/badge/C%2B%2B-GCC%2013-blue.svg?style=flat-square)](https://gcc.gnu.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-[Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [47 Company Blueprints](#-47-company-prep-blueprints) • [Multi-Language Runner](#-polyglot-execution-engine) • [Quick Start](#-quick-start)
+[Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [47 Company Blueprints](#-47-company-prep-blueprints) • [Polyglot Runner](#-polyglot-execution-engine) • [System Limitations](#-system-limitations--engineering-constraints) • [Quick Start](#-quick-start)
 
 </div>
 
@@ -169,6 +169,32 @@ For recruiting teams and candidates seeking verified skill validation:
 
 ---
 
+## ⚠️ System Limitations & Engineering Constraints
+
+To ensure transparent expectations, the following architectural and runtime constraints are inherent to the platform:
+
+1. **Browser Speech & Microphone Compatibility:**
+   - Real-time in-browser speech recognition relies on the **Web Speech API** (which has the highest stability on Chromium-based browsers like Chrome, Edge, and Brave) or the **Deepgram Nova-3 API**.
+   - Safari and Firefox utilize standard Web Speech Synthesis and fallback audio mechanisms.
+
+2. **Proctoring & Vision AI Environment:**
+   - MediaPipe head-pose and gaze attention monitoring execute **entirely client-side** using WebAssembly and WebGL.
+   - Attention accuracy can vary depending on local lighting, camera angle, and hardware acceleration capabilities. It is designed as an ambient integrity metric rather than biometric forensic surveillance.
+
+3. **Sandboxed Code Execution Scope:**
+   - The code runner is scoped specifically for single-file algorithmic problems and standard libraries (`STL`, `java.util.*`, `collections`, `math`).
+   - For security, network sockets, file system writes, multi-threaded server listening, and subprocess execution from within candidate code are disallowed and constrained by a **6,000 ms timeout**.
+
+4. **LLM Evaluation & Rubric Variance:**
+   - Post-interview scorecards, radar metrics, and feedback diffs are synthesized using large language models grounded on company rubrics.
+   - While tightly calibrated, candidates should use evaluations as high-signal deliberate practice rather than a legally binding hiring committee outcome.
+
+5. **Third-Party OAuth Configuration:**
+   - 1-Click Google and LinkedIn authentication require valid `GOOGLE_CLIENT_ID` and `LINKEDIN_CLIENT_ID` credentials in production.
+   - In development or unconfigured environments, the application gracefully falls back to the in-app candidate credential sync dialog and email authentication.
+
+---
+
 ## 🚦 Quick Start
 
 ### 1. Clone & Install
@@ -188,7 +214,7 @@ VITE_API_BASE_URL=http://localhost:8787
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct
 
-# Deepgram Speech-to-Text (Optional for real-time voice streaming)
+# Deepgram Speech-to-Text (Optional for enhanced voice accuracy)
 DEEPGRAM_API_KEY=your_deepgram_api_key_here
 
 # OAuth & Social Sign-In (Optional)
