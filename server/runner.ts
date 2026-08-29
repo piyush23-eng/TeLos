@@ -71,6 +71,60 @@ function runPython(code: string): RunnerResult {
   return { status: 'ok', output: (result.stdout || 'Program executed with no output.').trim() };
 }
 
+async function runViaWandbox(code: string, language: 'java' | 'cpp' | 'c' | 'python'): Promise<RunnerResult> {
+  try {
+    let compiler = 'gcc-13.2.0';
+    let formattedCode = code;
+    let options = 'warning,c++17';
+
+    if (language === 'java') {
+      compiler = 'openjdk-jdk-21+35';
+      options = '';
+      formattedCode = code.replace(/public\s+class\s+([A-Za-z0-9_]+)/g, 'class $1');
+    } else if (language === 'c') {
+      compiler = 'gcc-13.2.0';
+      options = 'warning,c11';
+    } else if (language === 'python') {
+      compiler = 'cpython-head';
+      options = '';
+    }
+
+    const res = await fetch('https://wandbox.org/api/compile.json', {
+      method: 'POST',
+      signal: AbortSignal.timeout(9000),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: formattedCode,
+        compiler,
+        options
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Execution service returned status ${res.status}`);
+    }
+
+    const data = await res.json() as any;
+    if (data.status === '0' || (!data.status && data.program_output)) {
+      return {
+        status: 'ok',
+        output: (data.program_output || data.program_message || 'Program executed with no console output.').trim()
+      };
+    }
+
+    const errorOut = (data.compiler_error || data.program_error || data.program_output || data.status || 'Compilation or runtime error').trim();
+    return {
+      status: 'error',
+      output: errorOut
+    };
+  } catch (err: any) {
+    return {
+      status: 'error',
+      output: `Code execution failed: ${err.message || String(err)}`
+    };
+  }
+}
+
 async function runCpp(code: string): Promise<RunnerResult> {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'telos-cpp-'));
   const sourcePath = path.join(tempDir, 'main.cpp');
@@ -88,10 +142,8 @@ async function runCpp(code: string): Promise<RunnerResult> {
 
   if (compile?.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    return {
-      status: 'error',
-      output: 'C++ compiler (g++ / clang++) is not installed on this environment.'
-    };
+    // Host has no native C++ compiler -> Run via high-speed cloud compiler
+    return runViaWandbox(code, 'cpp');
   }
   if (compile.status !== 0) {
     await fs.rm(tempDir, { recursive: true, force: true });
@@ -122,10 +174,7 @@ async function runC(code: string): Promise<RunnerResult> {
 
   if (compile?.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    return {
-      status: 'error',
-      output: 'C compiler (gcc / clang) is not installed on this environment.'
-    };
+    return runViaWandbox(code, 'c');
   }
   if (compile.status !== 0) {
     await fs.rm(tempDir, { recursive: true, force: true });
@@ -162,10 +211,8 @@ async function runJava(code: string): Promise<RunnerResult> {
   const compile = safeSpawn('javac', [sourcePath], tempDir);
   if (compile.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    return {
-      status: 'error',
-      output: 'Java JDK is not installed on this host environment. To enable Java execution on Render, deploy with Docker runtime (or use Python/JavaScript).'
-    };
+    // Host has no native OpenJDK -> Run via high-speed cloud compiler
+    return runViaWandbox(code, 'java');
   }
   if (compile.status !== 0) {
     await fs.rm(tempDir, { recursive: true, force: true });
