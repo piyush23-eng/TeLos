@@ -4102,4 +4102,72 @@ body.dark-theme .social-auth-btn:hover {
   box-shadow: 2px 2px 0 #5b587a;
 }
 
+/* Authentic Google & LinkedIn OAuth Dialog Panels */
+.oauth-dialog-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 26px 22px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: editorial-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.oauth-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.oauth-account-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+.oauth-account-item:hover {
+  background: #f8f9fa;
+  border-color: #4285f4;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.15);
+}
+.oauth-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e8f0fe;
+  color: #1a73e8;
+  font: 700 14px/1 'Space Grotesk', sans-serif;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.oauth-avatar-circle.linkedin {
+  background: #e8f3fc;
+  color: #0a66c2;
+}
+
+body.dark-theme .oauth-dialog-card {
+  background: #1a1926;
+  border-color: #3b394e;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+body.dark-theme .oauth-account-item {
+  background: #242334;
+  border-color: #4a4862;
+  color: #f4f2fa;
+}
+body.dark-theme .oauth-account-item:hover {
+  background: #2e2c42;
+  border-color: #7c65fa;
+}
+
+
 
