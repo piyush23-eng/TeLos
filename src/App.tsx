@@ -2013,7 +2013,7 @@ function SiteFooter({ onNavigate }: { onNavigate: (page: Page) => void }) {
       </div>
 
       <div className="footer-bottom-bar">
-        <span>© {new Date().getFullYear()} TELOS INTERVIEW STUDIO • BUILT FOR SENIOR CANDIDATE CALIBRATION</span>
+        <span>© {new Date().getFullYear()} TELOS • REAL SYSTEMS. DEEP TRADEOFFS. ZERO CANNED TRIVIA.</span>
         <a
           href="https://github.com/piyush23-eng/TeLos"
           target="_blank"
