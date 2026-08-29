@@ -65,14 +65,15 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
     }
   };
 
-  const openOAuthPopup = (url: string, title: string) => {
+  const openOAuthPopup = (url: string, targetName = 'telos_oauth_window') => {
     const width = 540;
     const height = 640;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
+    const validTarget = targetName.replace(/[^a-zA-Z0-9_]/g, '_');
     return window.open(
       url,
-      title,
+      validTarget,
       `width=${width},height=${height},left=${left},top=${top},status=0,menubar=0,toolbar=0`
     );
   };
@@ -89,7 +90,7 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
       const res = await fetch(`${API}/api/auth/google/url`);
       const data = await res.json();
       if (data.url) {
-        openOAuthPopup(data.url, 'Google Sign In');
+        openOAuthPopup(data.url, 'telos_google_oauth');
       } else {
         setSocialProvider('google');
         setSocialName(name || '');
@@ -111,7 +112,7 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
       const res = await fetch(`${API}/api/auth/linkedin/url`);
       const data = await res.json();
       if (data.url) {
-        openOAuthPopup(data.url, 'LinkedIn Sign In');
+        openOAuthPopup(data.url, 'telos_linkedin_oauth');
       } else {
         setSocialProvider('linkedin');
         setSocialName(name || '');
