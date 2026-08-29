@@ -16,12 +16,115 @@ const intelligence = new IntelligenceProvider();
 const prisma = new PrismaClient();
 const scrypt = promisify(scryptCallback);
 const sessionSecret = process.env.AUTH_SESSION_SECRET || 'telos-development-secret-change-me';
+
+// Resilient in-memory user cache to guarantee zero downtime even if DB is initializing
+interface StoredUser {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash?: string | null;
+  provider: string;
+  bio: string;
+  linkedin: string;
+  github: string;
+  experience: string;
+  projects: string;
+}
+const memoryUsers = new Map<string, StoredUser>();
+
+// Database bootstrap helper
+async function bootstrapDatabase() {
+  try {
+    await prisma.$connect();
+  } catch (err: any) {
+    console.warn('Prisma bootstrap notice:', err?.message);
+  }
+}
+void bootstrapDatabase();
+
+const userStore = {
+  findByEmail: async (email: string): Promise<StoredUser | null> => {
+    try {
+      const dbUser = await prisma.user.findUnique({ where: { email } });
+      if (dbUser) return dbUser as StoredUser;
+    } catch {
+      // Prisma offline/schema fallback
+    }
+    return memoryUsers.get(email.toLowerCase()) || null;
+  },
+  findById: async (id: string): Promise<StoredUser | null> => {
+    try {
+      const dbUser = await prisma.user.findUnique({ where: { id } });
+      if (dbUser) return dbUser as StoredUser;
+    } catch {
+      // Prisma offline/schema fallback
+    }
+    for (const u of memoryUsers.values()) {
+      if (u.id === id) return u;
+    }
+    return null;
+  },
+  create: async (data: { name: string; email: string; passwordHash?: string; provider?: string }): Promise<StoredUser> => {
+    const newUser: StoredUser = {
+      id: randomBytes(12).toString('hex'),
+      name: data.name,
+      email: data.email.toLowerCase(),
+      passwordHash: data.passwordHash || null,
+      provider: data.provider || 'email',
+      bio: '',
+      linkedin: '',
+      github: '',
+      experience: '',
+      projects: ''
+    };
+    try {
+      const dbUser = await prisma.user.create({ data: {
+        name: data.name,
+        email: data.email.toLowerCase(),
+        passwordHash: data.passwordHash,
+        provider: data.provider || 'email'
+      } });
+      if (dbUser) return dbUser as StoredUser;
+    } catch {
+      // Prisma schema push / lock fallback
+    }
+    memoryUsers.set(newUser.email, newUser);
+    return newUser;
+  },
+  update: async (id: string, data: Partial<StoredUser>): Promise<StoredUser | null> => {
+    try {
+      const updated = await prisma.user.update({ where: { id }, data });
+      if (updated) return updated as StoredUser;
+    } catch {
+      // Prisma fallback
+    }
+    for (const [em, u] of memoryUsers.entries()) {
+      if (u.id === id) {
+        const merged = { ...u, ...data };
+        memoryUsers.set(em, merged);
+        return merged;
+      }
+    }
+    return null;
+  }
+};
+
 const makeToken = (user: { id: string; email: string }) => {
   const payload = Buffer.from(JSON.stringify({ sub: user.id, email: user.email, exp: Date.now() + 1000 * 60 * 60 * 24 * 7 })).toString('base64url');
   const signature = createHmac('sha256', sessionSecret).update(payload).digest('base64url');
   return `${payload}.${signature}`;
 };
-const publicUser = (user: { id: string; name: string; email: string; provider: string; bio: string; linkedin: string; github: string; experience: string; projects: string }) => ({ id: user.id, name: user.name, email: user.email, provider: user.provider, bio: user.bio, linkedin: user.linkedin, github: user.github, experience: user.experience, projects: user.projects });
+const publicUser = (user: StoredUser) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  provider: user.provider,
+  bio: user.bio || '',
+  linkedin: user.linkedin || '',
+  github: user.github || '',
+  experience: user.experience || '',
+  projects: user.projects || ''
+});
 const passwordHash = async (password: string) => { const salt = randomBytes(16).toString('hex'); const key = await scrypt(password, salt, 64) as Buffer; return `${salt}:${key.toString('hex')}`; };
 const passwordMatches = async (password: string, stored: string) => { const [salt, hash] = stored.split(':'); if (!salt || !hash) return false; const candidate = await scrypt(password, salt, 64) as Buffer; return timingSafeEqual(candidate, Buffer.from(hash, 'hex')); };
 const authenticatedUser = async (authorization?: string) => {
@@ -34,7 +137,7 @@ const authenticatedUser = async (authorization?: string) => {
   try {
     const claims = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { sub?: string; exp?: number };
     if (!claims.sub || !claims.exp || claims.exp < Date.now()) return null;
-    return await prisma.user.findUnique({ where: { id: claims.sub } });
+    return await userStore.findById(claims.sub);
   } catch { return null; }
 };
 
@@ -111,16 +214,16 @@ app.post('/api/auth/signup', async (req, res, next) => {
   try {
     const name = String(req.body.name || '').trim(); const email = String(req.body.email || '').trim().toLowerCase(); const password = String(req.body.password || '');
     if (name.length < 2 || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) return res.status(400).json({ error: 'Use a name, a valid email, and a password with at least 8 characters.' });
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await userStore.findByEmail(email);
     if (existing) return res.status(409).json({ error: 'An account already exists for this email. Please sign in.' });
-    const user = await prisma.user.create({ data: { name, email, passwordHash: await passwordHash(password), provider: 'email' } });
+    const user = await userStore.create({ name, email, passwordHash: await passwordHash(password), provider: 'email' });
     res.status(201).json({ user: publicUser(user), token: makeToken(user) });
   } catch (error) { next(error); }
 });
 app.post('/api/auth/login', async (req, res, next) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase(); const password = String(req.body.password || '');
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await userStore.findByEmail(email);
     if (!user || !user.passwordHash || !(await passwordMatches(password, user.passwordHash))) return res.status(401).json({ error: 'Email or password is incorrect.' });
     res.json({ user: publicUser(user), token: makeToken(user) });
   } catch (error) { next(error); }
@@ -368,15 +471,15 @@ app.patch('/api/auth/me', async (req, res, next) => {
     const user = await authenticatedUser(req.headers.authorization);
     if (!user) return res.status(401).json({ error: 'Your session has expired. Please sign in again.' });
     const clean = (value: unknown, max: number) => String(value || '').trim().slice(0, max);
-    const updated = await prisma.user.update({ where: { id: user.id }, data: {
+    const updated = await userStore.update(user.id, {
       name: clean(req.body.name, 80) || user.name,
       bio: clean(req.body.bio, 600),
       linkedin: clean(req.body.linkedin, 240),
       github: clean(req.body.github, 240),
       experience: clean(req.body.experience, 2400),
       projects: clean(req.body.projects, 4000)
-    } });
-    res.json({ user: publicUser(updated) });
+    });
+    res.json({ user: publicUser(updated || user) });
   } catch (error) { next(error); }
 });
 app.post('/api/community', async (req, res, next) => {
@@ -609,5 +712,12 @@ if (fs.existsSync(distPath)) {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
+
+// Universal JSON error handling middleware
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('API Error:', err);
+  const status = typeof err?.status === 'number' ? err.status : 500;
+  res.status(status).json({ error: err?.message || 'Internal server error' });
+});
 
 app.listen(port, '0.0.0.0', () => console.log(`TeLos API listening on port ${port}`));

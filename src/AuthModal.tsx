@@ -62,9 +62,16 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
         }),
       });
 
-      const data = await response.json();
+      const rawText = await response.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = { error: rawText || "Unexpected response from authentication server." };
+      }
+
       if (!response.ok) {
-        throw new Error(data.error || "Could not authenticate. Please check your credentials.");
+        throw new Error(data.error || "Authentication failed. Please check your credentials.");
       }
 
       if (data.token) {
@@ -75,7 +82,7 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
       }
     } catch (reason) {
       const msg = reason instanceof Error ? reason.message : "Authentication failed.";
-      setError(msg.includes("pattern") ? "Authentication request could not be processed. Please try again." : msg);
+      setError(msg);
     } finally {
       setBusy(false);
     }
