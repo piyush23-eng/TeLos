@@ -77,16 +77,20 @@ async function runCpp(code: string): Promise<RunnerResult> {
   const binaryPath = path.join(tempDir, 'main');
   await fs.writeFile(sourcePath, code, 'utf8');
 
-  let compile = safeSpawn('g++', ['-std=c++17', sourcePath, '-O2', '-o', binaryPath], tempDir);
-  if (compile.error && (compile.error as any).code === 'ENOENT') {
-    compile = safeSpawn('clang++', ['-std=c++17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+  const candidates = ['g++', 'clang++', 'c++', '/usr/bin/g++', '/usr/bin/clang++', '/usr/bin/c++'];
+  let compile: any = null;
+  for (const cmd of candidates) {
+    compile = safeSpawn(cmd, ['-std=c++17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+    if (!compile.error || (compile.error as any).code !== 'ENOENT') {
+      break;
+    }
   }
 
-  if (compile.error) {
+  if (compile?.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
     return {
       status: 'error',
-      output: 'C++ compiler (g++ / clang++) is not installed on this environment. To enable C++ compilation on Render, deploy with Docker runtime (or use Python/JavaScript).'
+      output: 'C++ compiler (g++ / clang++) is not installed on this environment.'
     };
   }
   if (compile.status !== 0) {
@@ -107,12 +111,16 @@ async function runC(code: string): Promise<RunnerResult> {
   const binaryPath = path.join(tempDir, 'main');
   await fs.writeFile(sourcePath, code, 'utf8');
 
-  let compile = safeSpawn('gcc', ['-std=c17', sourcePath, '-O2', '-o', binaryPath], tempDir);
-  if (compile.error && (compile.error as any).code === 'ENOENT') {
-    compile = safeSpawn('clang', ['-std=c17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+  const candidates = ['gcc', 'clang', 'cc', '/usr/bin/gcc', '/usr/bin/clang', '/usr/bin/cc'];
+  let compile: any = null;
+  for (const cmd of candidates) {
+    compile = safeSpawn(cmd, ['-std=c17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+    if (!compile.error || (compile.error as any).code !== 'ENOENT') {
+      break;
+    }
   }
 
-  if (compile.error) {
+  if (compile?.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
     return {
       status: 'error',
