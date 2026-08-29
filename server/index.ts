@@ -4,7 +4,7 @@ import cors from 'cors';
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { PrismaClient } from '@prisma/client';
-import { demoSessions, personas, problems, communitySeedPosts } from './mockData';
+import { demoSessions, personas, problems } from './mockData';
 import { IntelligenceProvider } from './intelligence';
 import { runCodeSnippet } from './runner';
 
@@ -36,7 +36,7 @@ const authenticatedUser = async (authorization?: string) => {
   } catch { return null; }
 };
 
-const communityPosts: any[] = [...communitySeedPosts];
+const communityPosts: any[] = [];
 
 app.get('/health', (_req, res) =>
   res.json({ status: 'ok', mode: intelligence.mode, llm: intelligence.llm, deepgram: Boolean(process.env.DEEPGRAM_API_KEY) })
