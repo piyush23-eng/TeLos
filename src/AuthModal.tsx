@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, LockKeyhole, X } from "lucide-react";
-
-const API = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:8787" : "");
+import { apiUrl, safeStorage } from "./apiConfig";
 
 export type AuthUser = {
   id: string;
@@ -52,7 +51,8 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
 
     try {
       const endpoint = mode === "signin" ? "/api/auth/login" : "/api/auth/signup";
-      const response = await fetch(`${API}${endpoint}`, {
+      const targetUrl = apiUrl(endpoint);
+      const response = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -64,17 +64,18 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Could not authenticate. Please try again.");
+        throw new Error(data.error || "Could not authenticate. Please check your credentials.");
       }
 
       if (data.token) {
-        localStorage.setItem("telos-token", data.token);
+        safeStorage.set("telos-token", data.token);
       }
       if (data.user) {
         onAuthenticated(data.user);
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Authentication failed.");
+      const msg = reason instanceof Error ? reason.message : "Authentication failed.";
+      setError(msg.includes("pattern") ? "Authentication request could not be processed. Please try again." : msg);
     } finally {
       setBusy(false);
     }

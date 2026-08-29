@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ArrowRight, BadgeCheck, BrainCircuit, CalendarDays, CheckCircle2, Clock3, Code2, Edit3, Flame, Github, Layers3, Link, Linkedin, Save, ShieldCheck, Sparkles, Target, TrendingUp, Trophy, UserRound } from 'lucide-react';
 import type { AuthUser } from './AuthModal';
+import { apiUrl, safeStorage } from './apiConfig';
 
-const API = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
 type PageTarget = 'studio' | 'assessment' | 'bank' | 'analytics';
 type Props = { user: AuthUser | null; onNavigate: (page: PageTarget) => void; onRequireAuth: () => void; onUserUpdated: (user: AuthUser) => void };
 const fallback = [{ date: 'JUL 03', star: 62, accuracy: 68, fillers: 9.2 }, { date: 'JUL 08', star: 66, accuracy: 71, fillers: 7.4 }, { date: 'JUL 14', star: 73, accuracy: 76, fillers: 5.6 }, { date: 'JUL 19', star: 77, accuracy: 79, fillers: 4.1 }, { date: 'JUL 26', star: 84, accuracy: 82, fillers: 3.2 }];
@@ -15,13 +15,13 @@ const practiceRhythm = Array.from({ length: 70 }, (_, index) => (index * 17 + in
 
 export function UserDashboard({ user, onNavigate, onRequireAuth, onUserUpdated }: Props) {
   const [data, setData] = useState(fallback); const [profile, setProfile] = useState<AuthUser | null>(user); const [editing, setEditing] = useState(false); const [saving, setSaving] = useState(false); const [notice, setNotice] = useState('');
-  useEffect(() => { fetch(`${API}/api/analytics`).then(response => response.json()).then(payload => setData(payload.sessions || fallback)).catch(() => undefined); }, []);
-  useEffect(() => { const token = localStorage.getItem('telos-token'); if (!token) return; fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(response => response.ok ? response.json() : null).then(payload => { if (payload?.user) { setProfile(payload.user); onUserUpdated(payload.user); } }).catch(() => undefined); }, [onUserUpdated]);
+  useEffect(() => { fetch(apiUrl('/api/analytics')).then(response => response.json()).then(payload => setData(payload.sessions || fallback)).catch(() => undefined); }, []);
+  useEffect(() => { const token = safeStorage.get('telos-token'); if (!token) return; fetch(apiUrl('/api/auth/me'), { headers: { Authorization: `Bearer ${token}` } }).then(response => response.ok ? response.json() : null).then(payload => { if (payload?.user) { setProfile(payload.user); onUserUpdated(payload.user); } }).catch(() => undefined); }, [onUserUpdated]);
   const latest = useMemo(() => data[data.length - 1] || fallback[fallback.length - 1], [data]);
   const candidate = profile || user; const firstName = candidate?.name.split(' ')[0] || 'Candidate';
   const gate = (page: PageTarget) => candidate ? onNavigate(page) : onRequireAuth();
   const update = (field: ProfileField, value: string) => setProfile(current => current ? { ...current, [field]: value } : current);
-  const saveProfile = async () => { const token = localStorage.getItem('telos-token'); if (!token || !profile) return; setSaving(true); setNotice(''); try { const response = await fetch(`${API}/api/auth/me`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(profile) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Could not save your profile.'); setProfile(payload.user); onUserUpdated(payload.user); setEditing(false); setNotice('Profile saved securely.'); } catch (error) { setNotice(error instanceof Error ? error.message : 'Could not save your profile.'); } finally { setSaving(false); } };
+  const saveProfile = async () => { const token = safeStorage.get('telos-token'); if (!token || !profile) return; setSaving(true); setNotice(''); try { const response = await fetch(apiUrl('/api/auth/me'), { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(profile) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || 'Could not save your profile.'); setProfile(payload.user); onUserUpdated(payload.user); setEditing(false); setNotice('Profile saved securely.'); } catch (error) { setNotice(error instanceof Error ? error.message : 'Could not save your profile.'); } finally { setSaving(false); } };
   const projects = candidate?.projects?.split('\n').filter(Boolean) || [];
   const completedFields = profileFields.filter(field => candidate?.[field]?.trim()).length; const completeness = Math.round((completedFields / profileFields.length) * 100);
   return <main className="shell dashboard-shell">

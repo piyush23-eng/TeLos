@@ -13,9 +13,9 @@ import telosLogo from './assets/telos-logo.jpeg';
 import './roadmap.css';
 import { buildSessionReport, calculateSpeakingPace, countFillerWords, exportDebriefToMarkdown } from './voiceMetrics';
 
-const companyCatalog = companyPrepCatalog;
+import { apiUrl, safeStorage } from './apiConfig';
 
-const API = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
+const companyCatalog = companyPrepCatalog;
 
 type Page = 'dashboard' | 'studio' | 'prep' | 'community' | 'analytics' | 'bank' | 'assessment';
 type Message = { id: number; speaker: 'PANEL' | 'YOU'; text: string; time: string; pending?: boolean };
@@ -127,7 +127,7 @@ async function speak(text: string, enabled: boolean, requestedVoice = 'coral', p
     activeHumanVoice = null;
   }
   try {
-    const response = await fetch(`${API}/api/tts`, {
+    const response = await fetch(apiUrl('/api/tts'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -154,7 +154,7 @@ async function speak(text: string, enabled: boolean, requestedVoice = 'coral', p
 
 const pageOrder: Page[] = ['dashboard', 'studio', 'prep', 'community', 'analytics', 'bank'];
 
-function TopNav({page,setPage,user,onAuth,onLogout,locked}:{page:Page;setPage:(p:Page)=>void;user:AuthUser|null;onAuth:()=>void;onLogout:()=>void;locked:boolean}) { const [menuOpen,setMenuOpen] = useState(false); const [darkMode,setDarkMode] = useState(() => localStorage.getItem('telos-theme') === 'dark'); useEffect(() => { document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'; localStorage.setItem('telos-theme', darkMode ? 'dark' : 'light'); }, [darkMode]); const go=(next:Page)=>{if(!locked){setPage(next);setMenuOpen(false)}}; const accountAction=()=>{if(!locked){if(user)setMenuOpen(open => !open);else onAuth()}}; const logout=()=>{setMenuOpen(false);onLogout()}; return <header className={`top-nav ${locked?'assessment-nav-locked':''}`}><button className="wordmark" aria-label="Go to TeLos interview practice" disabled={locked} onClick={()=>go('studio')}><img className="brand-logo" src={telosLogo} alt="TeLos logo"/><span className="brand-name">TeLos</span><sup>®</sup></button><nav className="nav-links" aria-label="Main navigation"><button disabled={locked} className={page==='studio'?'selected':''} onClick={()=>go('studio')}>Interview</button><button disabled={locked} className={page==='prep'?'selected':''} onClick={()=>go('prep')}>Company prep</button><button className={page==='assessment'?'selected':''} onClick={()=>go('assessment')}>Assessment</button><button disabled={locked} className={page==='community'?'selected':''} onClick={()=>go('community')}>Discuss</button><button disabled={locked} className={page==='analytics'?'selected':''} onClick={()=>go('analytics')}>Results</button><button disabled={locked} className={page==='bank'?'selected':''} onClick={()=>go('bank')}>Drills</button></nav><div className="account-actions"><button className="theme-toggle" type="button" onClick={()=>setDarkMode(value => !value)} aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} title={darkMode ? 'Light mode' : 'Dark mode'}>{darkMode ? <Sun size={16}/> : <Moon size={16}/>}</button><div className="account-menu"><button className="nav-cta account-cta" disabled={locked} onClick={accountAction}>{locked?'Assessment locked':user ? <><span className="account-initial">{user.name.slice(0,1).toUpperCase()}</span>{user.name.split(' ')[0]}<ChevronDown size={14} className={menuOpen?'rotated':''}/></> : <>Sign in <ArrowRight size={15}/></>}</button>{user && menuOpen && <div className="account-popover" role="menu"><div className="account-popover-head"><span>{user.name.slice(0,1).toUpperCase()}</span><div><b>{user.name}</b><small>{user.email}</small></div></div><button onClick={()=>go('dashboard')}><LayoutDashboard size={16}/><span><b>My dashboard</b><small>Profile, progress, and practice plan</small></span></button><button onClick={()=>go('analytics')}><BarChart3 size={16}/><span><b>Performance</b><small>Readiness and interview results</small></span></button><button onClick={()=>go('bank')}><Code2 size={16}/><span><b>Practice library</b><small>Drills and coding patterns</small></span></button><button className="popover-logout" onClick={logout}><LogOut size={16}/>Log out</button></div>}</div></div></header> }
+function TopNav({page,setPage,user,onAuth,onLogout,locked}:{page:Page;setPage:(p:Page)=>void;user:AuthUser|null;onAuth:()=>void;onLogout:()=>void;locked:boolean}) { const [menuOpen,setMenuOpen] = useState(false); const [darkMode,setDarkMode] = useState(() => safeStorage.get('telos-theme') === 'dark'); useEffect(() => { document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'; safeStorage.set('telos-theme', darkMode ? 'dark' : 'light'); }, [darkMode]); const go=(next:Page)=>{if(!locked){setPage(next);setMenuOpen(false)}}; const accountAction=()=>{if(!locked){if(user)setMenuOpen(open => !open);else onAuth()}}; const logout=()=>{setMenuOpen(false);onLogout()}; return <header className={`top-nav ${locked?'assessment-nav-locked':''}`}><button className="wordmark" aria-label="Go to TeLos interview practice" disabled={locked} onClick={()=>go('studio')}><img className="brand-logo" src={telosLogo} alt="TeLos logo"/><span className="brand-name">TeLos</span><sup>®</sup></button><nav className="nav-links" aria-label="Main navigation"><button disabled={locked} className={page==='studio'?'selected':''} onClick={()=>go('studio')}>Interview</button><button disabled={locked} className={page==='prep'?'selected':''} onClick={()=>go('prep')}>Company prep</button><button className={page==='assessment'?'selected':''} onClick={()=>go('assessment')}>Assessment</button><button disabled={locked} className={page==='community'?'selected':''} onClick={()=>go('community')}>Discuss</button><button disabled={locked} className={page==='analytics'?'selected':''} onClick={()=>go('analytics')}>Results</button><button disabled={locked} className={page==='bank'?'selected':''} onClick={()=>go('bank')}>Drills</button></nav><div className="account-actions"><button className="theme-toggle" type="button" onClick={()=>setDarkMode(value => !value)} aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'} title={darkMode ? 'Light mode' : 'Dark mode'}>{darkMode ? <Sun size={16}/> : <Moon size={16}/>}</button><div className="account-menu"><button className="nav-cta account-cta" disabled={locked} onClick={accountAction}>{locked?'Assessment locked':user ? <><span className="account-initial">{user.name.slice(0,1).toUpperCase()}</span>{user.name.split(' ')[0]}<ChevronDown size={14} className={menuOpen?'rotated':''}/></> : <>Sign in <ArrowRight size={15}/></>}</button>{user && menuOpen && <div className="account-popover" role="menu"><div className="account-popover-head"><span>{user.name.slice(0,1).toUpperCase()}</span><div><b>{user.name}</b><small>{user.email}</small></div></div><button onClick={()=>go('dashboard')}><LayoutDashboard size={16}/><span><b>My dashboard</b><small>Profile, progress, and practice plan</small></span></button><button onClick={()=>go('analytics')}><BarChart3 size={16}/><span><b>Performance</b><small>Readiness and interview results</small></span></button><button onClick={()=>go('bank')}><Code2 size={16}/><span><b>Practice library</b><small>Drills and coding patterns</small></span></button><button className="popover-logout" onClick={logout}><LogOut size={16}/>Log out</button></div>}</div></div></header> }
 
 function LiveMeter({ active }: { active: boolean }) {
   return (
@@ -309,7 +309,7 @@ public class Solution {
     setRunningCode(true);
     setCodeOutput('Compiling & running test cases against local runtime sandbox...');
     try {
-      const response = await fetch(`${API}/api/run`, {
+      const response = await fetch(apiUrl('/api/run'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, language })
@@ -507,7 +507,7 @@ public class Solution {
     const fallbackQuestion = buildCompanySpecificQuestion(phase, msgs);
     upsertStreamingPanel(phase === 'opening' ? 'Starting the interview…' : 'Analyzing response…', false);
     try {
-      const response = await fetch(`${API}/api/interviewer/next/stream`, {
+      const response = await fetch(apiUrl('/api/interviewer/next/stream'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...context, modelProvider, transcript: toTranscript(msgs), phase })
@@ -1537,7 +1537,7 @@ function Report({
       text: m.text,
     }));
 
-    fetch(`${API}/api/interview/debrief`, {
+    fetch(apiUrl('/api/interview/debrief'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2006,7 +2006,7 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
   );
 }
 
-function Analytics(){const[data,setData]=useState(fallbackData);useEffect(()=>{fetch(`${API}/api/analytics`).then(r=>r.json()).then(d=>setData(d.sessions)).catch(()=>undefined)},[]);const latest=(data[data.length-1]||data[0]||{date:'NOW',star:78,accuracy:78,fillers:4.3,pace:145}) as typeof fallbackData[number] & { pace?: number };const insightCards=[{label:'Rhythm',value:`${latest.pace ?? 0} WPM`,copy:'Your recent sessions show a healthier speaking cadence and less drift.'},{label:'Clarity',value:`${latest.accuracy ?? 0}%`,copy:'The strongest answers connect the mechanism to the impact.'},{label:'Filler drop',value:`${latest.fillers ?? 0} / min`,copy:'You are getting quieter and more deliberate with each round.'}];return <main className="shell"><section className="studio-head"><div><p className="kicker">02 / IMPROVEMENT IS A DATASET</p><h1>YOUR<br/><span>RECEIPTS.</span></h1></div><div className="session-meta"><b>12 SESSIONS LOGGED</b><span>LAST 30 DAYS</span><span>UPWARD TRAJECTORY</span></div></section><div className="big-stats"><div><b>82</b><span>READINESS<br/>INDEX</span></div><div><b>+14</b><span>STAR SCORE<br/>THIS MONTH</span></div><div><b>−65%</b><span>FILLER WORDS<br/>FROM BASELINE</span></div></div><section className="analytics-grid"><div className="analytics-stack"><article className="chart-card"><p className="kicker">STRUCTURE × TECHNICAL DEPTH</p><h2>ANSWER QUALITY</h2><ResponsiveContainer width="100%" height={280}><LineChart data={data}><CartesianGrid stroke="#1c1c1c" vertical={false}/><XAxis dataKey="date" tickLine={false} axisLine={false}/><YAxis domain={[50,100]} tickLine={false} axisLine={false}/><Tooltip/><Line dataKey="star" stroke="#ecff00" strokeWidth={4} dot={{r:5,fill:'#ecff00'}}/><Line dataKey="accuracy" stroke="#ff4f19" strokeWidth={4} dot={{r:5,fill:'#ff4f19'}}/></LineChart></ResponsiveContainer></article><article className="chart-card light-chart"><p className="kicker">SPEAKING CLEANER</p><h2>FILLER DECAY</h2><ResponsiveContainer width="100%" height={280}><AreaChart data={data}><defs><linearGradient id="brute" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ff4f19" stopOpacity=".7"/><stop offset="100%" stopColor="#ff4f19" stopOpacity=".03"/></linearGradient></defs><CartesianGrid stroke="#bbb" vertical={false}/><XAxis dataKey="date" tickLine={false} axisLine={false}/><YAxis tickLine={false} axisLine={false}/><Tooltip/><Area dataKey="fillers" stroke="#000" fill="url(#brute)" strokeWidth={4}/></AreaChart></ResponsiveContainer></article></div><div className="analytics-stack">{insightCards.map(card=><article key={card.label} className="insight-card"><p className="kicker">INSIGHT</p><h3>{card.label}</h3><b>{card.value}</b><p>{card.copy}</p></article>)}<article className="insight-card"><p className="kicker">COMMUNITY INTELLIGENCE</p><h3>Where people share real interview stories</h3><ul><li><strong>Blind</strong> — strong for company-specific round breakdowns and recruiter stories.</li><li><strong>Reddit / r/cscareerquestions</strong> — practical prep notes and failure patterns.</li><li><strong>Discord communities</strong> — useful for recent process changes and interview feedback.</li></ul></article></div></section></main>}
+function Analytics(){const[data,setData]=useState(fallbackData);useEffect(()=>{fetch(apiUrl('/api/analytics')).then(r=>r.json()).then(d=>setData(d.sessions)).catch(()=>undefined)},[]);const latest=(data[data.length-1]||data[0]||{date:'NOW',star:78,accuracy:78,fillers:4.3,pace:145}) as typeof fallbackData[number] & { pace?: number };const insightCards=[{label:'Rhythm',value:`${latest.pace ?? 0} WPM`,copy:'Your recent sessions show a healthier speaking cadence and less drift.'},{label:'Clarity',value:`${latest.accuracy ?? 0}%`,copy:'The strongest answers connect the mechanism to the impact.'},{label:'Filler drop',value:`${latest.fillers ?? 0} / min`,copy:'You are getting quieter and more deliberate with each round.'}];return <main className="shell"><section className="studio-head"><div><p className="kicker">02 / IMPROVEMENT IS A DATASET</p><h1>YOUR<br/><span>RECEIPTS.</span></h1></div><div className="session-meta"><b>12 SESSIONS LOGGED</b><span>LAST 30 DAYS</span><span>UPWARD TRAJECTORY</span></div></section><div className="big-stats"><div><b>82</b><span>READINESS<br/>INDEX</span></div><div><b>+14</b><span>STAR SCORE<br/>THIS MONTH</span></div><div><b>−65%</b><span>FILLER WORDS<br/>FROM BASELINE</span></div></div><section className="analytics-grid"><div className="analytics-stack"><article className="chart-card"><p className="kicker">STRUCTURE × TECHNICAL DEPTH</p><h2>ANSWER QUALITY</h2><ResponsiveContainer width="100%" height={280}><LineChart data={data}><CartesianGrid stroke="#1c1c1c" vertical={false}/><XAxis dataKey="date" tickLine={false} axisLine={false}/><YAxis domain={[50,100]} tickLine={false} axisLine={false}/><Tooltip/><Line dataKey="star" stroke="#ecff00" strokeWidth={4} dot={{r:5,fill:'#ecff00'}}/><Line dataKey="accuracy" stroke="#ff4f19" strokeWidth={4} dot={{r:5,fill:'#ff4f19'}}/></LineChart></ResponsiveContainer></article><article className="chart-card light-chart"><p className="kicker">SPEAKING CLEANER</p><h2>FILLER DECAY</h2><ResponsiveContainer width="100%" height={280}><AreaChart data={data}><defs><linearGradient id="brute" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ff4f19" stopOpacity=".7"/><stop offset="100%" stopColor="#ff4f19" stopOpacity=".03"/></linearGradient></defs><CartesianGrid stroke="#bbb" vertical={false}/><XAxis dataKey="date" tickLine={false} axisLine={false}/><YAxis tickLine={false} axisLine={false}/><Tooltip/><Area dataKey="fillers" stroke="#000" fill="url(#brute)" strokeWidth={4}/></AreaChart></ResponsiveContainer></article></div><div className="analytics-stack">{insightCards.map(card=><article key={card.label} className="insight-card"><p className="kicker">INSIGHT</p><h3>{card.label}</h3><b>{card.value}</b><p>{card.copy}</p></article>)}<article className="insight-card"><p className="kicker">COMMUNITY INTELLIGENCE</p><h3>Where people share real interview stories</h3><ul><li><strong>Blind</strong> — strong for company-specific round breakdowns and recruiter stories.</li><li><strong>Reddit / r/cscareerquestions</strong> — practical prep notes and failure patterns.</li><li><strong>Discord communities</strong> — useful for recent process changes and interview feedback.</li></ul></article></div></section></main>}
 
 const codeTemplate = (problem: any, lang: CodeLanguage) => {
   const header = `// ${problem?.title || 'Problem'}\n// ${problem?.description || ''}\n\n`;
@@ -2042,7 +2042,7 @@ function Bank() {
   };
 
   useEffect(() => {
-    fetch(`${API}/api/problems`)
+    fetch(apiUrl('/api/problems'))
       .then(r => r.json())
       .then(d => {
         const list = d.problems || [];
@@ -2101,7 +2101,7 @@ function Bank() {
     setRunning(true);
     setOutput('Running solution against test sandbox...');
     try {
-      const result = await fetch(`${API}/api/run`, {
+      const result = await fetch(apiUrl('/api/run'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, language, problemId: selected.id }),
@@ -3006,7 +3006,7 @@ function Community() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API}/api/community`)
+    fetch(apiUrl('/api/community'))
       .then(r => r.json())
       .then(d => {
         if (d.posts && Array.isArray(d.posts)) {
@@ -3028,7 +3028,7 @@ function Community() {
     });
     setVotes(v => ({ ...v, [id]: (v[id] || 0) + delta }));
     try {
-      await fetch(`${API}/api/community/vote`, {
+      await fetch(apiUrl('/api/community/vote'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId: id, delta })
@@ -3088,7 +3088,7 @@ function Community() {
     setExpandedReplies(prev => new Set(prev).add(postId));
 
     try {
-      await fetch(`${API}/api/community/reply`, {
+      await fetch(apiUrl('/api/community/reply'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId, reply: newReply })
@@ -3126,7 +3126,7 @@ function Community() {
     };
 
     try {
-      const res = await fetch(`${API}/api/community`, {
+      const res = await fetch(apiUrl('/api/community'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPost)
@@ -3701,10 +3701,10 @@ export default function App(){
   const [page,setPage] = useState<Page>('studio');
   const [authOpen,setAuthOpen] = useState(false);
   const [assessmentLocked,setAssessmentLocked] = useState(false);
-  const [user,setUser] = useState<AuthUser|null>(() => { try { return JSON.parse(localStorage.getItem('telos-user') || 'null'); } catch { return null; } });
+  const [user,setUser] = useState<AuthUser|null>(() => { try { return JSON.parse(safeStorage.get('telos-user') || 'null'); } catch { return null; } });
   const handleAssessmentActivity = useCallback((active: boolean) => setAssessmentLocked(active), []);
-  const syncUser = useCallback((nextUser: AuthUser) => { localStorage.setItem('telos-user', JSON.stringify(nextUser)); setUser(nextUser); }, []);
-  const logout = useCallback(() => { localStorage.removeItem('telos-token'); localStorage.removeItem('telos-user'); setUser(null); setPage('studio'); }, []);
+  const syncUser = useCallback((nextUser: AuthUser) => { safeStorage.set('telos-user', JSON.stringify(nextUser)); setUser(nextUser); }, []);
+  const logout = useCallback(() => { safeStorage.remove('telos-token'); safeStorage.remove('telos-user'); setUser(null); setPage('studio'); }, []);
   const currentPage = page === 'dashboard'
     ? user ? <UserDashboard user={user} onNavigate={setPage} onRequireAuth={()=>setAuthOpen(true)} onUserUpdated={syncUser} /> : <Studio />
     : page === 'studio'
