@@ -2769,7 +2769,7 @@ function Community() {
   }, [posts, activeTopic, companyFilter, postTypeFilter, searchQuery, sort, votes, helpfulPosts]);
 
   return (
-    <main className="shell">
+    <main className="shell community-shell">
       <section className="studio-head">
         <div>
           <p className="kicker">03 / LEARN WITH THE COMMUNITY</p>
@@ -2777,190 +2777,174 @@ function Community() {
         </div>
         <div className="session-meta">
           <b>TELOS DISCUSS HUB</b>
-          <span>INTERVIEW EXPERIENCES</span>
-          <span>PEER MOCK PRACTICE</span>
+          <span>REAL INTERVIEW LOGS</span>
+          <span>PEER MOCK INTERVIEWS</span>
         </div>
       </section>
 
-      <section className="prep-shell community-shell">
-        {/* LEFT COLUMN: Unified Sidebar matching Company Prep */}
+      <div className="community-layout">
+        {/* LEFT COLUMN: Structured Sidebar (Equalized Cards) */}
         <aside className="community-sidebar">
-          {/* Section 1: Topics Directory */}
-          <div className="panel-label">
-            <span>
-              <Users size={12} style={{ display: 'inline', marginRight: 6 }} />
-              TOPICS DIRECTORY
-            </span>
-            <span>{posts.length} POSTS</span>
+          {/* Card 1: Topics Directory */}
+          <div className="community-card">
+            <div className="community-card-head">
+              <span>
+                <Users size={12} style={{ display: 'inline', marginRight: 6 }} />
+                TOPICS DIRECTORY
+              </span>
+              <span>{posts.length} POSTS</span>
+            </div>
+            <div className="community-topic-list">
+              {topics.map(item => {
+                const count = item === 'All topics'
+                  ? posts.length
+                  : posts.filter(post => `${post.message} ${(post.tags || []).join(' ')}`.toLowerCase().includes(item.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'))).length;
+                return (
+                  <button
+                    key={item}
+                    className={`community-topic-btn ${activeTopic === item ? 'active' : ''}`}
+                    onClick={() => setActiveTopic(item)}
+                  >
+                    <span>{item}</span>
+                    <span className="community-topic-count">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="community-topic-list">
-            {topics.map(item => {
-              const count = item === 'All topics'
-                ? posts.length
-                : posts.filter(post => `${post.message} ${(post.tags || []).join(' ')}`.toLowerCase().includes(item.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'))).length;
-              return (
+
+          {/* Card 2: Trending Company Scope */}
+          <div className="community-card">
+            <div className="community-card-head">
+              <span>
+                <Briefcase size={12} style={{ display: 'inline', marginRight: 6 }} />
+                DISCUSS BY COMPANY
+              </span>
+              <span>HOT</span>
+            </div>
+            <div className="trending-companies-grid">
+              {trendingCompanies.map(comp => (
                 <button
-                  key={item}
-                  className={`community-topic-btn ${activeTopic === item ? 'active' : ''}`}
-                  onClick={() => setActiveTopic(item)}
+                  key={comp}
+                  className={`company-tag-pill ${companyFilter === comp ? 'active' : ''}`}
+                  onClick={() => setCompanyFilter(comp)}
                 >
-                  <span>{item}</span>
-                  <span className="community-topic-count">{count}</span>
+                  {comp === 'All' ? 'All Companies' : `#${comp}`}
                 </button>
-              );
-            })}
-          </div>
-
-          {/* Section 2: Trending Company Scope */}
-          <div className="panel-label">
-            <span>
-              <Briefcase size={12} style={{ display: 'inline', marginRight: 6 }} />
-              DISCUSS BY COMPANY
-            </span>
-            <span>HOT</span>
-          </div>
-          <div className="community-pill-row">
-            {trendingCompanies.map(comp => (
-              <button
-                key={comp}
-                className={`community-pill-chip ${companyFilter === comp ? 'active' : ''}`}
-                onClick={() => setCompanyFilter(comp)}
-              >
-                {comp === 'All' ? 'ALL' : `#${comp}`}
-              </button>
-            ))}
-          </div>
-
-          {/* Section 3: Community Metrics */}
-          <div className="panel-label">
-            <span>
-              <TrendingUp size={12} style={{ display: 'inline', marginRight: 6 }} />
-              COMMUNITY SIGNAL
-            </span>
-            <span>VERIFIED</span>
-          </div>
-          <div className="community-metrics-grid">
-            <div className="community-metric-card">
-              <span className="community-metric-value">{uniqueAuthorsCount}</span>
-              <span className="community-metric-label">Contributors</span>
-            </div>
-            <div className="community-metric-card">
-              <span className="community-metric-value">{totalPYQsCount}</span>
-              <span className="community-metric-label">Debriefs &amp; PYQs</span>
-            </div>
-            <div className="community-metric-card">
-              <span className="community-metric-value">{totalRepliesCount}</span>
-              <span className="community-metric-label">Answers</span>
-            </div>
-            <div className="community-metric-card">
-              <span className="community-metric-value">{trackedCompaniesCount}</span>
-              <span className="community-metric-label">Companies</span>
+              ))}
             </div>
           </div>
 
-          {/* Section 4: Signal Guidelines */}
-          <div className="panel-label" style={{ background: 'var(--ink)', color: 'var(--mint)', borderBottomColor: 'var(--ink)' }}>
-            <span>
-              <Award size={12} style={{ display: 'inline', marginRight: 6 }} />
-              PEER SHARING TIPS
-            </span>
-            <span>STANDARDS</span>
+          {/* Card 3: Community Metrics */}
+          <div className="community-card">
+            <div className="community-card-head">
+              <span>
+                <TrendingUp size={12} style={{ display: 'inline', marginRight: 6 }} />
+                COMMUNITY SIGNAL
+              </span>
+              <span>VERIFIED</span>
+            </div>
+            <div className="community-stats-grid">
+              <div className="community-stat-cell">
+                <span className="community-stat-val">{uniqueAuthorsCount}</span>
+                <span className="community-stat-lbl">Active Contributors</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-val">{totalPYQsCount}</span>
+                <span className="community-stat-lbl">Debriefs &amp; PYQs</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-val">{totalRepliesCount}</span>
+                <span className="community-stat-lbl">Community Answers</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-val">{trackedCompaniesCount}</span>
+                <span className="community-stat-lbl">Companies Tracked</span>
+              </div>
+            </div>
           </div>
-          <div style={{ padding: '14px 16px', background: '#ffffff' }}>
-            <p style={{ margin: 0, font: '500 12px/1.6 Manrope, sans-serif', color: 'var(--ink)' }}>
-              Include the <strong>Company</strong>, <strong>Role/Level</strong>, <strong>Round specifications</strong>, and <strong>trade-offs asked</strong> for high-signal peer calibration.
-            </p>
+
+          {/* Card 4: Signal Guidelines */}
+          <div className="community-card" style={{ background: 'var(--ink)', color: '#ffffff' }}>
+            <div className="community-card-head" style={{ background: '#191826', color: 'var(--mint)', borderBottomColor: 'rgba(255,255,255,0.15)' }}>
+              <span>
+                <Award size={12} style={{ display: 'inline', marginRight: 6 }} />
+                HIGH-SIGNAL ADVICE
+              </span>
+              <span>STANDARDS</span>
+            </div>
+            <div style={{ padding: 16 }}>
+              <p style={{ margin: 0, font: '400 11.5px/1.6 Manrope, sans-serif', color: '#d8d4e4' }}>
+                When posting an interview debrief, include the <strong>Company</strong>, <strong>Role/Level</strong>, <strong>Round specifications</strong>, and <strong>trade-offs asked</strong>. This helps peers give precise, actionable feedback.
+              </p>
+            </div>
           </div>
         </aside>
 
-        {/* RIGHT COLUMN: Feed matching Company Prep Detail Workspace */}
-        <div className="prep-detail community-board">
-          {/* Hero Card matching Company Prep Hero Gradient */}
-          <article className="hero-card">
-            <div className="detail-header">
-              <div>
-                <p className="kicker">COMMUNITY FORUM / {companyFilter.toUpperCase()}</p>
-                <h2>{activeTopic}</h2>
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span className="drill-tag-badge company-tag">
-                  {companyFilter === 'All' ? 'ALL COMPANIES' : companyFilter.toUpperCase()}
-                </span>
-                <span className="drill-tag-badge difficulty-tag diff-easy">
-                  {visiblePosts.length} DISCUSSIONS
-                </span>
-              </div>
+        {/* RIGHT COLUMN: Board Header, Filter Toolbar, Composer & Discussion Feed */}
+        <section className="community-board">
+          {/* Header Card */}
+          <div className="board-hero-card">
+            <div>
+              <p className="kicker">COMMUNITY FORUM / {companyFilter.toUpperCase()}</p>
+              <h2>{activeTopic}</h2>
             </div>
-            <p style={{ margin: '8px 0 14px', fontSize: 13.5, lineHeight: 1.6, color: 'var(--ink)', fontWeight: 500 }}>
-              Share verified interview experiences, compare compensation packages, solve high-impact system design trade-offs, and partner up for peer mock interviews.
-            </p>
-            <div className="detail-meta-row" style={{ margin: '8px 0 0' }}>
-              <span className="drill-tag-badge">Mode • Real-time Peer Hub</span>
-              <span className="drill-tag-badge">Quality Bar • High Signal</span>
-              <span className="drill-tag-badge">Coverage • 47 Unicorns</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span className="drill-tag-badge company-tag">{companyFilter === 'All' ? 'ALL COMPANIES' : companyFilter}</span>
+              <span className="drill-counter-pill">{visiblePosts.length} DISCUSSIONS</span>
             </div>
-          </article>
+          </div>
 
-          {/* Filter & Search Bar Card */}
-          <article className="community-filter-card">
-            <div className="community-filter-bar">
-              <div className="community-search-box">
-                <Search size={15} color="var(--ink)" />
-                <input
-                  type="text"
-                  placeholder="Search discussions by keyword, company, author..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery('')}
-                    style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 0, color: 'var(--ink)' }}
-                  >
-                    <X size={13} />
-                  </button>
-                )}
-              </div>
-
-              <div className="community-sort-tabs">
-                <button
-                  className={`community-sort-btn ${sort === 'popular' ? 'active' : ''}`}
-                  onClick={() => setSort('popular')}
+          {/* Filter & Search Bar */}
+          <div className="community-filter-bar">
+            <div className="community-search-box">
+              <Search size={14} />
+              <input
+                type="text"
+                placeholder="Search discussions by keyword, company, author..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 0, color: 'var(--muted)' }}
                 >
-                  🔥 POPULAR
+                  <X size={12} />
                 </button>
-                <button
-                  className={`community-sort-btn ${sort === 'newest' ? 'active' : ''}`}
-                  onClick={() => setSort('newest')}
-                >
-                  ✨ NEWEST
-                </button>
-                <button
-                  className={`community-sort-btn ${sort === 'replies' ? 'active' : ''}`}
-                  onClick={() => setSort('replies')}
-                >
-                  💬 MOST REPLIES
-                </button>
-                <button
-                  className={`community-sort-btn ${sort === 'helpful' ? 'active' : ''}`}
-                  onClick={() => setSort('helpful')}
-                >
-                  ⭐ HELPFUL
-                </button>
-              </div>
-            </div>
-          </article>
-
-          {/* Discussion Composer Card with Company Prep Panel Styling */}
-          <article className="composer-detail-card">
-            <div className="panel-label">
-              <span>
-                <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
-                START A NEW TECHNICAL DISCUSSION
-              </span>
-              <span>{composerType.toUpperCase()}</span>
+              )}
             </div>
 
+            <div className="community-sort-tabs">
+              <button
+                className={`community-sort-btn ${sort === 'popular' ? 'active' : ''}`}
+                onClick={() => setSort('popular')}
+              >
+                🔥 POPULAR
+              </button>
+              <button
+                className={`community-sort-btn ${sort === 'newest' ? 'active' : ''}`}
+                onClick={() => setSort('newest')}
+              >
+                ✨ NEWEST
+              </button>
+              <button
+                className={`community-sort-btn ${sort === 'replies' ? 'active' : ''}`}
+                onClick={() => setSort('replies')}
+              >
+                💬 MOST REPLIES
+              </button>
+              <button
+                className={`community-sort-btn ${sort === 'helpful' ? 'active' : ''}`}
+                onClick={() => setSort('helpful')}
+              >
+                ⭐ HELPFUL
+              </button>
+            </div>
+          </div>
+
+          {/* Rich Discussion Composer Card */}
+          <div className="composer-card">
             <div className="composer-type-tabs">
               <button
                 className={`composer-type-btn ${composerType === 'question' ? 'active' : ''}`}
@@ -3034,8 +3018,8 @@ function Community() {
                     <option value="Reject">Outcome: Rejected (Shared for Learning)</option>
                     <option value="N/A">Outcome: General Round Debrief</option>
                   </select>
-                  <span style={{ font: '700 9.5px/2.5 "DM Mono", monospace', color: 'var(--ink)' }}>
-                    ✓ AUTO-TAGGED FOR PEERS
+                  <span style={{ font: '600 10px/2.5 "DM Mono", monospace', color: 'var(--muted)' }}>
+                    ✓ AUTO-TAGGED FOR COMMUNITY
                   </span>
                 </div>
               )}
@@ -3065,10 +3049,10 @@ function Community() {
 
               <div className="composer-footer">
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <span className="drill-tag-badge company-tag">#{targetCompany.toLowerCase()}</span>
-                  <span className="drill-tag-badge">#{composerType}</span>
+                  <span className="tag-badge">#{targetCompany.toLowerCase()}</span>
+                  <span className="tag-badge">#{composerType}</span>
                   {activeTopic !== 'All topics' && (
-                    <span className="drill-tag-badge">#{activeTopic.toLowerCase()}</span>
+                    <span className="tag-badge">#{activeTopic.toLowerCase()}</span>
                   )}
                 </div>
 
@@ -3076,28 +3060,28 @@ function Community() {
                   className="brand-button"
                   onClick={submitPost}
                   disabled={!message.trim() || submitting}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: 'var(--mint)', color: 'var(--ink)', border: '1px solid var(--ink)', fontWeight: 700 }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}
                 >
                   <Send size={13} />
                   <span>{submitting ? 'POSTING...' : 'PUBLISH DISCUSSION'}</span>
                 </button>
               </div>
             </div>
-          </article>
+          </div>
 
           {/* Discussion Thread Feed */}
           <div className="thread-list">
             {loading ? (
-              <article className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center', background: '#ffffff' }}>
+              <div className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
                 <Sparkles size={24} style={{ margin: '0 auto 12px', color: 'var(--violet)' }} />
-                <h2 style={{ color: 'var(--ink)' }}>Loading discussions...</h2>
-              </article>
+                <h2>Loading discussions...</h2>
+              </div>
             ) : visiblePosts.length === 0 ? (
-              <article className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center', background: '#ffffff' }}>
-                <p className="kicker" style={{ color: 'var(--ink)' }}>DISCUSS COMMUNITY</p>
-                <h2 style={{ color: 'var(--ink)', margin: '8px 0' }}>No discussions found for this view.</h2>
-                <p style={{ color: 'var(--ink)', fontWeight: 500 }}>Be the first to start a conversation, share an interview debrief, or find a mock partner!</p>
-              </article>
+              <div className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
+                <MessageCircle size={28} style={{ margin: '0 auto 12px', color: 'var(--muted)' }} />
+                <h2>No discussions found for this view.</h2>
+                <p>Be the first to start a conversation or share an interview experience!</p>
+              </div>
             ) : (
               visiblePosts.map(post => {
                 const totalVotes = (post.upvotes || 0) + (votes[post.id] || 0);
@@ -3109,161 +3093,148 @@ function Community() {
 
                 return (
                   <article key={post.id} className="thread-item-card">
-                    <div className="panel-label">
-                      <span>
-                        {post.company ? post.company.toUpperCase() : 'COMMUNITY'} • {post.postType ? post.postType.toUpperCase() : 'THREAD'}
-                      </span>
-                      <span>{new Date(post.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    {/* Vote Column */}
+                    <div className="thread-vote-column">
+                      <button
+                        className={`thread-vote-btn ${isUpvoted ? 'upvoted' : ''}`}
+                        onClick={() => toggleVote(post.id)}
+                        title="Upvote discussion"
+                      >
+                        <ChevronUp size={18} />
+                      </button>
+                      <span className="thread-vote-num">{totalVotes}</span>
                     </div>
 
-                    <div className="thread-card-body">
-                      {/* Vote Column */}
-                      <div className="thread-vote-column">
-                        <button
-                          className={`thread-vote-btn ${isUpvoted ? 'upvoted' : ''}`}
-                          onClick={() => toggleVote(post.id)}
-                          title="Upvote discussion"
-                        >
-                          <ChevronUp size={18} />
-                        </button>
-                        <span className="thread-vote-num">{totalVotes}</span>
+                    {/* Content Column */}
+                    <div className="thread-main-column">
+                      <div className="thread-header-row">
+                        <div className="thread-user-info">
+                          <span className="thread-user-avatar">
+                            {post.author.slice(0, 1).toUpperCase()}
+                          </span>
+                          <div className="thread-user-titles">
+                            <span className="thread-user-name">{post.author}</span>
+                            <span className="thread-user-role">
+                              {post.role} • {new Date(post.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {post.company && (
+                            <span className="drill-tag-badge company-tag">{post.company}</span>
+                          )}
+                          {post.outcome && (
+                            <span className={`drill-tag-badge difficulty-tag ${post.outcome === 'Offer' ? 'diff-easy' : 'diff-medium'}`}>
+                              {post.outcome.toUpperCase()}
+                            </span>
+                          )}
+                          {post.postType && post.postType !== 'question' && (
+                            <span className="drill-tag-badge category-tag">{post.postType.toUpperCase()}</span>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Content Column */}
-                      <div className="thread-main-column">
-                        <div className="thread-header-row">
-                          <div className="thread-user-info">
-                            <span className="thread-user-avatar">
-                              {post.author.slice(0, 1).toUpperCase()}
-                            </span>
-                            <div className="thread-user-titles">
-                              <span className="thread-user-name">{post.author}</span>
-                              <span className="thread-user-role">
-                                {post.role}
-                              </span>
-                            </div>
-                          </div>
+                      {post.title && (
+                        <h3 className="thread-title">{post.title}</h3>
+                      )}
 
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            {post.company && (
-                              <span className="drill-tag-badge company-tag">
-                                {post.company}
-                              </span>
-                            )}
-                            {post.outcome && (
-                              <span className={`drill-tag-badge difficulty-tag ${post.outcome === 'Offer' ? 'diff-easy' : 'diff-medium'}`}>
-                                {post.outcome.toUpperCase()}
-                              </span>
-                            )}
-                            {post.postType && post.postType !== 'question' && (
-                              <span className="drill-tag-badge">
-                                {post.postType.toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                      <p className="thread-body-text">{post.message}</p>
 
-                        {post.title && (
-                          <h3 className="thread-title">{post.title}</h3>
-                        )}
+                      <div className="thread-badges-row">
+                        {post.tags?.map(tag => (
+                          <span key={tag} className="tag-badge">#{tag}</span>
+                        ))}
+                      </div>
 
-                        <p className="thread-body-text">{post.message}</p>
-
-                        <div className="thread-badges-row">
-                          {post.tags?.map(tag => (
-                            <span key={tag} className="thread-tag-badge">#{tag}</span>
-                          ))}
-                        </div>
-
-                        {/* Action Row */}
-                        <div className="thread-actions-bar">
-                          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                            <button
-                              className={`thread-action-pill ${isExpanded ? 'active' : ''}`}
-                              onClick={() => toggleReplies(post.id)}
-                            >
-                              <MessageCircle size={13} />
-                              <span>{repliesList.length} {repliesList.length === 1 ? 'Reply' : 'Replies'}</span>
-                            </button>
-
-                            <button
-                              className={`thread-action-pill ${isHelpful ? 'active' : ''}`}
-                              onClick={() => toggleHelpful(post.id)}
-                            >
-                              <ThumbsUp size={13} />
-                              <span>{(post.helpfulCount || 0) + (isHelpful ? 1 : 0)} Helpful</span>
-                            </button>
-
-                            <button
-                              className={`thread-action-pill ${isSaved ? 'active' : ''}`}
-                              onClick={() => toggleSaved(post.id)}
-                            >
-                              <Bookmark size={13} fill={isSaved ? 'currentColor' : 'none'} />
-                              <span>{isSaved ? 'Saved' : 'Save'}</span>
-                            </button>
-                          </div>
+                      {/* Action Row */}
+                      <div className="thread-actions-bar">
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                          <button
+                            className={`thread-action-btn ${isExpanded ? 'active' : ''}`}
+                            onClick={() => toggleReplies(post.id)}
+                          >
+                            <MessageCircle size={14} />
+                            <span>{repliesList.length} {repliesList.length === 1 ? 'Reply' : 'Replies'}</span>
+                          </button>
 
                           <button
-                            className="thread-action-pill"
-                            onClick={() => toggleReplies(post.id)}
-                            style={{ background: 'var(--ink)', color: '#ffffff' }}
+                            className={`thread-action-btn ${isHelpful ? 'active' : ''}`}
+                            onClick={() => toggleHelpful(post.id)}
                           >
-                            {isExpanded ? 'Hide Replies' : '+ Reply to Thread'}
+                            <ThumbsUp size={13} />
+                            <span>{(post.helpfulCount || 0) + (isHelpful ? 1 : 0)} Helpful</span>
+                          </button>
+
+                          <button
+                            className={`thread-action-btn ${isSaved ? 'active' : ''}`}
+                            onClick={() => toggleSaved(post.id)}
+                          >
+                            <Bookmark size={13} fill={isSaved ? 'currentColor' : 'none'} />
+                            <span>{isSaved ? 'Saved' : 'Save'}</span>
                           </button>
                         </div>
 
-                        {/* Nested Replies Drawer */}
-                        {isExpanded && (
-                          <div className="nested-replies-tray">
-                            {repliesList.length > 0 ? (
-                              repliesList.map((rep: CommunityReply) => (
-                                <div key={rep.id} className="nested-reply-item">
-                                  <div className="nested-reply-header">
-                                    <span className="nested-reply-author">{rep.author}</span>
-                                    <span className="nested-reply-role">{rep.role}</span>
-                                  </div>
-                                  <p className="nested-reply-text">{rep.message}</p>
-                                </div>
-                              ))
-                            ) : (
-                              <p style={{ margin: 0, font: '500 12px Manrope, sans-serif', color: 'var(--ink)' }}>
-                                No replies yet. Be the first to answer!
-                              </p>
-                            )}
-
-                            {/* Inline Reply Composer */}
-                            <div className="nested-reply-composer">
-                              <input
-                                className="nested-reply-input"
-                                placeholder={`Reply to ${post.author}...`}
-                                value={replyDrafts[post.id] || ''}
-                                onChange={e => setReplyDrafts({ ...replyDrafts, [post.id]: e.target.value })}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') submitReply(post.id);
-                                }}
-                              />
-                              <button
-                                className="brand-button"
-                                onClick={() => submitReply(post.id)}
-                                disabled={!(replyDrafts[post.id] || '').trim()}
-                                style={{ padding: '8px 16px', fontSize: 10.5, background: 'var(--mint)', color: 'var(--ink)', border: '1px solid var(--ink)', fontWeight: 700 }}
-                              >
-                                REPLY
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                        <button
+                          className="thread-action-btn"
+                          onClick={() => toggleReplies(post.id)}
+                          style={{ color: 'var(--ink)', fontWeight: 700 }}
+                        >
+                          {isExpanded ? 'Hide Replies' : '+ Reply to Thread'}
+                        </button>
                       </div>
+
+                      {/* Nested Replies Drawer */}
+                      {isExpanded && (
+                        <div className="nested-replies-tray">
+                          {repliesList.length > 0 ? (
+                            repliesList.map((rep: CommunityReply) => (
+                              <div key={rep.id} className="nested-reply-item">
+                                <div className="nested-reply-header">
+                                  <span className="nested-reply-author">{rep.author}</span>
+                                  <span className="nested-reply-role">{rep.role}</span>
+                                </div>
+                                <p className="nested-reply-text">{rep.message}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p style={{ margin: 0, font: '400 11.5px Manrope, sans-serif', color: 'var(--muted)' }}>
+                              No replies yet. Be the first to answer!
+                            </p>
+                          )}
+
+                          {/* Inline Reply Composer */}
+                          <div className="nested-reply-composer">
+                            <input
+                              className="nested-reply-input"
+                              placeholder={`Reply to ${post.author}...`}
+                              value={replyDrafts[post.id] || ''}
+                              onChange={e => setReplyDrafts({ ...replyDrafts, [post.id]: e.target.value })}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') submitReply(post.id);
+                              }}
+                            />
+                            <button
+                              className="brand-button"
+                              onClick={() => submitReply(post.id)}
+                              disabled={!(replyDrafts[post.id] || '').trim()}
+                              style={{ padding: '6px 14px', fontSize: 10 }}
+                            >
+                              REPLY
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </article>
                 );
               })
             )}
           </div>
-        </div>
-      </section>
-  </main>
-);
+        </section>
+      </div>
+    </main>
+  );
 }
 
 function SiteFooter({ onNavigate }: { onNavigate: (page: Page) => void }) {
