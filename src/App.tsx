@@ -2107,6 +2107,11 @@ function Bank() {
               </div>
 
               <div className="code-editor-area">
+                <div className="code-editor-gutter" aria-hidden="true">
+                  {Array.from({ length: Math.max(16, code.split('\n').length) }, (_, i) => (
+                    <span key={i + 1} className="gutter-num">{i + 1}</span>
+                  ))}
+                </div>
                 <textarea
                   className="code-editor-textarea"
                   value={code}
@@ -2122,31 +2127,45 @@ function Bank() {
                 <div className="console-nav-strip">
                   <div className="console-tabs-group">
                     <button className={`console-tab-btn ${activeConsoleTab === 'output' ? 'active' : ''}`} onClick={() => setActiveConsoleTab('output')}>
-                      <Terminal size={11} style={{ display: 'inline', marginRight: 4 }} /> CONSOLE OUTPUT
+                      <Terminal size={12} style={{ display: 'inline', marginRight: 5 }} /> CONSOLE OUTPUT
                     </button>
                     {executionStats && (
                       <button className={`console-tab-btn ${activeConsoleTab === 'testcases' ? 'active' : ''}`} onClick={() => setActiveConsoleTab('testcases')}>
-                        TEST CASES ({executionStats.passed}/{executionStats.total})
+                        <CheckCircle2 size={12} color="#4ade80" style={{ display: 'inline', marginRight: 5 }} /> TESTCASES ({executionStats.passed}/{executionStats.total})
                       </button>
                     )}
                   </div>
                   {executionStats && (
                     <span className={`console-status-pill ${executionStats.status === 'ACCEPTED' ? 'success' : 'error'}`}>
-                      {executionStats.status} ({executionStats.runtime})
+                      {executionStats.status} • {executionStats.runtime}
                     </span>
                   )}
                 </div>
 
                 <div className="console-output-scroll">
                   {activeConsoleTab === 'output' && (
-                    <pre className="console-pre-output">{output || '// Run code or submit to view sandbox execution output and testcase results.'}</pre>
+                    <pre className="console-pre-output">{output || '// Click "Run Code" or "Submit" to test your solution against input test cases.'}</pre>
                   )}
                   {activeConsoleTab === 'testcases' && executionStats && (
-                    <div style={{ font: "500 12px 'DM Mono', monospace", color: '#d1fae5', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div><b>STATUS:</b> {executionStats.status}</div>
-                      <div><b>RUNTIME:</b> {executionStats.runtime}</div>
-                      <div><b>MEMORY CONSUMPTION:</b> {executionStats.memory}</div>
-                      <div><b>TEST CASES PASSED:</b> {executionStats.passed} / {executionStats.total}</div>
+                    <div className="testcase-stats-panel">
+                      <div className="testcase-metric-row">
+                        <div className="metric-box">
+                          <span className="m-label">VERDICT</span>
+                          <b className={`m-val ${executionStats.status === 'ACCEPTED' ? 'pass' : 'fail'}`}>{executionStats.status}</b>
+                        </div>
+                        <div className="metric-box">
+                          <span className="m-label">SPEED / RUNTIME</span>
+                          <b className="m-val">{executionStats.runtime}</b>
+                        </div>
+                        <div className="metric-box">
+                          <span className="m-label">MEMORY FOOTPRINT</span>
+                          <b className="m-val">{executionStats.memory}</b>
+                        </div>
+                        <div className="metric-box">
+                          <span className="m-label">TESTCASES</span>
+                          <b className="m-val">{executionStats.passed} / {executionStats.total} Passed</b>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
