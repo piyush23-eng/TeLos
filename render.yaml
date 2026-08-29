@@ -12,3 +12,7 @@ services:
         value: 8787
       - key: AUTH_SESSION_SECRET
         generateValue: true
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
