@@ -47,7 +47,6 @@ flowchart TD
         Drills["Practice Drills IDE (Python / Java / C++ / JS)"]
         Proctor["Proctored Assessment (MediaPipe Attention & Focus)"]
         Community["Community Discuss (Debriefs & Offers)"]
-        AutoDemo["Auto-Demo Engine (Self-Running Tour & Voice Narration)"]
     end
 
     subgraph Server ["Backend Gateway (Node.js + Express + TypeScript)"]
@@ -167,15 +166,6 @@ For recruiting teams and candidates seeking verified skill validation:
 * **Focus & Attention Tracking**: Head pose and gaze tracking via MediaPipe vision tasks.
 * **Clipboard Protection**: Intercepts unauthorized copy/cut/paste attempts.
 * **Immutable Signal Audit**: Logs focus-loss events and window blurs for verifiable assessment reports.
-
----
-
-## 🎬 Hands-Free Auto-Demo Mode
-
-Click the **`🎬 AUTO-DEMO MODE`** button in the top navigation:
-* Automatically cycles through all platform views in sequence (Dashboard ➔ Studio ➔ Debrief ➔ 47 Companies ➔ Drills ➔ Discuss ➔ Analytics).
-* Speaks professional narration aloud via Web Speech Synthesis while rendering subtitle captions at the bottom.
-* Allows you to press **`Cmd + Shift + 5`** to record high-impact demo videos hands-free!
 
 ---
 
