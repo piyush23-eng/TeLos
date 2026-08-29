@@ -1760,15 +1760,15 @@ function Bank() {
   const codeTemplate = (problem: any, lang: CodeLanguage) => {
     const header = `// ${problem?.title || 'Problem'}\n// ${problem?.description || ''}\n\n`;
     if (lang === 'python') {
-      return `${header}def solve(input_data):\n    # Write your solution here\n    return None\n\nif __name__ == "__main__":\n    print(solve(None))\n`;
+      return `${header}def solve(input_data):\n    # Write your optimal O(N) solution here\n    result = []\n    return result\n\nif __name__ == "__main__":\n    print(solve(None))\n`;
     }
     if (lang === 'cpp') {
-      return `${header}#include <bits/stdc++.h>\nusing namespace std;\n\nint solve() {\n    // Write your solution here\n    return 0;\n}\n\nint main() {\n    cout << solve() << endl;\n    return 0;\n}\n`;
+      return `${header}#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint solve() {\n    // Write your optimal solution here\n    return 0;\n}\n\nint main() {\n    cout << solve() << endl;\n    return 0;\n}\n`;
     }
     if (lang === 'java') {
       return `${header}public class Solution {\n    public static void main(String[] args) {\n        System.out.println("Solution executed.");\n    }\n}\n`;
     }
-    return `${header}function solve(input) {\n    // Write your solution here\n    return input;\n}\n\nconsole.log(solve(undefined));\n`;
+    return `${header}function solve(input) {\n    // Write your optimal solution here\n    return input;\n}\n\nconsole.log(solve(undefined));\n`;
   };
 
   const openProblem = (problem: any) => {
@@ -1810,7 +1810,7 @@ function Bank() {
   const runCode = async () => {
     if (!selected) return;
     setRunning(true);
-    setOutput('Running testcases in sandbox...');
+    setOutput('Running solution against test sandbox...');
     try {
       const result = await fetch(`${API}/api/run`, {
         method: 'POST',
@@ -1818,7 +1818,7 @@ function Bank() {
         body: JSON.stringify({ code, language, problemId: selected.id }),
       });
       const payload = await result.json();
-      setOutput(payload.output || 'Solution executed successfully.');
+      setOutput(payload.output || 'Solution executed successfully with no errors.');
     } catch {
       setOutput('Runner service temporarily unavailable.');
     } finally {
@@ -1826,64 +1826,152 @@ function Bank() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const nextCode = code.substring(0, start) + '  ' + code.substring(end);
+      setCode(nextCode);
+      setTimeout(() => {
+        target.selectionStart = target.selectionEnd = start + 2;
+      }, 0);
+    }
+  };
+
   return (
     <main className="shell">
       <section className="studio-head">
         <div>
-          <p className="kicker">04 / REAL PRACTICE, NOT RANDOM DRILLS</p>
-          <h1>DRILL THE<br /><span>REAL SHAPE.</span></h1>
+          <p className="kicker">04 / LIVE CODING &amp; PRACTICE DRILLS</p>
+          <h1>PRACTICE<br /><span>WORKBENCH.</span></h1>
         </div>
         <div className="session-meta">
           <b>{problems.length} CURATED DRILLS</b>
-          <span>FULL PROMPTS + CONSTRAINTS</span>
+          <span>MULTI-LANGUAGE SANDBOX</span>
           <span>COMPANY-ALIGNED DSA</span>
         </div>
       </section>
 
-      <section className="prep-shell">
-        {/* Left Drill Selector Sidebar */}
-        <div className="prep-sidebar">
-          <div className="panel-label">
-            <span>SELECT A DRILL</span>
-            <span>{companyFilter === 'all' ? 'ALL COMPANIES' : companyFilter.toUpperCase()}</span>
-          </div>
-
-          <div className="pill-row">
-            {companyFilters.map(filter => (
-              <button
-                key={filter}
-                className={`pill-chip ${companyFilter === filter ? 'active' : ''}`}
-                onClick={() => setCompanyFilter(filter)}
-              >
-                {filter === 'all' ? 'All companies' : filter}
-              </button>
-            ))}
-          </div>
-
-          <div className="prep-list">
-            {filteredProblems.map((p, i) => (
-              <button
-                key={p.id}
-                className={`prep-card ${selected?.id === p.id ? 'selected' : ''}`}
-                onClick={() => openProblem(p)}
-              >
-                <div className="prep-card-top">
-                  <span className="index-badge">{String(i + 1).padStart(2, '0')}</span>
-                  <div>
-                    <strong>{p.title}</strong>
-                    <small>{p.difficulty} • {p.company} • {p.category}</small>
-                  </div>
-                </div>
-                <span className="arrow-pill"><ArrowRight size={16} /></span>
-              </button>
-            ))}
-          </div>
+      {/* Top Filter & Drill Switcher Bar */}
+      <div className="drill-selector-dock">
+        <div className="pill-row" style={{ margin: 0 }}>
+          {companyFilters.map(filter => (
+            <button
+              key={filter}
+              className={`pill-chip ${companyFilter === filter ? 'active' : ''}`}
+              onClick={() => {
+                setCompanyFilter(filter);
+                const nextList = filter === 'all' ? problems : problems.filter(p => p.company === filter);
+                if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
+                  openProblem(nextList[0]);
+                }
+              }}
+            >
+              {filter === 'all' ? 'All companies' : filter}
+            </button>
+          ))}
         </div>
 
-        {/* Right Drill Workspace */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ font: "500 10px 'DM Mono', monospace", color: 'var(--muted, #686771)' }}>
+            SELECT DRILL:
+          </span>
+          <select
+            className="drill-picker-select"
+            value={selected?.id || ''}
+            onChange={e => {
+              const target = problems.find(p => p.id === e.target.value);
+              if (target) openProblem(target);
+            }}
+          >
+            {filteredProblems.map((p, idx) => (
+              <option key={p.id} value={p.id}>
+                {String(idx + 1).padStart(2, '0')}. {p.title} ({p.difficulty} • {p.company})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Main Split: Left Coding Workspace, Right Question Screen */}
+      <section className="drill-workspace-shell">
+        {/* LEFT COLUMN: Coding Screen / Workspace */}
+        <div className="prep-detail">
+          <article className="detail-card code-zone-editor">
+            <div className="panel-label">
+              <span>
+                <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
+                WORKSPACE • {language.toUpperCase()}
+              </span>
+              <span>AUTO-INDENT (TAB: 2 SPACES)</span>
+            </div>
+
+            <div className="code-toolbar">
+              <label>
+                LANGUAGE
+                <select
+                  value={language}
+                  onChange={e => {
+                    const next = e.target.value as CodeLanguage;
+                    setLanguage(next);
+                    if (selected) {
+                      setCode(codeTemplate(selected, next));
+                      setOutput('Starter reset for ' + next.toUpperCase() + '.');
+                    }
+                  }}
+                >
+                  <option value="python">Python 3</option>
+                  <option value="js">JavaScript (Node.js)</option>
+                  <option value="cpp">C++</option>
+                  <option value="java">Java</option>
+                </select>
+              </label>
+              <span className="runtime-label">
+                {language === 'python'
+                  ? 'Python 3.11 Sandboxed'
+                  : language === 'js'
+                  ? 'Node.js 20 Sandboxed'
+                  : language === 'cpp'
+                  ? 'GCC C++20 Sandbox'
+                  : 'OpenJDK 17 Sandbox'}
+              </span>
+            </div>
+
+            <textarea
+              className="code-input"
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              onKeyDown={handleKeyDown}
+              spellCheck={false}
+              placeholder="// Write your solution here..."
+            />
+
+            <div className="action-row" style={{ padding: '14px 18px', borderTop: '1px solid var(--ink)' }}>
+              <button className="brand-button" onClick={runCode} disabled={running}>
+                <Play size={16} fill="currentColor" /> {running ? 'RUNNING SOLUTION...' : 'RUN SOLUTION'}
+              </button>
+              <button className="ghost-button" onClick={() => selected && openProblem(selected)}>
+                <RotateCcw size={13} style={{ display: 'inline', marginRight: 4 }} /> RESET STARTER
+              </button>
+            </div>
+
+            <div className="panel-label" style={{ borderTop: '1px solid var(--ink)' }}>
+              <span>SANDBOX EXECUTION CONSOLE</span>
+              <span>{running ? 'RUNNING' : 'IDLE'}</span>
+            </div>
+            <pre className="output-box" style={{ margin: 0, border: 0 }}>
+              {output || '// Click "RUN SOLUTION" to test your code in the sandbox.'}
+            </pre>
+          </article>
+        </div>
+
+        {/* RIGHT COLUMN: Question & Specifications */}
         <div className="prep-detail">
           {selected ? (
             <>
+              {/* Question Hero Card */}
               <article className="detail-card hero-card drill-prompt-card">
                 <div className="detail-header">
                   <div>
@@ -1896,19 +1984,20 @@ function Bank() {
                 <div className="problem-io">
                   <div>
                     <strong>INPUT</strong>
-                    <span>{selected.details?.input || 'Use the input described in the prompt.'}</span>
+                    <span>{selected.details?.input || 'Function parameters described above.'}</span>
                   </div>
                   <div>
                     <strong>OUTPUT</strong>
-                    <span>{selected.details?.output || 'Return the requested result.'}</span>
+                    <span>{selected.details?.output || 'Expected return value.'}</span>
                   </div>
                   <div>
                     <strong>TARGET</strong>
-                    <span>{selected.details?.expectedComplexity || 'Optimal practical time and auxiliary space complexity.'}</span>
+                    <span>{selected.details?.expectedComplexity || 'Optimal time and auxiliary space.'}</span>
                   </div>
                 </div>
               </article>
 
+              {/* Examples & Constraints Card */}
               <article className="detail-card">
                 <div className="panel-label">
                   <span>EXAMPLES + CONSTRAINTS</span>
@@ -1941,63 +2030,12 @@ function Bank() {
                   </div>
                 </div>
               </article>
-
-              <article className="detail-card">
-                <div className="panel-label">
-                  <span>WORKSPACE</span>
-                  <span>RUN YOUR SOLUTION</span>
-                </div>
-                <div className="code-toolbar">
-                  <label>
-                    LANGUAGE
-                    <select
-                      value={language}
-                      onChange={e => {
-                        const next = e.target.value as CodeLanguage;
-                        setLanguage(next);
-                        setCode(codeTemplate(selected, next));
-                        setOutput('Starter reset for ' + next.toUpperCase() + '.');
-                      }}
-                    >
-                      <option value="python">Python 3</option>
-                      <option value="js">JavaScript (Node.js)</option>
-                      <option value="cpp">C++</option>
-                      <option value="java">Java</option>
-                    </select>
-                  </label>
-                  <span className="runtime-label">
-                    {language === 'python'
-                      ? 'Python 3 runtime'
-                      : language === 'js'
-                      ? 'Node.js runtime'
-                      : language === 'cpp'
-                      ? 'C++ compile + run'
-                      : 'Java compile + run'}
-                  </span>
-                </div>
-                <textarea
-                  className="code-input"
-                  value={code}
-                  onChange={e => setCode(e.target.value)}
-                  spellCheck={false}
-                  placeholder="// Write your solution here..."
-                />
-                <div className="action-row">
-                  <button className="brand-button" onClick={runCode} disabled={running}>
-                    <Play size={16} /> {running ? 'RUNNING...' : 'RUN SOLUTION'}
-                  </button>
-                  <button className="ghost-button" onClick={() => openProblem(selected)}>
-                    RESET STARTER
-                  </button>
-                </div>
-                <pre className="output-box">{output || '// Output will appear here after running your solution.'}</pre>
-              </article>
             </>
           ) : (
             <article className="detail-card empty-state-card">
               <p className="kicker">READY</p>
-              <h2>Pick a detailed drill to start solving.</h2>
-              <p>Every drill includes a full prompt, I/O contract, constraints, examples, an interview hint, and a runnable workspace.</p>
+              <h2>Select a drill to view specifications.</h2>
+              <p>Every drill includes prompt, I/O specifications, constraints, examples, and interview hints.</p>
             </article>
           )}
         </div>

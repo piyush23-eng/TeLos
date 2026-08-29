@@ -53,7 +53,50 @@
 .detail-card{animation:card-rise .36s cubic-bezier(.2,.8,.2,1) both}.detail-card:nth-child(2){animation-delay:.05s}.detail-card:nth-child(3){animation-delay:.1s}
 @keyframes card-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes context-reveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:920px){.context-dock::before{display:none}.voice-box{grid-template-columns:58px minmax(0,1fr)!important;margin:0!important}.voice-box .voice-controls,.problem-io,.problem-details-grid{grid-template-columns:1fr!important}.voice-box .speak-button{grid-column:1/-1!important}.voice-box>button:first-child{grid-row:span 1!important}.problem-io div{border-right:0;border-bottom:1px solid var(--line)}.problem-io div:last-child{border-bottom:0}}
+/* Drill Workspace Shell (Left Editor, Right Question) */
+.drill-selector-dock {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--ink, #101018);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.drill-picker-select {
+  border: 1px solid var(--ink, #101018);
+  background: #ffffff;
+  padding: 7px 12px;
+  font: 600 11px 'DM Mono', monospace;
+  color: var(--ink, #101018);
+  cursor: pointer;
+}
+.drill-workspace-shell {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .drill-workspace-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+.code-zone-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+.code-zone-editor .code-input {
+  min-height: 360px;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  padding: 16px !important;
+}
 
 /* ========================================================
    REAL AI VIDEO INTERVIEW ROOM STYLES
