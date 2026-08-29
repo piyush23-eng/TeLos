@@ -2017,10 +2017,10 @@ function Bank() {
         </div>
       </div>
 
-      {/* Main Split: Left Question, Right Coding */}
+      {/* Main Split: Left Question, Right Coding (50/50 Equal Columns) */}
       <section className="drill-workspace-shell">
         {/* LEFT COLUMN: Question & Specifications */}
-        <div className="prep-detail">
+        <div className="drill-column drill-left-pane">
           {selected ? (
             <>
               {/* Question Hero Card */}
@@ -2093,7 +2093,7 @@ function Bank() {
         </div>
 
         {/* RIGHT COLUMN: Coding Screen / Workspace */}
-        <div className="prep-detail">
+        <div className="drill-column drill-right-pane">
           <article className="detail-card code-zone-editor">
             <div className="panel-label">
               <span>
@@ -2143,7 +2143,7 @@ function Bank() {
               placeholder="// Write your solution here..."
             />
 
-            <div className="action-row" style={{ padding: '14px 18px', borderTop: '1px solid var(--ink)' }}>
+            <div className="action-row" style={{ padding: '14px 18px', borderTop: '1px solid var(--ink)', margin: 0 }}>
               <button className="brand-button" onClick={runCode} disabled={running}>
                 <Play size={16} fill="currentColor" /> {running ? 'RUNNING...' : 'RUN SOLUTION'}
               </button>
@@ -2152,13 +2152,16 @@ function Bank() {
               </button>
             </div>
 
-            <div className="panel-label" style={{ borderTop: '1px solid var(--ink)' }}>
-              <span>CONSOLE</span>
-              <span>{running ? 'RUNNING' : 'IDLE'}</span>
+            <div className="output-pane">
+              <div className="panel-label" style={{ borderTop: '1px solid var(--ink)' }}>
+                <span>
+                  <Terminal size={12} style={{ display: 'inline', marginRight: 6 }} />
+                  SANDBOX CONSOLE
+                </span>
+                <span>{running ? 'EXECUTING...' : 'IDLE'}</span>
+              </div>
+              <pre className="output-box">{output || '// Click "RUN SOLUTION" to test your code against the sandbox.'}</pre>
             </div>
-            <pre className="output-box" style={{ margin: 0, border: 0 }}>
-              {output || '// Click "RUN SOLUTION" to test your code.'}
-            </pre>
           </article>
         </div>
       </section>

@@ -550,10 +550,69 @@
 
 .drill-workspace-shell {
   display: grid;
-  grid-template-columns: 1fr 1.15fr;
-  gap: 20px;
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
 }
+
+.drill-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.drill-left-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.drill-right-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.code-zone-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.code-zone-editor .code-input {
+  min-height: 380px;
+  flex: 1;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  padding: 16px !important;
+  box-sizing: border-box;
+}
+
+.output-pane {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--ink, #101018);
+  margin-top: auto;
+}
+
+.output-pane .output-box {
+  margin-top: 0;
+  border: 0;
+  min-height: 130px;
+  max-height: 220px;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
 @media (max-width: 980px) {
   .drill-workspace-shell {
     grid-template-columns: 1fr;
@@ -568,21 +627,6 @@
   .drill-active-select-wrapper {
     max-width: 100%;
   }
-}
-
-.code-zone-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  overflow: hidden;
-  position: sticky;
-  top: 24px;
-}
-.code-zone-editor .code-input {
-  min-height: 360px;
-  font-size: 13px !important;
-  line-height: 1.6 !important;
-  padding: 16px !important;
 }
 
 
