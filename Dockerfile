@@ -1,5 +1,6 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV DATABASE_URL="file:./dev.db"
 COPY package*.json ./
 COPY prisma ./prisma
 RUN npm ci
@@ -10,6 +11,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8787
+ENV DATABASE_URL="file:./dev.db"
 
 RUN apk add --no-cache python3 g++ gcc openjdk17
 
