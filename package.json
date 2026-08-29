@@ -14,6 +14,7 @@
     "start": "electron .",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "test": "vitest run",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
@@ -53,6 +54,7 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
+    "vitest": "^3.2.7",
     "wait-on": "^8.0.1"
   }
 }

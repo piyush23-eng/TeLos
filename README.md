@@ -13,6 +13,7 @@
 
 **Real Systems. Deep Trade-Offs. Multi-Language Execution. Zero Canned Trivia.**
 
+[![CI](https://github.com/piyush23-eng/TeLos/actions/workflows/ci.yml/badge.svg)](https://github.com/piyush23-eng/TeLos/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg?style=flat-square)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.4-646cff.svg?style=flat-square)](https://vitejs.dev/)
@@ -99,27 +100,42 @@ flowchart TD
 * **Barge-In Interruptibility (`✋ INTERRUPT ALEX`)**: Cut audio playback at any millisecond to naturally clarify assumptions or pivot your explanation.
 * **Acoustic Voice Orb**: High-fidelity 3D/canvas multi-layer visualizer indicating real-time audio energy and speaking states.
 
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│  LIVE STUDIO • ALEX AI (STAFF INTERVIEWER)                         00:14:22 [LIVE]     │
+├────────────────────────────────────────┬───────────────────────────────────────────────┤
+│  [CANDIDATE WEBCAM STREAM]             │  [ALEX AI ACOUSTIC VOICE ORB]                 │
+│  Resolution: 1080p WebRTC              │  Speaking: "Walk me through atomic token      │
+│  Eye-Contact Tracking: 94%             │  decrements under multi-region replication."  │
+├────────────────────────────────────────┴───────────────────────────────────────────────┤
+│  LIVE TELEMETRY HUD: 148 WPM (Optimal) │ Filler Density: 0.8% │ Talk-Time: 68% Cand.   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
 ### 2. 📊 Live Speech Telemetry HUD
-* **Speaking Pace (WPM)**: Live words-per-minute meter categorized into:
-  * `Optimal (130–160 WPM)`
-  * `Deliberate / Slow (<115 WPM)`
-  * `Fast / Rushed (>170 WPM)`
+* **Speaking Pace (WPM)**: Live words-per-minute meter categorized into `Optimal (130–160 WPM)`, `Deliberate (<115 WPM)`, and `Fast (>170 WPM)`.
 * **Vocal Filler Decay**: Real-time identification and tallying of verbal ticks (*"um"*, *"like"*, *"basically"*, *"you know"*).
 * **Talk-to-Listen Ratio**: Balances candidate explanation vs interviewer prompts.
 
 ### 3. 📈 6-Dimension Calibration Debrief & Scorecard
 * **Hiring Verdict Badge**: Instant recommendation (*Strong Hire*, *Hire*, *Leaning Hire*, *No Hire*) with rationale.
-* **6-Gauge Radar Scorecard**:
-  1. *Overall Readiness*
-  2. *Technical Depth & Rigor*
-  3. *Systems Architecture & Concurrency*
-  4. *Communication & STAR Structure*
-  5. *Edge Cases & Failure Recovery*
-  6. *Speaking Cadence & Delivery*
+* **6-Gauge Radar Scorecard**: *Overall Readiness*, *Technical Depth*, *Systems Architecture*, *Communication*, *Edge Cases*, and *Speaking Cadence*.
 * **"What You Said" vs "Ideal High-Bar Response"**: Side-by-side diff showing how to elevate junior answers into Staff-level architectural reasoning.
 * **Anti-Pattern Traps**: Flags vague buzzwords, unaddressed single points of failure, or premature optimizations.
 * **48-Hour Action Roadmap**: Prioritized 3-day recovery plan with target practice problems.
 * **1-Click Markdown Export**: Download session scorecards directly as `.md`.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│  6-DIMENSION CALIBRATION SCORECARD                    VERDICT: STRONG HIRE (84%)       │
+├──────────────────────┬──────────────────────┬──────────────────────┬───────────────────┤
+│  Readiness: 84%      │  Tech Depth: 80%     │  System Arch: 82%    │  Cadence: 90%     │
+├──────────────────────┴──────────────────────┴──────────────────────┴───────────────────┤
+│  "WHAT YOU SAID" vs "HIGH-BAR STAFF RESPONSE"                                          │
+│  [-] "We just put Kafka in front because it scales well."                              │
+│  [+] "We partitioned Kafka on user_id to ensure FIFO ordering with exponential retries."│
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 

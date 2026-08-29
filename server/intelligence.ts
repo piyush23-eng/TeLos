@@ -1034,3 +1034,6 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
     return { category, confidence: 0.91 };
   }
 }
+
+export const intelligence = new IntelligenceProvider();
+
