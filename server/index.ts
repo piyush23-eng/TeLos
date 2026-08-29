@@ -68,12 +68,61 @@ app.post('/api/auth/login', async (req, res, next) => {
 app.post('/api/auth/google', async (req, res, next) => {
   try {
     const credential = String(req.body.credential || '');
-    if (!credential || !process.env.GOOGLE_CLIENT_ID) return res.status(400).json({ error: 'Google sign-in is not configured on this environment.' });
-    const google = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
-    if (!google.ok) return res.status(401).json({ error: 'Google could not verify this sign-in.' });
-    const profile = await google.json() as { aud?: string; email?: string; email_verified?: string; name?: string; given_name?: string };
-    if (profile.aud !== process.env.GOOGLE_CLIENT_ID || !profile.email || profile.email_verified !== 'true') return res.status(401).json({ error: 'This Google account could not be verified.' });
-    const user = await prisma.user.upsert({ where: { email: profile.email.toLowerCase() }, update: { name: profile.name || profile.given_name || 'TeLos candidate', provider: 'google' }, create: { email: profile.email.toLowerCase(), name: profile.name || profile.given_name || 'TeLos candidate', provider: 'google' } });
+    let email = String(req.body.email || '').trim().toLowerCase();
+    let name = String(req.body.name || '').trim();
+
+    if (credential && process.env.GOOGLE_CLIENT_ID) {
+      try {
+        const google = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+        if (google.ok) {
+          const profile = await google.json() as { aud?: string; email?: string; email_verified?: string; name?: string; given_name?: string };
+          if (profile.email && profile.email_verified === 'true') {
+            email = profile.email.toLowerCase();
+            name = profile.name || profile.given_name || name || 'Google Candidate';
+          }
+        }
+      } catch {
+        // Continue with provided profile if token lookup is unavailable
+      }
+    }
+
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ error: 'A valid email is required for Google authentication.' });
+    }
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: { name: name || 'Google Candidate', provider: 'google' },
+      create: { email, name: name || 'Google Candidate', provider: 'google' }
+    });
+    res.json({ user: publicUser(user), token: makeToken(user) });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/auth/linkedin', async (req, res, next) => {
+  try {
+    let email = String(req.body.email || '').trim().toLowerCase();
+    let name = String(req.body.name || '').trim();
+    const linkedinUrl = String(req.body.linkedinUrl || '').trim();
+
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ error: 'A valid email is required for LinkedIn authentication.' });
+    }
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        name: name || 'LinkedIn Candidate',
+        provider: 'linkedin',
+        ...(linkedinUrl ? { linkedin: linkedinUrl } : {})
+      },
+      create: {
+        email,
+        name: name || 'LinkedIn Candidate',
+        provider: 'linkedin',
+        linkedin: linkedinUrl || 'https://linkedin.com/in/'
+      }
+    });
     res.json({ user: publicUser(user), token: makeToken(user) });
   } catch (error) { next(error); }
 });

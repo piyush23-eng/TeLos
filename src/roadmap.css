@@ -4060,3 +4060,46 @@ body.dark-theme .collapsible-tag {
   color: #f4f2fa;
 }
 
+/* Social Auth Buttons (Google & LinkedIn) */
+.social-auth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+.social-auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid var(--ink, #101018);
+  background: var(--paper, #ffffff);
+  color: var(--ink, #101018);
+  font: 700 11px Manrope, sans-serif;
+  cursor: pointer;
+  border-radius: 0;
+  transition: all 0.15s ease;
+}
+.social-auth-btn:hover {
+  background: #f4f2ea;
+  box-shadow: 2px 2px 0 var(--ink, #101018);
+}
+.social-auth-btn.google-btn:hover {
+  border-color: #4285f4;
+}
+.social-auth-btn.linkedin-btn:hover {
+  border-color: #0a66c2;
+}
+
+body.dark-theme .social-auth-btn {
+  background: #242334;
+  border-color: #4a4862;
+  color: #f4f2fa;
+}
+body.dark-theme .social-auth-btn:hover {
+  background: #2e2c42;
+  box-shadow: 2px 2px 0 #5b587a;
+}
+
+
