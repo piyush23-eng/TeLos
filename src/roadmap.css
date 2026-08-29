@@ -549,230 +549,131 @@
 }
 
 /* ========================================================
-   UNIFIED MASTER WORKBENCH CONSOLE (SINGLE MERGED BOX)
+   DRILL SPLIT WORKSPACE: 100% EQUAL DUAL PANE BOXES
    ======================================================== */
-.unified-workbench-console {
-  background: rgba(255, 255, 255, 0.75);
+.drill-workspace-shell {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+  width: 100%;
+  height: 760px;
+  min-height: 760px;
+  box-sizing: border-box;
+}
+
+.drill-box {
+  background: rgba(255, 255, 255, 0.65);
   border: 1px solid var(--ink, #101018);
   display: flex;
   flex-direction: column;
-  box-shadow: 6px 6px 0 var(--ink, #101018);
-  overflow: hidden;
-  margin-top: 10px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-:root[data-theme='dark'] .unified-workbench-console {
-  background: #191826 !important;
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.6);
-}
-
-/* Master Header Strip */
-.workbench-header-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid var(--ink, #101018);
-  flex-wrap: wrap;
-}
-
-:root[data-theme='dark'] .workbench-header-bar {
-  background: #201f2e;
-}
-
-.workbench-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.workbench-title-group h2 {
-  font: 400 24px/1 'DM Serif Display', serif;
-  letter-spacing: -0.03em;
-  margin: 0;
-  color: var(--ink, #101018);
-}
-
-:root[data-theme='dark'] .workbench-title-group h2 {
-  color: #f4f2fa;
-}
-
-.workbench-header-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* Master Filter & Navigation Toolbar */
-.workbench-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.45);
-  border-bottom: 1px solid var(--ink, #101018);
-  flex-wrap: wrap;
-}
-
-:root[data-theme='dark'] .workbench-toolbar {
-  background: #1d1c2b;
-}
-
-.workbench-filter-section {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  flex: 1;
-  min-width: 0;
-}
-
-.workbench-filter-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.workbench-nav-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* Master Split Body: 50% Left, 50% Right in ONE Box */
-.workbench-workspace-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 720px;
-  height: 720px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Left Pane: Specifications (Scrollable) */
-.workbench-specs-pane {
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--ink, #101018);
   height: 100%;
+  min-height: 100%;
   max-height: 100%;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.35);
+  box-sizing: border-box;
+  box-shadow: 4px 4px 0 rgba(16, 16, 24, 0.06);
 }
 
-:root[data-theme='dark'] .workbench-specs-pane {
-  background: rgba(255, 255, 255, 0.015);
+:root[data-theme='dark'] .drill-box {
+  background: #1a1926 !important;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
 }
 
-.workbench-specs-header {
-  padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.7);
-  border-bottom: 1px solid var(--ink, #101018);
+/* Left Box: Scrollable Question & Specifications */
+.drill-question-box {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font: 700 9px/1 'DM Mono', monospace;
-  letter-spacing: 1px;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
-:root[data-theme='dark'] .workbench-specs-header {
-  background: #201f2e;
-}
-
-.workbench-specs-content {
+.drill-question-scroll {
   padding: 22px;
   overflow-y: auto;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
-.problem-statement-text {
-  font: 400 13.5px/1.7 Manrope, sans-serif;
+.drill-question-hero {
+  border-bottom: 1px solid var(--line, rgba(16, 16, 24, 0.12));
+  padding-bottom: 16px;
+}
+
+.drill-question-hero h2 {
+  font: 400 32px/1.15 'DM Serif Display', serif;
+  letter-spacing: -0.04em;
+  margin: 6px 0 10px;
   color: var(--ink, #101018);
-  margin: 0;
 }
 
-:root[data-theme='dark'] .problem-statement-text {
-  color: #ddd9eb;
+:root[data-theme='dark'] .drill-question-hero h2 {
+  color: #f4f2fa;
 }
 
-/* Right Pane: Code Sandbox & Output Terminal */
-.workbench-sandbox-pane {
+.drill-meta-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* Right Box: Code Zone & Terminal Output */
+.drill-code-box {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 100%;
   overflow: hidden;
-  background: #161520;
 }
 
-.workbench-sandbox-header {
-  padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.7);
-  border-bottom: 1px solid var(--ink, #101018);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font: 700 9px/1 'DM Mono', monospace;
-  letter-spacing: 1px;
-}
-
-:root[data-theme='dark'] .workbench-sandbox-header {
-  background: #201f2e;
-}
-
-.workbench-editor-toolbar {
+.drill-code-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 10px 16px;
-  background: #1b1a26;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid var(--ink, #101018);
+  background: rgba(255, 255, 255, 0.45);
   flex-wrap: wrap;
 }
 
-.workbench-editor-toolbar label {
+:root[data-theme='dark'] .drill-code-toolbar {
+  background: #201f2e;
+}
+
+.drill-code-toolbar label {
   display: flex;
   align-items: center;
   gap: 8px;
   font: 700 9px/1 'DM Mono', monospace;
   letter-spacing: 1px;
-  color: #bbb7c5;
 }
 
-.workbench-editor-toolbar select {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: #242334;
+.drill-code-toolbar select {
+  border: 1px solid var(--ink, #101018);
+  background: #ffffff;
   padding: 6px 10px;
   font: 600 11px Manrope, sans-serif;
-  color: #ffffff;
+  color: var(--ink, #101018);
   cursor: pointer;
 }
 
-.workbench-action-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+:root[data-theme='dark'] .drill-code-toolbar select {
+  background: #242334;
+  color: #f4f2fa;
+  border-color: rgba(244, 242, 250, 0.25);
 }
 
-.workbench-code-editor {
+.drill-code-input {
   display: block;
   width: 100%;
   flex: 1;
-  min-height: 240px;
+  min-height: 260px;
   border: 0 !important;
+  border-radius: 0 !important;
   background: #161520 !important;
   color: #f1ecff !important;
   padding: 16px !important;
@@ -782,30 +683,42 @@
   box-sizing: border-box;
 }
 
-/* Console Section */
-.workbench-console-tray {
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+.drill-action-bar {
   display: flex;
-  flex-direction: column;
-  height: 200px;
-  min-height: 200px;
-  max-height: 200px;
-  background: #12111a;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--ink, #101018);
+  background: rgba(255, 255, 255, 0.45);
 }
 
-.workbench-console-header {
+:root[data-theme='dark'] .drill-action-bar {
+  background: #201f2e;
+}
+
+.drill-console-pane {
+  border-top: 1px solid var(--ink, #101018);
+  display: flex;
+  flex-direction: column;
+  height: 190px;
+  min-height: 190px;
+  max-height: 190px;
+  background: #161520;
+}
+
+.drill-console-header {
   padding: 8px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   justify-content: space-between;
   align-items: center;
   font: 700 8.5px/1 'DM Mono', monospace;
   letter-spacing: 1px;
-  color: #8c899c;
-  background: #0d0c14;
+  color: #bbb7c5;
+  background: #111019;
 }
 
-.workbench-console-output {
+.drill-console-output {
   padding: 12px 16px;
   margin: 0;
   color: #d7f6d1;
@@ -816,24 +729,14 @@
 }
 
 @media (max-width: 980px) {
-  .workbench-workspace-body {
+  .drill-workspace-shell {
     grid-template-columns: 1fr;
     height: auto;
     min-height: auto;
   }
-  .workbench-specs-pane {
-    border-right: 0;
-    border-bottom: 1px solid var(--ink, #101018);
-    height: 520px;
-    max-height: 520px;
-  }
-  .workbench-sandbox-pane {
-    height: 600px;
-    max-height: 600px;
-  }
-  .workbench-toolbar {
-    flex-direction: column;
-    align-items: stretch;
+  .drill-box {
+    height: 650px;
+    max-height: 650px;
   }
 }
 

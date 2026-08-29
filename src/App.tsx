@@ -1882,112 +1882,83 @@ function Bank() {
         </div>
       </section>
 
-      {/* UNIFIED MASTER WORKBENCH CONSOLE (SINGLE MERGED CONTAINER) */}
-      <section className="unified-workbench-console">
-        {/* 1. Header Bar: Problem Name, Company Scope, Difficulty, and Progress Counter */}
-        <div className="workbench-header-bar">
-          <div className="workbench-title-group">
-            <span className="metric-pill" style={{ background: 'var(--ink)', color: '#ffffff' }}>
-              <Code2 size={12} style={{ display: 'inline', marginRight: 5 }} />
-              PRACTICE WORKBENCH
-            </span>
-            <h2>{selected?.title || 'Problem Workspace'}</h2>
-            {selected && (
-              <span className={`drill-tag-badge difficulty-tag diff-${selected.difficulty?.toLowerCase()}`}>
-                {selected.difficulty}
-              </span>
-            )}
+      {/* Modern Brutalist Drill Control Deck */}
+      <div className="drill-control-deck">
+        {/* Top Filter Bar: Company Chips + Difficulty Pills + Search */}
+        <div className="drill-filter-bar">
+          <div className="drill-filter-group">
+            <div className="drill-group-label">
+              <Code2 size={13} />
+              <span>COMPANY:</span>
+            </div>
+            <div className="drill-chip-scroll">
+              {companyFilters.map(f => (
+                <button
+                  key={f}
+                  className={`drill-filter-chip ${companyFilter === f ? 'active' : ''}`}
+                  onClick={() => {
+                    setCompanyFilter(f);
+                    const nextList = problems.filter(p => 
+                      (f === 'all' || p.company === f) &&
+                      (difficultyFilter === 'all' || p.difficulty?.toLowerCase() === difficultyFilter.toLowerCase())
+                    );
+                    if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
+                      openProblem(nextList[0]);
+                    }
+                  }}
+                >
+                  {f === 'all' ? 'All Companies' : f}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="workbench-header-meta">
-            {selected && (
-              <>
-                <span className="drill-tag-badge company-tag">{selected.company}</span>
-                {selected.category && (
-                  <span className="drill-tag-badge category-tag">{selected.category}</span>
-                )}
-              </>
+          <div className="drill-filter-group">
+            <div className="drill-group-label">
+              <Zap size={13} />
+              <span>DIFFICULTY:</span>
+            </div>
+            <div className="drill-difficulty-pills">
+              {(['all', 'Easy', 'Medium', 'Hard'] as const).map(diff => (
+                <button
+                  key={diff}
+                  className={`drill-diff-pill ${difficultyFilter === diff ? 'active' : ''} diff-${diff.toLowerCase()}`}
+                  onClick={() => {
+                    setDifficultyFilter(diff);
+                    const nextList = problems.filter(p => 
+                      (companyFilter === 'all' || p.company === companyFilter) &&
+                      (diff === 'all' || p.difficulty?.toLowerCase() === diff.toLowerCase())
+                    );
+                    if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
+                      openProblem(nextList[0]);
+                    }
+                  }}
+                >
+                  {diff.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="drill-search-box">
+            <Search size={14} />
+            <input
+              type="text"
+              placeholder="Search drills by topic..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="drill-search-clear" onClick={() => setSearchQuery('')}>
+                <X size={12} />
+              </button>
             )}
-            <span className="drill-counter-pill">
-              {currentIndex >= 0 ? `${currentIndex + 1} / ${filteredProblems.length}` : `${filteredProblems.length}`} DRILLS ACTIVE
-            </span>
           </div>
         </div>
 
-        {/* 2. Control Toolbar: Company Scope Chips + Difficulty Filter + Live Search + Quick Jumper */}
-        <div className="workbench-toolbar">
-          <div className="workbench-filter-section">
-            <div className="workbench-filter-group">
-              <div className="drill-group-label">
-                <Code2 size={13} />
-                <span>COMPANY:</span>
-              </div>
-              <div className="drill-chip-scroll">
-                {companyFilters.map(f => (
-                  <button
-                    key={f}
-                    className={`drill-filter-chip ${companyFilter === f ? 'active' : ''}`}
-                    onClick={() => {
-                      setCompanyFilter(f);
-                      const nextList = problems.filter(p => 
-                        (f === 'all' || p.company === f) &&
-                        (difficultyFilter === 'all' || p.difficulty?.toLowerCase() === difficultyFilter.toLowerCase())
-                      );
-                      if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
-                        openProblem(nextList[0]);
-                      }
-                    }}
-                  >
-                    {f === 'all' ? 'All Companies' : f}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="workbench-filter-group">
-              <div className="drill-group-label">
-                <Zap size={13} />
-                <span>LEVEL:</span>
-              </div>
-              <div className="drill-difficulty-pills">
-                {(['all', 'Easy', 'Medium', 'Hard'] as const).map(diff => (
-                  <button
-                    key={diff}
-                    className={`drill-diff-pill ${difficultyFilter === diff ? 'active' : ''} diff-${diff.toLowerCase()}`}
-                    onClick={() => {
-                      setDifficultyFilter(diff);
-                      const nextList = problems.filter(p => 
-                        (companyFilter === 'all' || p.company === companyFilter) &&
-                        (diff === 'all' || p.difficulty?.toLowerCase() === diff.toLowerCase())
-                      );
-                      if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
-                        openProblem(nextList[0]);
-                      }
-                    }}
-                  >
-                    {diff.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="drill-search-box">
-              <Search size={14} />
-              <input
-                type="text"
-                placeholder="Search drills..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button className="drill-search-clear" onClick={() => setSearchQuery('')}>
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="workbench-nav-section">
+        {/* Bottom Drill Navigator: Prev / Next / Jump Select / Metadata */}
+        <div className="drill-navigator-strip">
+          <div className="drill-nav-controls">
             <button 
               className="drill-nav-btn prev-btn" 
               onClick={goToPrev}
@@ -1998,7 +1969,7 @@ function Bank() {
               <span>PREV</span>
             </button>
 
-            <div className="drill-active-select-wrapper" style={{ maxWidth: 280 }}>
+            <div className="drill-active-select-wrapper">
               <select
                 className="drill-active-select"
                 value={selected?.id || ''}
@@ -2009,7 +1980,7 @@ function Bank() {
               >
                 {filteredProblems.map((p, idx) => (
                   <option key={p.id} value={p.id}>
-                    #{String(idx + 1).padStart(2, '0')} [{p.company}] {p.title}
+                    [{p.company}] #{String(idx + 1).padStart(2, '0')} — {p.title} ({p.difficulty})
                   </option>
                 ))}
               </select>
@@ -2026,160 +1997,186 @@ function Bank() {
               <ChevronRight size={14} />
             </button>
           </div>
+
+          <div className="drill-nav-meta">
+            {selected && (
+              <>
+                <span className="drill-tag-badge company-tag">{selected.company}</span>
+                <span className={`drill-tag-badge difficulty-tag diff-${selected.difficulty?.toLowerCase()}`}>
+                  {selected.difficulty}
+                </span>
+                {selected.category && (
+                  <span className="drill-tag-badge category-tag">{selected.category}</span>
+                )}
+              </>
+            )}
+            <span className="drill-counter-pill">
+              {currentIndex >= 0 ? `${currentIndex + 1} / ${filteredProblems.length}` : `${filteredProblems.length}`} DRILLS
+            </span>
+          </div>
         </div>
+      </div>
 
-        {/* 3. Merged Workspace Body (50% Left Specs | 50% Right Code IDE) */}
-        <div className="workbench-workspace-body">
-          {/* LEFT COLUMN: Problem Details & Specifications */}
-          <div className="workbench-specs-pane">
-            <div className="workbench-specs-header">
-              <span>
-                <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
-                DRILL SPECIFICATION • {selected?.company?.toUpperCase() || 'GENERAL'}
-              </span>
-              <span>{selected?.difficulty?.toUpperCase() || 'DETAILS'}</span>
-            </div>
-
-            <div className="workbench-specs-content">
-              {selected ? (
-                <>
-                  <div className="drill-question-hero">
-                    <p className="kicker">DRILL REQUIREMENT / {selected.company}</p>
-                    <h2>{selected.title}</h2>
-                    <div className="drill-meta-pills">
-                      <span className={`drill-tag-badge difficulty-tag diff-${selected.difficulty?.toLowerCase()}`}>
-                        {selected.difficulty} DIFFICULTY
-                      </span>
-                      {selected.category && (
-                        <span className="drill-tag-badge category-tag">{selected.category}</span>
-                      )}
-                      <span className="metric-pill">
-                        TARGET: {selected.details?.expectedComplexity || 'O(N) TIME'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="problem-statement-text">{selected.details?.prompt || selected.description}</p>
-                  </div>
-
-                  <div className="problem-io">
-                    <div>
-                      <strong>INPUT</strong>
-                      <span>{selected.details?.input || 'Function parameters described above.'}</span>
-                    </div>
-                    <div>
-                      <strong>OUTPUT</strong>
-                      <span>{selected.details?.output || 'Expected return value.'}</span>
-                    </div>
-                    <div>
-                      <strong>COMPLEXITY</strong>
-                      <span>{selected.details?.expectedComplexity || 'Optimal time and auxiliary space.'}</span>
-                    </div>
-                  </div>
-
-                  {selected.details?.examples && selected.details.examples.length > 0 && (
-                    <div className="example-stack">
-                      <div className="panel-label" style={{ padding: '8px 0', border: 0, borderBottom: '1px solid var(--line)' }}>
-                        <span>EXAMPLES</span>
-                        <span>TEST CASES</span>
-                      </div>
-                      {selected.details.examples.map((example: any, index: number) => (
-                        <article className="example-card" key={index}>
-                          <strong>EXAMPLE {index + 1}</strong>
-                          <code>Input: {example.input}</code>
-                          <code>Output: {example.output}</code>
-                          {example.explanation && <p>{example.explanation}</p>}
-                        </article>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="constraint-card">
-                    <div className="panel-label" style={{ padding: '8px 0', border: 0, borderBottom: '1px solid var(--line)' }}>
-                      <span>CONSTRAINTS</span>
-                      <span>BOUNDARIES</span>
-                    </div>
-                    <ul>
-                      {(selected.details?.constraints || ['1 <= nums.length <= 10^5', 'Optimal O(N) runtime required.']).map((constraint: string) => (
-                        <li key={constraint}>{constraint}</li>
-                      ))}
-                    </ul>
-                    {selected.hint && (
-                      <div className="hint-callout">
-                        <b>INTERVIEW HINT</b>
-                        <span>{selected.hint}</span>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="empty-state">
-                  Select a drill to view specifications.
-                </div>
-              )}
-            </div>
+      {/* Main Split: Left Question Box, Right Workspace Box (100% Symmetrical Equal Dual-Pane) */}
+      <section className="drill-workspace-shell">
+        {/* LEFT EQUAL BOX: Question Details & Specs */}
+        <div className="drill-box drill-question-box">
+          <div className="panel-label">
+            <span>
+              <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
+              ACTIVE DRILL • {selected?.company?.toUpperCase() || 'SPECIFICATIONS'}
+            </span>
+            <span>{selected?.difficulty?.toUpperCase() || 'DRILL DETAILS'}</span>
           </div>
 
-          {/* RIGHT COLUMN: Code Editor & Execution Sandbox */}
-          <div className="workbench-sandbox-pane">
-            <div className="workbench-sandbox-header">
-              <span>
-                <Terminal size={13} style={{ display: 'inline', marginRight: 6 }} />
-                WORKSPACE • {language.toUpperCase()}
-              </span>
-              <span>SANDBOX READY • TAB: 2 SPACES</span>
-            </div>
+          <div className="drill-question-scroll">
+            {selected ? (
+              <>
+                <div className="drill-question-hero">
+                  <p className="kicker">DRILL SPECIFICATION / {selected.company}</p>
+                  <h2>{selected.title}</h2>
+                  <div className="drill-meta-pills">
+                    <span className={`drill-tag-badge difficulty-tag diff-${selected.difficulty?.toLowerCase()}`}>
+                      {selected.difficulty} DIFFICULTY
+                    </span>
+                    {selected.category && (
+                      <span className="drill-tag-badge category-tag">{selected.category}</span>
+                    )}
+                    <span className="metric-pill">
+                      TARGET: {selected.details?.expectedComplexity || 'O(N) TIME'}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="workbench-editor-toolbar">
-              <label>
-                LANGUAGE
-                <select
-                  value={language}
-                  onChange={e => {
-                    const next = e.target.value as CodeLanguage;
-                    setLanguage(next);
-                    if (selected) {
-                      setCode(codeTemplate(selected, next));
-                      setOutput('Starter reset for ' + next.toUpperCase() + '.');
-                    }
-                  }}
-                >
-                  <option value="python">Python 3</option>
-                  <option value="js">JavaScript (Node.js)</option>
-                  <option value="cpp">C++ (GCC 12)</option>
-                  <option value="java">Java (OpenJDK 17)</option>
-                </select>
-              </label>
+                <div className="problem-statement-block">
+                  <p className="problem-statement">{selected.details?.prompt || selected.description}</p>
+                </div>
 
-              <div className="workbench-action-group">
-                <button className="ghost-button" onClick={() => selected && openProblem(selected)} style={{ padding: '6px 12px' }}>
-                  <RotateCcw size={12} style={{ display: 'inline', marginRight: 4 }} /> RESET
-                </button>
-                <button className="brand-button" onClick={runCode} disabled={running} style={{ padding: '6px 14px' }}>
-                  <Play size={14} fill="currentColor" /> {running ? 'RUNNING...' : 'RUN SOLUTION'}
-                </button>
+                <div className="problem-io">
+                  <div>
+                    <strong>INPUT</strong>
+                    <span>{selected.details?.input || 'Function parameters described above.'}</span>
+                  </div>
+                  <div>
+                    <strong>OUTPUT</strong>
+                    <span>{selected.details?.output || 'Expected return value.'}</span>
+                  </div>
+                  <div>
+                    <strong>COMPLEXITY</strong>
+                    <span>{selected.details?.expectedComplexity || 'Optimal time and auxiliary space.'}</span>
+                  </div>
+                </div>
+
+                {selected.details?.examples && selected.details.examples.length > 0 && (
+                  <div className="example-stack">
+                    <div className="panel-label" style={{ padding: '8px 0', border: 0, borderBottom: '1px solid var(--line)' }}>
+                      <span>EXAMPLES</span>
+                      <span>TEST CASES</span>
+                    </div>
+                    {selected.details.examples.map((example: any, index: number) => (
+                      <article className="example-card" key={index}>
+                        <strong>EXAMPLE {index + 1}</strong>
+                        <code>Input: {example.input}</code>
+                        <code>Output: {example.output}</code>
+                        {example.explanation && <p>{example.explanation}</p>}
+                      </article>
+                    ))}
+                  </div>
+                )}
+
+                <div className="constraint-card">
+                  <div className="panel-label" style={{ padding: '8px 0', border: 0, borderBottom: '1px solid var(--line)' }}>
+                    <span>CONSTRAINTS</span>
+                    <span>BOUNDARIES</span>
+                  </div>
+                  <ul>
+                    {(selected.details?.constraints || ['1 <= nums.length <= 10^5', 'Optimal O(N) runtime required.']).map((constraint: string) => (
+                      <li key={constraint}>{constraint}</li>
+                    ))}
+                  </ul>
+                  {selected.hint && (
+                    <div className="hint-callout">
+                      <b>INTERVIEW HINT</b>
+                      <span>{selected.hint}</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="empty-state">
+                Select a drill to view specifications.
               </div>
-            </div>
+            )}
+          </div>
+        </div>
 
-            <textarea
-              className="workbench-code-editor"
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              onKeyDown={handleKeyDown}
-              spellCheck={false}
-              placeholder="// Write your solution here..."
-            />
+        {/* RIGHT EQUAL BOX: Code Workspace & Terminal Output */}
+        <div className="drill-box drill-code-box">
+          <div className="panel-label">
+            <span>
+              <Terminal size={13} style={{ display: 'inline', marginRight: 6 }} />
+              WORKSPACE • {language.toUpperCase()}
+            </span>
+            <span>SANDBOX READY • TAB: 2 SPACES</span>
+          </div>
 
-            <div className="workbench-console-tray">
-              <div className="workbench-console-header">
-                <span>SANDBOX CONSOLE / TEST OUTPUT</span>
-                <span>{running ? 'PROCESSING...' : 'RESULT'}</span>
-              </div>
-              <pre className="workbench-console-output">
-                {output || '// Click "RUN SOLUTION" to execute code against sandbox test cases.'}
-              </pre>
+          <div className="drill-code-toolbar">
+            <label>
+              LANGUAGE
+              <select
+                value={language}
+                onChange={e => {
+                  const next = e.target.value as CodeLanguage;
+                  setLanguage(next);
+                  if (selected) {
+                    setCode(codeTemplate(selected, next));
+                    setOutput('Starter reset for ' + next.toUpperCase() + '.');
+                  }
+                }}
+              >
+                <option value="python">Python 3</option>
+                <option value="js">JavaScript (Node.js)</option>
+                <option value="cpp">C++ (GCC 12)</option>
+                <option value="java">Java (OpenJDK 17)</option>
+              </select>
+            </label>
+            <span className="runtime-label">
+              {language === 'python'
+                ? 'Python 3.11 Sandbox'
+                : language === 'js'
+                ? 'Node.js 20 Sandbox'
+                : language === 'cpp'
+                ? 'GCC C++20 Sandbox'
+                : 'OpenJDK 17 Sandbox'}
+            </span>
+          </div>
+
+          <textarea
+            className="drill-code-input"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            onKeyDown={handleKeyDown}
+            spellCheck={false}
+            placeholder="// Write your solution here..."
+          />
+
+          <div className="drill-action-bar">
+            <button className="brand-button" onClick={runCode} disabled={running}>
+              <Play size={15} fill="currentColor" /> {running ? 'RUNNING...' : 'RUN SOLUTION'}
+            </button>
+            <button className="ghost-button" onClick={() => selected && openProblem(selected)}>
+              <RotateCcw size={13} style={{ display: 'inline', marginRight: 4 }} /> RESET CODE
+            </button>
+          </div>
+
+          <div className="drill-console-pane">
+            <div className="drill-console-header">
+              <span>SANDBOX CONSOLE / TEST OUTPUT</span>
+              <span>{running ? 'PROCESSING...' : 'RESULT'}</span>
             </div>
+            <pre className="drill-console-output">
+              {output || '// Click "RUN SOLUTION" to execute code against sandbox test cases.'}
+            </pre>
           </div>
         </div>
       </section>
