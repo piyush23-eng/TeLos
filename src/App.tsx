@@ -1752,6 +1752,8 @@ function Bank() {
   const [problems, setProblems] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
   const [companyFilter, setCompanyFilter] = useState('all');
+  const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'Easy' | 'Medium' | 'Hard'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<CodeLanguage>('python');
   const [code, setCode] = useState('// Choose a drill and sketch your solution.\n');
   const [output, setOutput] = useState('');
@@ -1802,10 +1804,36 @@ function Bank() {
   );
 
   const filteredProblems = useMemo(() => {
-    return companyFilter === 'all'
-      ? problems
-      : problems.filter(p => p.company === companyFilter);
-  }, [companyFilter, problems]);
+    return problems.filter(p => {
+      const matchesCompany = companyFilter === 'all' || p.company?.toLowerCase() === companyFilter.toLowerCase();
+      const matchesDifficulty = difficultyFilter === 'all' || p.difficulty?.toLowerCase() === difficultyFilter.toLowerCase();
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch = !q ||
+        p.title?.toLowerCase().includes(q) ||
+        p.company?.toLowerCase().includes(q) ||
+        (p.category && p.category.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q));
+      return matchesCompany && matchesDifficulty && matchesSearch;
+    });
+  }, [problems, companyFilter, difficultyFilter, searchQuery]);
+
+  const currentIndex = selected ? filteredProblems.findIndex(p => p.id === selected.id) : -1;
+
+  const goToPrev = () => {
+    if (currentIndex > 0) {
+      openProblem(filteredProblems[currentIndex - 1]);
+    } else if (filteredProblems.length > 0) {
+      openProblem(filteredProblems[filteredProblems.length - 1]);
+    }
+  };
+
+  const goToNext = () => {
+    if (currentIndex >= 0 && currentIndex < filteredProblems.length - 1) {
+      openProblem(filteredProblems[currentIndex + 1]);
+    } else if (filteredProblems.length > 0) {
+      openProblem(filteredProblems[0]);
+    }
+  };
 
   const runCode = async () => {
     if (!selected) return;
@@ -1854,49 +1882,138 @@ function Bank() {
         </div>
       </section>
 
-      {/* Drill Selector Dock */}
-      <div className="drill-selector-dock">
-        <div className="drill-dock-left">
-          <span className="drill-dock-label">FILTER</span>
-          <select
-            className="drill-picker-select"
-            value={companyFilter}
-            onChange={e => {
-              const next = e.target.value;
-              setCompanyFilter(next);
-              const nextList = next === 'all' ? problems : problems.filter(p => p.company === next);
-              if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
-                openProblem(nextList[0]);
-              }
-            }}
-          >
-            {companyFilters.map(f => (
-              <option key={f} value={f}>{f === 'all' ? 'All Companies' : f}</option>
-            ))}
-          </select>
+      {/* Modern Brutalist Drill Control Deck */}
+      <div className="drill-control-deck">
+        {/* Top Filter Bar: Company Chips + Difficulty Pills + Search */}
+        <div className="drill-filter-bar">
+          <div className="drill-filter-group">
+            <div className="drill-group-label">
+              <Code2 size={13} />
+              <span>COMPANY:</span>
+            </div>
+            <div className="drill-chip-scroll">
+              {companyFilters.map(f => (
+                <button
+                  key={f}
+                  className={`drill-filter-chip ${companyFilter === f ? 'active' : ''}`}
+                  onClick={() => {
+                    setCompanyFilter(f);
+                    const nextList = problems.filter(p => 
+                      (f === 'all' || p.company === f) &&
+                      (difficultyFilter === 'all' || p.difficulty?.toLowerCase() === difficultyFilter.toLowerCase())
+                    );
+                    if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
+                      openProblem(nextList[0]);
+                    }
+                  }}
+                >
+                  {f === 'all' ? 'All Companies' : f}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          <span className="drill-dock-divider" />
+          <div className="drill-filter-group">
+            <div className="drill-group-label">
+              <Zap size={13} />
+              <span>DIFFICULTY:</span>
+            </div>
+            <div className="drill-difficulty-pills">
+              {(['all', 'Easy', 'Medium', 'Hard'] as const).map(diff => (
+                <button
+                  key={diff}
+                  className={`drill-diff-pill ${difficultyFilter === diff ? 'active' : ''} diff-${diff.toLowerCase()}`}
+                  onClick={() => {
+                    setDifficultyFilter(diff);
+                    const nextList = problems.filter(p => 
+                      (companyFilter === 'all' || p.company === companyFilter) &&
+                      (diff === 'all' || p.difficulty?.toLowerCase() === diff.toLowerCase())
+                    );
+                    if (nextList.length > 0 && (!selected || !nextList.some(p => p.id === selected.id))) {
+                      openProblem(nextList[0]);
+                    }
+                  }}
+                >
+                  {diff.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          <span className="drill-dock-label">DRILL</span>
-          <select
-            className="drill-picker-select"
-            value={selected?.id || ''}
-            onChange={e => {
-              const target = problems.find(p => p.id === e.target.value);
-              if (target) openProblem(target);
-            }}
-            style={{ minWidth: 240 }}
-          >
-            {filteredProblems.map((p, idx) => (
-              <option key={p.id} value={p.id}>
-                {String(idx + 1).padStart(2, '0')}. {p.title} ({p.difficulty})
-              </option>
-            ))}
-          </select>
+          <div className="drill-search-box">
+            <Search size={14} />
+            <input
+              type="text"
+              placeholder="Search drills by topic..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="drill-search-clear" onClick={() => setSearchQuery('')}>
+                <X size={12} />
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="drill-dock-right">
-          <span className="drill-dock-count">{filteredProblems.length} DRILLS</span>
+        {/* Bottom Drill Navigator: Prev / Next / Jump Select / Metadata */}
+        <div className="drill-navigator-strip">
+          <div className="drill-nav-controls">
+            <button 
+              className="drill-nav-btn prev-btn" 
+              onClick={goToPrev}
+              disabled={filteredProblems.length === 0}
+              title="Previous Problem"
+            >
+              <ChevronLeft size={14} />
+              <span>PREV</span>
+            </button>
+
+            <div className="drill-active-select-wrapper">
+              <select
+                className="drill-active-select"
+                value={selected?.id || ''}
+                onChange={e => {
+                  const target = problems.find(p => p.id === e.target.value);
+                  if (target) openProblem(target);
+                }}
+              >
+                {filteredProblems.map((p, idx) => (
+                  <option key={p.id} value={p.id}>
+                    [{p.company}] #{String(idx + 1).padStart(2, '0')} — {p.title} ({p.difficulty})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="drill-select-arrow" />
+            </div>
+
+            <button 
+              className="drill-nav-btn next-btn" 
+              onClick={goToNext}
+              disabled={filteredProblems.length === 0}
+              title="Next Problem"
+            >
+              <span>NEXT</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          <div className="drill-nav-meta">
+            {selected && (
+              <>
+                <span className="drill-tag-badge company-tag">{selected.company}</span>
+                <span className={`drill-tag-badge difficulty-tag diff-${selected.difficulty?.toLowerCase()}`}>
+                  {selected.difficulty}
+                </span>
+                {selected.category && (
+                  <span className="drill-tag-badge category-tag">{selected.category}</span>
+                )}
+              </>
+            )}
+            <span className="drill-counter-pill">
+              {currentIndex >= 0 ? `${currentIndex + 1} / ${filteredProblems.length}` : `${filteredProblems.length}`} DRILLS
+            </span>
+          </div>
         </div>
       </div>
 
