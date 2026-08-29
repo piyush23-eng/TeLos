@@ -9,7 +9,7 @@
     "web": "vite",
     "server": "tsx watch server/index.ts",
     "build": "tsc -b && vite build",
-    "build:prod": "prisma generate && prisma db push --accept-data-loss && node scripts/setup-jdk.mjs && tsc -b && vite build",
+    "build:prod": "prisma generate && node scripts/setup-jdk.mjs && tsc -b && vite build",
     "start:prod": "tsx server/index.ts",
     "start": "electron .",
     "db:generate": "prisma generate",

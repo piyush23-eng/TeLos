@@ -13,7 +13,7 @@ import { runCodeSnippet } from './runner';
 const app = express();
 app.use(cors()); app.use(express.json());
 
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/telos?schema=public';
 const intelligence = new IntelligenceProvider();
 const prisma = new PrismaClient();
 const scrypt = promisify(scryptCallback);

@@ -1,6 +1,6 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
-ENV DATABASE_URL="file:./dev.db"
+ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/telos?schema=public"
 COPY package*.json ./
 COPY prisma ./prisma
 RUN npm ci
@@ -11,7 +11,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8787
-ENV DATABASE_URL="file:./dev.db"
+ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/telos?schema=public"
 
 RUN apk add --no-cache python3 g++ gcc openjdk17
 
