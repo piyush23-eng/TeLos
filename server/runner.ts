@@ -1,11 +1,16 @@
 import { createRequire } from 'node:module';
-import { promises as fs } from 'node:fs';
+import { promises as fs, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
 const vm = require('node:vm');
+
+const localJdkBin = path.resolve(process.cwd(), '.jdk', 'bin');
+if (existsSync(localJdkBin)) {
+  process.env.PATH = `${localJdkBin}:${process.env.PATH || ''}`;
+}
 
 export type RunnerResult = {
   status: 'ok' | 'error';
