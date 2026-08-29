@@ -3,7 +3,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bot, Check, CheckCheck, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, Copy, Download, ExternalLink, FileText, Github, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldCheck, Sparkles, Square, Sun, Terminal, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bookmark, Bot, Briefcase, Check, CheckCheck, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, Copy, Download, ExternalLink, FileText, Github, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldCheck, Sparkles, Square, Sun, Terminal, ThumbsUp, TrendingUp, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import { companyPrepCatalog, type CompanyPrepItem } from './companyPrepData';
 import { Assessment } from './Assessment';
 import { AuthModal, type AuthUser } from './AuthModal';
@@ -18,10 +18,29 @@ const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787';
 
 type Page = 'dashboard' | 'studio' | 'prep' | 'community' | 'analytics' | 'bank' | 'assessment';
 type Message = { id: number; speaker: 'PANEL' | 'YOU'; text: string; time: string; pending?: boolean };
-type CommunityPost = { id: string; author: string; role: string; message: string; tags: string[]; timestamp: string };
 type VoiceProfile = 'natural' | 'warm' | 'broadcast';
 type CodeLanguage = 'js' | 'python' | 'cpp' | 'java';
 type Recognition = { continuous: boolean; interimResults: boolean; lang: string; start(): void; stop(): void; onresult: ((event: any) => void) | null; onerror: ((event: any) => void) | null; onend: (() => void) | null };
+type PostType = 'question' | 'debrief' | 'offer' | 'mock';
+type CommunityReply = { id: string; author: string; role: string; message: string; timestamp: string };
+type CommunityPost = {
+  id: string;
+  author: string;
+  role: string;
+  title?: string;
+  postType?: PostType;
+  company?: string;
+  outcome?: 'Offer' | 'Reject' | 'Pending' | 'N/A';
+  level?: string;
+  compensation?: string;
+  message: string;
+  tags: string[];
+  timestamp: string;
+  upvotes?: number;
+  helpfulCount?: number;
+  replies?: CommunityReply[];
+  saved?: boolean;
+};
 declare global { interface Window { webkitSpeechRecognition?: new () => Recognition; SpeechRecognition?: new () => Recognition } }
 
 import { VoiceOrbVisualizer } from './components/VoiceOrbVisualizer';
@@ -2516,98 +2535,765 @@ function CompanyPrep() {
   );
 }
 
+const initialCommunityPosts: CommunityPost[] = [
+  {
+    id: 'post-1',
+    author: 'Aria Sharma',
+    role: 'SWE II (Incoming Google L4)',
+    title: 'Google L4 Full-Loop Debrief — 3 Coding Rounds + 1 Googleyness [Offer]',
+    postType: 'debrief',
+    company: 'Google',
+    outcome: 'Offer',
+    level: 'L4 (Bangalore)',
+    message: 'Just wrapped up my Google loop and received the offer! Round 1: Graph BFS with state tracking (Shortest path in matrix with k obstacle eliminations). Round 2: Tree DP with memoization on tree diameters and sub-tree query aggregation. Round 3: Live Rate Limiter design with sliding window log algorithm and distributed token bucket trade-offs.\n\nKey Tip: Clarify all edge cases (empty input, negative weights, scale limits) before writing any code. The interviewer cared heavily about clean variable naming and modular decomposition.',
+    tags: ['google', 'interview experiences', 'dsa & algorithms', 'system design'],
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+    upvotes: 48,
+    helpfulCount: 39,
+    replies: [
+      { id: 'rep-1', author: 'Rohan V.', role: 'SDE-1 @ Swiggy', message: 'Congrats Aria! For the Tree DP question, did they ask you to write iterative code or was recursive with memoization acceptable?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+      { id: 'rep-2', author: 'Aria Sharma', role: 'SWE II (Incoming Google L4)', message: 'Recursive with memo dict was completely acceptable as long as you can trace call-stack space complexity accurately.', timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString() }
+    ]
+  },
+  {
+    id: 'post-2',
+    author: 'Devendra Patel',
+    role: 'Backend SDE @ Razorpay',
+    title: 'Amazon SDE-2 Bar Raiser Experience: LP Deep Dive + Minimum Fulfillment Window',
+    postType: 'debrief',
+    company: 'Amazon',
+    outcome: 'Offer',
+    level: 'SDE II (Seattle / Remote)',
+    message: 'For Amazon SDE-2, the Bar Raiser round lasted 60 minutes with 35 minutes dedicated purely to Leadership Principles (Customer Obsession, Bias for Action, Have Backbone). Every LP story was scrutinized using the STAR framework.\n\nThe coding question was a variation of Minimum Fulfillment Window with deque-based sliding window. Explaining the O(N) invariant step-by-step made all the difference.',
+    tags: ['amazon', 'interview experiences', 'dsa & algorithms', 'career advice'],
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 7).toISOString(),
+    upvotes: 36,
+    helpfulCount: 28,
+    replies: [
+      { id: 'rep-3', author: 'Karthik N.', role: 'Student @ BITS', message: 'Did you prepare structured STAR metrics beforehand?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString() },
+      { id: 'rep-4', author: 'Devendra Patel', role: 'Backend SDE @ Razorpay', message: 'Yes! Write down 5 versatile projects and map 2 LP principles to each with measurable metrics.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString() }
+    ]
+  },
+  {
+    id: 'post-3',
+    author: 'Pooja Iyer',
+    role: 'Senior Platform Engineer',
+    title: 'Flipkart Machine Coding Round: Strategy & Clean Architecture Tips',
+    postType: 'question',
+    company: 'Flipkart',
+    level: 'SDE II / III (Bangalore)',
+    message: 'In the 90-minute Machine Coding round at Flipkart (Cab Booking / Ride-Sharing Engine), what is the best way to structure interfaces under time pressure?\n\nI recommend: 1) Model entities first (Driver, Rider, Trip, Location). 2) Service layer with Strategy Pattern for DriverMatchingStrategy and PricingStrategy. 3) In-memory repository with thread-safe maps. Don\'t spend time on REST endpoints until core logic passes all test cases.',
+    tags: ['flipkart', 'system design', 'interview experiences', 'dsa & algorithms'],
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+    upvotes: 42,
+    helpfulCount: 35,
+    replies: [
+      { id: 'rep-5', author: 'Ankit G.', role: 'Tech Lead @ PhonePe', message: 'Spot on. Demonstrating clean separation of concerns and extensible SOLID principles gets you through.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString() }
+    ]
+  },
+  {
+    id: 'post-4',
+    author: 'Siddharth Roy',
+    role: 'SDE-2 Candidate',
+    title: 'Offer Review & Negotiation: Google L4 vs Razorpay SDE-2 vs Microsoft L61',
+    postType: 'offer',
+    company: 'Google',
+    level: 'SDE II',
+    compensation: '₹48 LPA vs ₹44 LPA vs ₹42 LPA',
+    message: 'Currently holding 3 offers for SDE-2 backend in Bangalore. Google L4 base ₹32L + ₹16L RSUs, Razorpay ₹34L base + ₹10L ESOPs + ₹4L joining, Microsoft L61 ₹29L base + stock. Priority is high-scale distributed systems ownership and career growth over the next 2-3 years. How do stock refreshers compare at Google vs Razorpay?',
+    tags: ['career advice', 'google', 'razorpay', 'interview experiences'],
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+    upvotes: 53,
+    helpfulCount: 31,
+    replies: [
+      { id: 'rep-6', author: 'Vikram M.', role: 'Staff Eng @ Swiggy', message: 'At Google L4, refreshers are consistent and liquidity is guaranteed. Razorpay will give you massive ownership on payment rails. Both are top tier.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString() }
+    ]
+  },
+  {
+    id: 'post-5',
+    author: 'Sneha Chawla',
+    role: 'Final Year CS @ NITK',
+    title: 'TCS Prime & Innovator Coding Round PYQs & Tips for College Students',
+    postType: 'debrief',
+    company: 'TCS',
+    outcome: 'Offer',
+    level: 'TCS Prime (9 LPA)',
+    message: 'For college students preparing for TCS National Qualifier & Prime/Innovator test: Section A was medium graph traversal and bitwise subset generation. Section B had an Interval Scheduling DP problem. Scoring 100% test cases without time-limit-exceeded is essential for the 9-11 LPA Prime/Innovator bands.',
+    tags: ['tcs', 'interview experiences', 'dsa & algorithms', 'career advice'],
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
+    upvotes: 64,
+    helpfulCount: 52,
+    replies: [
+      { id: 'rep-7', author: 'Rahul D.', role: 'College Grad', message: 'Thank you Sneha! Were the test cases strict on memory limits?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString() }
+    ]
+  },
+  {
+    id: 'post-6',
+    author: 'Kunal Mehra',
+    role: 'Full Stack Engineer',
+    title: 'Looking for Peer Mock Partner for L5 / Senior System Design (Distributed Caching)',
+    postType: 'mock',
+    company: 'General',
+    level: 'Senior SWE (L5)',
+    message: 'Preparing for Meta E5 / Uber L5 interviews in the next 6 weeks. Looking for a serious peer mock partner to do 2x weekly 60-min sessions on System Design (Distributed Caching, Notification Engine, Live Leaderboards, Rate Limiters) with thorough mutual rubric feedback. Available evenings IST and weekends.',
+    tags: ['mock interviews', 'system design', 'peer mock'],
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 42).toISOString(),
+    upvotes: 24,
+    helpfulCount: 19,
+    replies: []
+  }
+];
+
 function Community() {
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [draft, setDraft] = useState('');
-  const [author, setAuthor] = useState('TeLos User');
-  const [role, setRole] = useState('SWE Applicant');
-  const [submitting, setSubmitting] = useState(false);
-  const [topic, setTopic] = useState('All topics');
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<'popular'|'newest'>('popular');
+  const [posts, setPosts] = useState<CommunityPost[]>(initialCommunityPosts);
+  const [activeTopic, setActiveTopic] = useState('All topics');
+  const [companyFilter, setCompanyFilter] = useState('All');
+  const [postTypeFilter, setPostTypeFilter] = useState<'all' | PostType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sort, setSort] = useState<'popular' | 'newest' | 'replies' | 'helpful'>('popular');
   const [votes, setVotes] = useState<Record<string, number>>({});
-  const [replyTo, setReplyTo] = useState<CommunityPost | null>(null);
-  const [replyText, setReplyText] = useState('');
-  const [replying, setReplying] = useState(false);
+  const [upvotedPosts, setUpvotedPosts] = useState<Set<string>>(new Set());
+  const [helpfulPosts, setHelpfulPosts] = useState<Set<string>>(new Set());
+  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+
+  // Composer State
+  const [composerType, setComposerType] = useState<PostType>('question');
+  const [author, setAuthor] = useState('TeLos User');
+  const [role, setRole] = useState('SWE Candidate');
+  const [targetCompany, setTargetCompany] = useState('Google');
+  const [levelOrRound, setLevelOrRound] = useState('L4 / SDE II');
+  const [outcome, setOutcome] = useState<'Offer' | 'Reject' | 'Pending' | 'N/A'>('Offer');
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Reply Drafts
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+
   const topics = ['All topics', 'Interview experiences', 'DSA & algorithms', 'System design', 'Career advice', 'Mock interviews'];
+  const trendingCompanies = ['All', 'Google', 'Amazon', 'Meta', 'Microsoft', 'Flipkart', 'Swiggy', 'Razorpay', 'TCS', 'Netflix', 'Uber'];
 
   useEffect(() => {
-    fetch(`${API}/api/community`).then(r => r.json()).then(d => setPosts(d.posts || [])).catch(() => undefined);
+    fetch(`${API}/api/community`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.posts && Array.isArray(d.posts) && d.posts.length > 0) {
+          // Merge with initial rich seed posts
+          setPosts(prev => {
+            const ids = new Set(prev.map(p => p.id));
+            const incoming = d.posts.filter((p: any) => !ids.has(p.id));
+            return [...prev, ...incoming];
+          });
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
-  const submitPost = async () => {
-    const trimmed = draft.trim();
-    if (!trimmed) return;
-    setSubmitting(true);
-    const nextPost: CommunityPost = {
-      id: crypto.randomUUID?.() ?? `post-${Date.now()}`,
-      author,
-      role,
-      message: trimmed,
-      tags: [topic === 'All topics' ? 'interview experience' : topic.toLowerCase(), 'feedback'],
+  const toggleVote = (id: string) => {
+    setUpvotedPosts(prev => {
+      const next = new Set(prev);
+      const isUpvoted = next.has(id);
+      if (isUpvoted) {
+        next.delete(id);
+        setVotes(v => ({ ...v, [id]: (v[id] || 0) - 1 }));
+      } else {
+        next.add(id);
+        setVotes(v => ({ ...v, [id]: (v[id] || 0) + 1 }));
+      }
+      return next;
+    });
+  };
+
+  const toggleHelpful = (id: string) => {
+    setHelpfulPosts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSaved = (id: string) => {
+    setSavedPosts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleReplies = (id: string) => {
+    setExpandedReplies(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const submitReply = (postId: string) => {
+    const text = (replyDrafts[postId] || '').trim();
+    if (!text) return;
+    const newReply: CommunityReply = {
+      id: crypto.randomUUID?.() ?? `rep-${Date.now()}`,
+      author: author.trim() || 'TeLos Member',
+      role: role.trim() || 'Candidate',
+      message: text,
       timestamp: new Date().toISOString()
     };
+    setPosts(prev => prev.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          replies: [...(p.replies || []), newReply]
+        };
+      }
+      return p;
+    }));
+    setReplyDrafts(prev => ({ ...prev, [postId]: '' }));
+    setExpandedReplies(prev => new Set(prev).add(postId));
+  };
+
+  const submitPost = async () => {
+    const trimmedMsg = message.trim();
+    if (!trimmedMsg) return;
+    setSubmitting(true);
+    const tags = [
+      targetCompany.toLowerCase(),
+      composerType === 'debrief' ? 'interview experiences' : composerType === 'mock' ? 'mock interviews' : activeTopic === 'All topics' ? 'dsa & algorithms' : activeTopic.toLowerCase()
+    ];
+    if (outcome && outcome !== 'N/A' && composerType === 'debrief') tags.push(outcome.toLowerCase());
+
+    const newPost: CommunityPost = {
+      id: crypto.randomUUID?.() ?? `post-${Date.now()}`,
+      author: author.trim() || 'TeLos Candidate',
+      role: role.trim() || 'Software Engineer',
+      title: title.trim() || `${targetCompany} ${composerType.toUpperCase()} Discussion`,
+      postType: composerType,
+      company: targetCompany,
+      outcome: composerType === 'debrief' ? outcome : undefined,
+      level: levelOrRound.trim() || undefined,
+      message: trimmedMsg,
+      tags,
+      timestamp: new Date().toISOString(),
+      upvotes: 1,
+      helpfulCount: 0,
+      replies: []
+    };
+
     try {
-      const res = await fetch(`${API}/api/community`, {
+      await fetch(`${API}/api/community`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nextPost)
+        body: JSON.stringify(newPost)
       });
-      const data = await res.json();
-      setPosts(data.posts || [nextPost, ...posts]);
-      setDraft('');
     } catch {
-      setPosts(prev => [nextPost, ...prev]);
-      setDraft('');
-    } finally {
-      setSubmitting(false);
+      // offline fallback
     }
+
+    setPosts(prev => [newPost, ...prev]);
+    setMessage('');
+    setTitle('');
+    setSubmitting(false);
   };
 
-  const submitReply = async () => {
-    const trimmed = replyText.trim();
-    if (!trimmed || !replyTo) return;
-    setReplying(true);
-    const nextPost: CommunityPost = {
-      id: crypto.randomUUID?.() ?? `reply-${Date.now()}`,
-      author,
-      role,
-      message: `Reply to ${replyTo.author}: ${trimmed}`,
-      tags: ['reply', ...replyTo.tags.slice(0, 1)],
-      timestamp: new Date().toISOString()
-    };
-    try {
-      const response = await fetch(`${API}/api/community`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nextPost) });
-      const payload = await response.json();
-      setPosts(payload.posts || [nextPost, ...posts]);
-    } catch {
-      setPosts(current => [nextPost, ...current]);
-    } finally {
-      setReplyText('');
-      setReplyTo(null);
-      setReplying(false);
-    }
-  };
+  const visiblePosts = useMemo(() => {
+    return posts.filter(post => {
+      const text = `${post.title || ''} ${post.message} ${(post.tags || []).join(' ')} ${post.author} ${post.company || ''}`.toLowerCase();
+      
+      const topicMatch = activeTopic === 'All topics' || 
+        text.includes(activeTopic.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'));
+      
+      const companyMatch = companyFilter === 'All' || 
+        post.company?.toLowerCase() === companyFilter.toLowerCase() ||
+        text.includes(companyFilter.toLowerCase());
 
-  const visiblePosts = posts.filter(post => {
-    const text = `${post.message} ${post.tags.join(' ')}`.toLowerCase();
-    const topicMatch = topic === 'All topics' || text.includes(topic.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'));
-    return topicMatch && text.includes(query.toLowerCase());
-  }).sort((a, b) => sort === 'newest' ? +new Date(b.timestamp) - +new Date(a.timestamp) : (votes[b.id] || 0) - (votes[a.id] || 0));
-  const vote = (id: string) => setVotes(current => ({ ...current, [id]: (current[id] || 0) + 1 }));
+      const typeMatch = postTypeFilter === 'all' || post.postType === postTypeFilter;
 
-  return <main className="shell community-shell">
-    <section className="studio-head"><div><p className="kicker">03 / LEARN WITH THE COMMUNITY</p><h1>DISCUSS.<br/><span>GET BETTER.</span></h1></div><div className="session-meta"><b>TELOS DISCUSS</b><span>INTERVIEW NOTES</span><span>PRACTICE WITH PEERS</span></div></section>
-    <div className="community-layout">
-      <aside className="community-sidebar"><section className="topic-nav"><div className="topic-nav-head"><Users size={16}/><span>DISCUSS</span></div><h2>Topics</h2><div>{topics.map(item => <button key={item} className={topic === item ? 'active' : ''} onClick={() => setTopic(item)}>{item}<small>{item === 'All topics' ? posts.length : posts.filter(post => `${post.message} ${post.tags.join(' ')}`.toLowerCase().includes(item.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'))).length}</small></button>)}</div></section><section className="community-tip"><p className="kicker">GOOD QUESTION</p><p>Add company, role, round, and what you have already tried. It makes it much easier for others to help.</p></section></aside>
-      <section className="community-board">
-        <div className="board-header"><div><p className="kicker">TELOS DISCUSS</p><h2>{topic}</h2></div><span>{visiblePosts.length} discussions</span></div>
-        <div className="board-tools"><label><Search size={16}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search discussions"/></label><div><button className={sort === 'popular' ? 'active' : ''} onClick={() => setSort('popular')}>Popular</button><button className={sort === 'newest' ? 'active' : ''} onClick={() => setSort('newest')}>Newest</button></div></div>
-        <section className="discussion-composer"><div className="compose-header"><div><b>Start a discussion</b><span>Ask, share an interview experience, or help someone prepare.</span></div><button className="brand-button" onClick={submitPost} disabled={!draft.trim() || submitting}>{submitting ? 'POSTING…' : 'POST'}</button></div><div className="composer-fields"><input value={author} onChange={event => setAuthor(event.target.value)} placeholder="Your name"/><input value={role} onChange={event => setRole(event.target.value)} placeholder="Your role"/></div><textarea value={draft} onChange={event => setDraft(event.target.value)} placeholder="What would you like to discuss? Include the company, interview round, or problem context."/></section>
-        <section className="thread-list">{visiblePosts.length === 0 ? <div className="empty-state"><MessageCircle size={22}/><b>No discussions match this view.</b><span>Start the first one — a clear question is often the most useful contribution.</span></div> : visiblePosts.map(post => <article key={post.id} className="discussion-thread"><div className="thread-vote"><button onClick={() => vote(post.id)} aria-label={`Upvote ${post.author}'s discussion`}><ChevronUp size={18}/></button><b>{votes[post.id] || 0}</b></div><div className="thread-content"><div className="thread-meta"><span className="thread-avatar">{post.author.slice(0, 1).toUpperCase()}</span><span><b>{post.author}</b><small>{post.role} · {new Date(post.timestamp).toLocaleDateString()}</small></span></div><p>{post.message}</p><div className="thread-footer"><div className="tag-row">{post.tags.map(tag => <span key={tag} className="tag-badge">{tag}</span>)}</div><button onClick={() => { setReplyTo(post); setReplyText(''); }}><MessageCircle size={15}/> Reply</button></div>{replyTo?.id === post.id && <div className="thread-reply"><b>Replying to {post.author}</b><textarea autoFocus value={replyText} onChange={event => setReplyText(event.target.value)} placeholder="Write a helpful reply…"/><div><button type="button" onClick={() => { setReplyTo(null); setReplyText(''); }}>CANCEL</button><button type="button" className="brand-button" disabled={!replyText.trim() || replying} onClick={() => void submitReply()}>{replying ? 'POSTING…' : 'POST REPLY'}</button></div></div>}</div></article>)}</section>
+      const queryMatch = !searchQuery.trim() || text.includes(searchQuery.trim().toLowerCase());
+
+      return topicMatch && companyMatch && typeMatch && queryMatch;
+    }).sort((a, b) => {
+      if (sort === 'newest') return +new Date(b.timestamp) - +new Date(a.timestamp);
+      if (sort === 'replies') return (b.replies?.length || 0) - (a.replies?.length || 0);
+      if (sort === 'helpful') return ((b.helpfulCount || 0) + (helpfulPosts.has(b.id) ? 1 : 0)) - ((a.helpfulCount || 0) + (helpfulPosts.has(a.id) ? 1 : 0));
+      // popular (default)
+      const scoreA = (a.upvotes || 0) + (votes[a.id] || 0) + (a.replies?.length || 0) * 2;
+      const scoreB = (b.upvotes || 0) + (votes[b.id] || 0) + (b.replies?.length || 0) * 2;
+      return scoreB - scoreA;
+    });
+  }, [posts, activeTopic, companyFilter, postTypeFilter, searchQuery, sort, votes, helpfulPosts]);
+
+  return (
+    <main className="shell community-shell">
+      <section className="studio-head">
+        <div>
+          <p className="kicker">03 / LEARN WITH THE COMMUNITY</p>
+          <h1>DISCUSS.<br /><span>GET BETTER.</span></h1>
+        </div>
+        <div className="session-meta">
+          <b>TELOS DISCUSS HUB</b>
+          <span>REAL INTERVIEW LOGS</span>
+          <span>PEER MOCK INTERVIEWS</span>
+        </div>
       </section>
-    </div>
-  </main>;
+
+      <div className="community-layout">
+        {/* LEFT COLUMN: Structured Sidebar (Equalized Cards) */}
+        <aside className="community-sidebar">
+          {/* Card 1: Topics Directory */}
+          <div className="community-card">
+            <div className="community-card-head">
+              <span>
+                <Users size={12} style={{ display: 'inline', marginRight: 6 }} />
+                TOPICS DIRECTORY
+              </span>
+              <span>{posts.length} POSTS</span>
+            </div>
+            <div className="community-topic-list">
+              {topics.map(item => {
+                const count = item === 'All topics'
+                  ? posts.length
+                  : posts.filter(post => `${post.message} ${(post.tags || []).join(' ')}`.toLowerCase().includes(item.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'))).length;
+                return (
+                  <button
+                    key={item}
+                    className={`community-topic-btn ${activeTopic === item ? 'active' : ''}`}
+                    onClick={() => setActiveTopic(item)}
+                  >
+                    <span>{item}</span>
+                    <span className="community-topic-count">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Card 2: Trending Company Scope */}
+          <div className="community-card">
+            <div className="community-card-head">
+              <span>
+                <Briefcase size={12} style={{ display: 'inline', marginRight: 6 }} />
+                DISCUSS BY COMPANY
+              </span>
+              <span>HOT</span>
+            </div>
+            <div className="trending-companies-grid">
+              {trendingCompanies.map(comp => (
+                <button
+                  key={comp}
+                  className={`company-tag-pill ${companyFilter === comp ? 'active' : ''}`}
+                  onClick={() => setCompanyFilter(comp)}
+                >
+                  {comp === 'All' ? 'All Companies' : `#${comp}`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Card 3: Community Metrics */}
+          <div className="community-card">
+            <div className="community-card-head">
+              <span>
+                <TrendingUp size={12} style={{ display: 'inline', marginRight: 6 }} />
+                COMMUNITY SIGNAL
+              </span>
+              <span>VERIFIED</span>
+            </div>
+            <div className="community-stats-grid">
+              <div className="community-stat-cell">
+                <span className="community-stat-val">1.8k+</span>
+                <span className="community-stat-lbl">Active Candidates</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-val">480+</span>
+                <span className="community-stat-lbl">PYQs Logged</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-val">96%</span>
+                <span className="community-stat-lbl">Response Rate</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-val">47</span>
+                <span className="community-stat-lbl">Companies Tracked</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Signal Guidelines */}
+          <div className="community-card" style={{ background: 'var(--ink)', color: '#ffffff' }}>
+            <div className="community-card-head" style={{ background: '#191826', color: 'var(--mint)', borderBottomColor: 'rgba(255,255,255,0.15)' }}>
+              <span>
+                <Award size={12} style={{ display: 'inline', marginRight: 6 }} />
+                HIGH-SIGNAL ADVICE
+              </span>
+              <span>STANDARDS</span>
+            </div>
+            <div style={{ padding: 16 }}>
+              <p style={{ margin: 0, font: '400 11.5px/1.6 Manrope, sans-serif', color: '#d8d4e4' }}>
+                When posting an interview debrief, include the <strong>Company</strong>, <strong>Role/Level</strong>, <strong>Round specifications</strong>, and <strong>trade-offs asked</strong>. This helps peers give precise, actionable feedback.
+              </p>
+            </div>
+          </div>
+        </aside>
+
+        {/* RIGHT COLUMN: Board Header, Filter Toolbar, Composer & Discussion Feed */}
+        <section className="community-board">
+          {/* Header Card */}
+          <div className="board-hero-card">
+            <div>
+              <p className="kicker">COMMUNITY FORUM / {companyFilter.toUpperCase()}</p>
+              <h2>{activeTopic}</h2>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span className="drill-tag-badge company-tag">{companyFilter === 'All' ? 'ALL COMPANIES' : companyFilter}</span>
+              <span className="drill-counter-pill">{visiblePosts.length} DISCUSSIONS</span>
+            </div>
+          </div>
+
+          {/* Filter & Search Bar */}
+          <div className="community-filter-bar">
+            <div className="community-search-box">
+              <Search size={14} />
+              <input
+                type="text"
+                placeholder="Search discussions by keyword, company, author..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 0, color: 'var(--muted)' }}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className="community-sort-tabs">
+              <button
+                className={`community-sort-btn ${sort === 'popular' ? 'active' : ''}`}
+                onClick={() => setSort('popular')}
+              >
+                🔥 POPULAR
+              </button>
+              <button
+                className={`community-sort-btn ${sort === 'newest' ? 'active' : ''}`}
+                onClick={() => setSort('newest')}
+              >
+                ✨ NEWEST
+              </button>
+              <button
+                className={`community-sort-btn ${sort === 'replies' ? 'active' : ''}`}
+                onClick={() => setSort('replies')}
+              >
+                💬 MOST REPLIES
+              </button>
+              <button
+                className={`community-sort-btn ${sort === 'helpful' ? 'active' : ''}`}
+                onClick={() => setSort('helpful')}
+              >
+                ⭐ HELPFUL
+              </button>
+            </div>
+          </div>
+
+          {/* Rich Discussion Composer Card */}
+          <div className="composer-card">
+            <div className="composer-type-tabs">
+              <button
+                className={`composer-type-btn ${composerType === 'question' ? 'active' : ''}`}
+                onClick={() => setComposerType('question')}
+              >
+                💡 QUESTION / DISCUSSION
+              </button>
+              <button
+                className={`composer-type-btn ${composerType === 'debrief' ? 'active' : ''}`}
+                onClick={() => setComposerType('debrief')}
+              >
+                📝 INTERVIEW DEBRIEF (PYQS)
+              </button>
+              <button
+                className={`composer-type-btn ${composerType === 'offer' ? 'active' : ''}`}
+                onClick={() => setComposerType('offer')}
+              >
+                💼 OFFER &amp; COMP REVIEW
+              </button>
+              <button
+                className={`composer-type-btn ${composerType === 'mock' ? 'active' : ''}`}
+                onClick={() => setComposerType('mock')}
+              >
+                👥 FIND MOCK PARTNER
+              </button>
+            </div>
+
+            <div className="composer-body">
+              <div className="composer-row-fields">
+                <input
+                  className="composer-field-input"
+                  value={author}
+                  onChange={e => setAuthor(e.target.value)}
+                  placeholder="Your Name (e.g. Aria S.)"
+                />
+                <input
+                  className="composer-field-input"
+                  value={role}
+                  onChange={e => setRole(e.target.value)}
+                  placeholder="Your Role / Target (e.g. SDE-2 Candidate)"
+                />
+                <select
+                  className="composer-field-input"
+                  value={targetCompany}
+                  onChange={e => setTargetCompany(e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <option value="Google">Google</option>
+                  <option value="Amazon">Amazon</option>
+                  <option value="Meta">Meta</option>
+                  <option value="Microsoft">Microsoft</option>
+                  <option value="Flipkart">Flipkart</option>
+                  <option value="Swiggy">Swiggy</option>
+                  <option value="Razorpay">Razorpay</option>
+                  <option value="TCS">TCS</option>
+                  <option value="Netflix">Netflix</option>
+                  <option value="Uber">Uber</option>
+                  <option value="General">General / Other</option>
+                </select>
+              </div>
+
+              {composerType === 'debrief' && (
+                <div className="composer-row-fields">
+                  <input
+                    className="composer-field-input"
+                    value={levelOrRound}
+                    onChange={e => setLevelOrRound(e.target.value)}
+                    placeholder="Round / Level (e.g. Round 3 System Design / L4)"
+                  />
+                  <select
+                    className="composer-field-input"
+                    value={outcome}
+                    onChange={e => setOutcome(e.target.value as any)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="Offer">Outcome: Offer Received 🎉</option>
+                    <option value="Pending">Outcome: Result Pending</option>
+                    <option value="Reject">Outcome: Rejected (Shared for Learning)</option>
+                    <option value="N/A">Outcome: General Round Debrief</option>
+                  </select>
+                  <span style={{ font: '600 10px/2.5 "DM Mono", monospace', color: 'var(--muted)' }}>
+                    ✓ AUTO-TAGGED FOR COMMUNITY
+                  </span>
+                </div>
+              )}
+
+              <input
+                className="composer-field-input"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="Discussion Title (e.g. Google L4 Rate Limiter Round — Expected Complexity & Edge Cases)"
+                style={{ fontWeight: 600 }}
+              />
+
+              <textarea
+                className="composer-textarea"
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                placeholder={
+                  composerType === 'debrief'
+                    ? "Share the interview questions, edge cases discussed, behavioral prompts, and specific tips that helped you..."
+                    : composerType === 'offer'
+                    ? "List base salary, stock/RSUs, joining bonus, location, and your competing counter-offers..."
+                    : composerType === 'mock'
+                    ? "Describe your target companies, topics (DSA / LLD / System Design), and weekly availability..."
+                    : "What would you like to discuss? Include company, round context, code snippets, or architecture questions."
+                }
+              />
+
+              <div className="composer-footer">
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span className="tag-badge">#{targetCompany.toLowerCase()}</span>
+                  <span className="tag-badge">#{composerType}</span>
+                  {activeTopic !== 'All topics' && (
+                    <span className="tag-badge">#{activeTopic.toLowerCase()}</span>
+                  )}
+                </div>
+
+                <button
+                  className="brand-button"
+                  onClick={submitPost}
+                  disabled={!message.trim() || submitting}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}
+                >
+                  <Send size={13} />
+                  <span>{submitting ? 'POSTING...' : 'PUBLISH DISCUSSION'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Discussion Thread Feed */}
+          <div className="thread-list">
+            {visiblePosts.length === 0 ? (
+              <div className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
+                <MessageCircle size={28} style={{ margin: '0 auto 12px', color: 'var(--muted)' }} />
+                <h2>No discussions found for this view.</h2>
+                <p>Be the first to start a conversation or share an interview experience!</p>
+              </div>
+            ) : (
+              visiblePosts.map(post => {
+                const totalVotes = (post.upvotes || 0) + (votes[post.id] || 0);
+                const isUpvoted = upvotedPosts.has(post.id);
+                const isHelpful = helpfulPosts.has(post.id);
+                const isSaved = savedPosts.has(post.id);
+                const isExpanded = expandedReplies.has(post.id);
+                const repliesList = post.replies || [];
+
+                return (
+                  <article key={post.id} className="thread-item-card">
+                    {/* Vote Column */}
+                    <div className="thread-vote-column">
+                      <button
+                        className={`thread-vote-btn ${isUpvoted ? 'upvoted' : ''}`}
+                        onClick={() => toggleVote(post.id)}
+                        title="Upvote discussion"
+                      >
+                        <ChevronUp size={18} />
+                      </button>
+                      <span className="thread-vote-num">{totalVotes}</span>
+                    </div>
+
+                    {/* Content Column */}
+                    <div className="thread-main-column">
+                      <div className="thread-header-row">
+                        <div className="thread-user-info">
+                          <span className="thread-user-avatar">
+                            {post.author.slice(0, 1).toUpperCase()}
+                          </span>
+                          <div className="thread-user-titles">
+                            <span className="thread-user-name">{post.author}</span>
+                            <span className="thread-user-role">
+                              {post.role} • {new Date(post.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {post.company && (
+                            <span className="drill-tag-badge company-tag">{post.company}</span>
+                          )}
+                          {post.outcome && (
+                            <span className={`drill-tag-badge difficulty-tag ${post.outcome === 'Offer' ? 'diff-easy' : 'diff-medium'}`}>
+                              {post.outcome.toUpperCase()}
+                            </span>
+                          )}
+                          {post.postType && post.postType !== 'question' && (
+                            <span className="drill-tag-badge category-tag">{post.postType.toUpperCase()}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {post.title && (
+                        <h3 className="thread-title">{post.title}</h3>
+                      )}
+
+                      <p className="thread-body-text">{post.message}</p>
+
+                      <div className="thread-badges-row">
+                        {post.tags?.map(tag => (
+                          <span key={tag} className="tag-badge">#{tag}</span>
+                        ))}
+                      </div>
+
+                      {/* Action Row */}
+                      <div className="thread-actions-bar">
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                          <button
+                            className={`thread-action-btn ${isExpanded ? 'active' : ''}`}
+                            onClick={() => toggleReplies(post.id)}
+                          >
+                            <MessageCircle size={14} />
+                            <span>{repliesList.length} {repliesList.length === 1 ? 'Reply' : 'Replies'}</span>
+                          </button>
+
+                          <button
+                            className={`thread-action-btn ${isHelpful ? 'active' : ''}`}
+                            onClick={() => toggleHelpful(post.id)}
+                          >
+                            <ThumbsUp size={13} />
+                            <span>{(post.helpfulCount || 0) + (isHelpful ? 1 : 0)} Helpful</span>
+                          </button>
+
+                          <button
+                            className={`thread-action-btn ${isSaved ? 'active' : ''}`}
+                            onClick={() => toggleSaved(post.id)}
+                          >
+                            <Bookmark size={13} fill={isSaved ? 'currentColor' : 'none'} />
+                            <span>{isSaved ? 'Saved' : 'Save'}</span>
+                          </button>
+                        </div>
+
+                        <button
+                          className="thread-action-btn"
+                          onClick={() => toggleReplies(post.id)}
+                          style={{ color: 'var(--ink)', fontWeight: 700 }}
+                        >
+                          {isExpanded ? 'Hide Replies' : '+ Reply to Thread'}
+                        </button>
+                      </div>
+
+                      {/* Nested Replies Drawer */}
+                      {isExpanded && (
+                        <div className="nested-replies-tray">
+                          {repliesList.length > 0 ? (
+                            repliesList.map((rep: CommunityReply) => (
+                              <div key={rep.id} className="nested-reply-item">
+                                <div className="nested-reply-header">
+                                  <span className="nested-reply-author">{rep.author}</span>
+                                  <span className="nested-reply-role">{rep.role}</span>
+                                </div>
+                                <p className="nested-reply-text">{rep.message}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p style={{ margin: 0, font: '400 11.5px Manrope, sans-serif', color: 'var(--muted)' }}>
+                              No replies yet. Be the first to answer!
+                            </p>
+                          )}
+
+                          {/* Inline Reply Composer */}
+                          <div className="nested-reply-composer">
+                            <input
+                              className="nested-reply-input"
+                              placeholder={`Reply to ${post.author}...`}
+                              value={replyDrafts[post.id] || ''}
+                              onChange={e => setReplyDrafts({ ...replyDrafts, [post.id]: e.target.value })}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') submitReply(post.id);
+                              }}
+                            />
+                            <button
+                              className="brand-button"
+                              onClick={() => submitReply(post.id)}
+                              disabled={!(replyDrafts[post.id] || '').trim()}
+                              style={{ padding: '6px 14px', fontSize: 10 }}
+                            >
+                              REPLY
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
 
 function SiteFooter({ onNavigate }: { onNavigate: (page: Page) => void }) {
