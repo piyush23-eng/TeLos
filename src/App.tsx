@@ -2183,38 +2183,34 @@ function CompanyPrep() {
 
                   <div className="roadmap-weeks">
                     {activeRoadmap.weeks.map((week: any, index: number) => (
-                      <div className="roadmap-week" key={week.label} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div className="roadmap-week" key={week.label}>
+                        <div className="week-head-row">
                           <span className="roadmap-number">0{index + 1}</span>
-                          <div style={{ flex: 1 }}>
-                            <strong>{week.label} / {week.focus}</strong>
-                          </div>
+                          <strong>{week.label} / {week.focus}</strong>
                           <Check size={16} aria-hidden="true" />
                         </div>
 
-                        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: '#d8d4e5' }}>{week.target}</p>
+                        <div className="week-body">
+                          <p>{week.target}</p>
 
-                        {week.topics && week.topics.length > 0 && (
-                          <div style={{ marginTop: 4 }}>
-                            <span style={{ fontSize: 9, fontFamily: "'DM Mono', monospace", letterSpacing: '1px', color: 'var(--coral, #f3a184)', fontWeight: 700 }}>
-                              HIGH-PRIORITY TOPICS &amp; PATTERNS:
-                            </span>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                              {week.topics.map((t: string) => (
-                                <span key={t} style={{ fontSize: 10, background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255,255,255,0.12)', padding: '3px 8px', fontFamily: "'DM Mono', monospace", color: '#d8d4e5' }}>
-                                  ✓ {t}
-                                </span>
-                              ))}
+                          {week.topics && week.topics.length > 0 && (
+                            <div>
+                              <span className="week-topics-label">HIGH-PRIORITY TOPICS &amp; PATTERNS:</span>
+                              <div className="week-topics-row">
+                                {week.topics.map((t: string) => (
+                                  <span key={t} className="topic-chip">✓ {t}</span>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {week.deliverable && (
-                          <div style={{ marginTop: 6, padding: '6px 10px', background: 'rgba(214,244,209,0.08)', border: '1px solid rgba(214,244,209,0.15)', fontSize: 11, fontFamily: "'DM Mono', monospace", lineHeight: 1.5 }}>
-                            <b style={{ color: 'var(--mint, #d6f4d1)', marginRight: 8 }}>MILESTONE DELIVERABLE:</b>
-                            <span style={{ color: '#d8d4e5' }}>{week.deliverable}</span>
-                          </div>
-                        )}
+                          {week.deliverable && (
+                            <div className="week-deliverable">
+                              <b>MILESTONE DELIVERABLE:</b>
+                              <span>{week.deliverable}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
