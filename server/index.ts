@@ -65,24 +65,103 @@ app.post('/api/auth/login', async (req, res, next) => {
     res.json({ user: publicUser(user), token: makeToken(user) });
   } catch (error) { next(error); }
 });
+app.get('/api/auth/google/url', (req, res) => {
+  const redirectUri = String(req.query.redirect_uri || `${req.protocol}://${req.get('host')}/api/auth/google/callback`);
+  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '';
+  const scope = encodeURIComponent('openid email profile');
+  const url = clientId
+    ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=select_account`
+    : '';
+  res.json({ url, configured: Boolean(clientId) });
+});
+
+app.get('/api/auth/google/callback', async (req, res) => {
+  try {
+    const code = String(req.query.code || '');
+    const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+    let email = '';
+    let name = '';
+
+    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (code && clientId && clientSecret) {
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code'
+        })
+      });
+      if (tokenRes.ok) {
+        const tokens = await tokenRes.json() as any;
+        const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokens.access_token}` }
+        });
+        if (userinfoRes.ok) {
+          const info = await userinfoRes.json() as any;
+          email = info.email?.toLowerCase();
+          name = info.name || info.given_name || 'Google Candidate';
+        }
+      }
+    }
+
+    if (!email) {
+      return res.status(400).send('Google authentication code could not be verified.');
+    }
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: { name: name || 'Google Candidate', provider: 'google' },
+      create: { email, name: name || 'Google Candidate', provider: 'google' }
+    });
+
+    const token = makeToken(user);
+    const authData = JSON.stringify({ token, user: publicUser(user) });
+
+    res.send(`<!DOCTYPE html>
+<html>
+<head><title>TeLos Google Auth</title></head>
+<body style="font-family:sans-serif;text-align:center;padding:40px;">
+  <p>Authenticating with Google...</p>
+  <script>
+    if (window.opener) {
+      window.opener.postMessage({ type: 'TELOS_AUTH_SUCCESS', data: ${authData} }, '*');
+      window.close();
+    } else {
+      localStorage.setItem('telos-token', ${JSON.stringify(token)});
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>`);
+  } catch (err: any) {
+    res.status(500).send(`Google auth error: ${err.message}`);
+  }
+});
+
 app.post('/api/auth/google', async (req, res, next) => {
   try {
     const credential = String(req.body.credential || '');
     let email = String(req.body.email || '').trim().toLowerCase();
     let name = String(req.body.name || '').trim();
 
-    if (credential && process.env.GOOGLE_CLIENT_ID) {
+    if (credential) {
       try {
         const google = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
         if (google.ok) {
           const profile = await google.json() as { aud?: string; email?: string; email_verified?: string; name?: string; given_name?: string };
-          if (profile.email && profile.email_verified === 'true') {
+          if (profile.email && (profile.email_verified === 'true' || profile.email_verified === (true as any))) {
             email = profile.email.toLowerCase();
             name = profile.name || profile.given_name || name || 'Google Candidate';
           }
         }
       } catch {
-        // Continue with provided profile if token lookup is unavailable
+        // Fall back to direct profile payload if token info lookup fails
       }
     }
 
@@ -97,6 +176,97 @@ app.post('/api/auth/google', async (req, res, next) => {
     });
     res.json({ user: publicUser(user), token: makeToken(user) });
   } catch (error) { next(error); }
+});
+
+app.get('/api/auth/linkedin/url', (req, res) => {
+  const redirectUri = String(req.query.redirect_uri || `${req.protocol}://${req.get('host')}/api/auth/linkedin/callback`);
+  const clientId = process.env.LINKEDIN_CLIENT_ID || process.env.VITE_LINKEDIN_CLIENT_ID || '';
+  const scope = encodeURIComponent('openid profile email');
+  const state = randomBytes(16).toString('hex');
+  const url = clientId
+    ? `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`
+    : '';
+  res.json({ url, configured: Boolean(clientId) });
+});
+
+app.get('/api/auth/linkedin/callback', async (req, res) => {
+  try {
+    const code = String(req.query.code || '');
+    const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/linkedin/callback`;
+    let email = '';
+    let name = '';
+    let linkedinUrl = '';
+
+    const clientId = process.env.LINKEDIN_CLIENT_ID || process.env.VITE_LINKEDIN_CLIENT_ID;
+    const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
+
+    if (code && clientId && clientSecret) {
+      const tokenRes = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code'
+        })
+      });
+      if (tokenRes.ok) {
+        const tokens = await tokenRes.json() as any;
+        const userinfoRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+          headers: { Authorization: `Bearer ${tokens.access_token}` }
+        });
+        if (userinfoRes.ok) {
+          const info = await userinfoRes.json() as any;
+          email = info.email?.toLowerCase();
+          name = info.name || `${info.given_name || ''} ${info.family_name || ''}`.trim() || 'LinkedIn Candidate';
+          linkedinUrl = info.sub ? `https://linkedin.com/in/${info.sub}` : '';
+        }
+      }
+    }
+
+    if (!email) {
+      return res.status(400).send('LinkedIn authorization code could not be verified.');
+    }
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        name: name || 'LinkedIn Candidate',
+        provider: 'linkedin',
+        ...(linkedinUrl ? { linkedin: linkedinUrl } : {})
+      },
+      create: {
+        email,
+        name: name || 'LinkedIn Candidate',
+        provider: 'linkedin',
+        linkedin: linkedinUrl || 'https://linkedin.com/in/'
+      }
+    });
+
+    const token = makeToken(user);
+    const authData = JSON.stringify({ token, user: publicUser(user) });
+
+    res.send(`<!DOCTYPE html>
+<html>
+<head><title>TeLos LinkedIn Auth</title></head>
+<body style="font-family:sans-serif;text-align:center;padding:40px;">
+  <p>Authenticating with LinkedIn...</p>
+  <script>
+    if (window.opener) {
+      window.opener.postMessage({ type: 'TELOS_AUTH_SUCCESS', data: ${authData} }, '*');
+      window.close();
+    } else {
+      localStorage.setItem('telos-token', ${JSON.stringify(token)});
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>`);
+  } catch (err: any) {
+    res.status(500).send(`LinkedIn auth error: ${err.message}`);
+  }
 });
 
 app.post('/api/auth/linkedin', async (req, res, next) => {

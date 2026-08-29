@@ -65,21 +65,80 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
     }
   };
 
-  const handleGoogleClick = () => {
-    if (clientId && window.google) {
-      window.google.accounts.id.prompt();
-    } else {
+  const openOAuthPopup = (url: string, title: string) => {
+    const width = 540;
+    const height = 640;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    return window.open(
+      url,
+      title,
+      `width=${width},height=${height},left=${left},top=${top},status=0,menubar=0,toolbar=0`
+    );
+  };
+
+  const handleGoogleClick = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      if (clientId && window.google) {
+        window.google.accounts.id.prompt();
+        setBusy(false);
+        return;
+      }
+      const res = await fetch(`${API}/api/auth/google/url`);
+      const data = await res.json();
+      if (data.url) {
+        openOAuthPopup(data.url, 'Google Sign In');
+      } else {
+        setSocialProvider('google');
+        setSocialName(name || '');
+        setSocialEmail(email || '');
+      }
+    } catch {
       setSocialProvider('google');
       setSocialName(name || '');
       setSocialEmail(email || '');
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleLinkedInClick = () => {
-    setSocialProvider('linkedin');
-    setSocialName(name || '');
-    setSocialEmail(email || '');
+  const handleLinkedInClick = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const res = await fetch(`${API}/api/auth/linkedin/url`);
+      const data = await res.json();
+      if (data.url) {
+        openOAuthPopup(data.url, 'LinkedIn Sign In');
+      } else {
+        setSocialProvider('linkedin');
+        setSocialName(name || '');
+        setSocialEmail(email || '');
+      }
+    } catch {
+      setSocialProvider('linkedin');
+      setSocialName(name || '');
+      setSocialEmail(email || '');
+    } finally {
+      setBusy(false);
+    }
   };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'TELOS_AUTH_SUCCESS' && event.data?.data) {
+        const { token, user } = event.data.data;
+        if (token && user) {
+          localStorage.setItem('telos-token', token);
+          onAuthenticated(user);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onAuthenticated]);
 
   const handleSocialSubmit = (e: React.FormEvent) => {
     e.preventDefault();
