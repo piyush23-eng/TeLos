@@ -2783,101 +2783,93 @@ function Community() {
       </section>
 
       <section className="prep-shell community-shell">
-        {/* LEFT COLUMN: Sidebar matching prep-sidebar */}
-        <aside className="prep-sidebar community-sidebar">
-          {/* Card 1: Topics Directory */}
-          <div className="detail-card" style={{ padding: 0, overflow: 'hidden', background: '#ffffff' }}>
-            <div className="panel-label">
-              <span>
-                <Users size={12} style={{ display: 'inline', marginRight: 6 }} />
-                TOPICS DIRECTORY
-              </span>
-              <span>{posts.length} POSTS</span>
-            </div>
-            <div className="community-topic-list">
-              {topics.map(item => {
-                const count = item === 'All topics'
-                  ? posts.length
-                  : posts.filter(post => `${post.message} ${(post.tags || []).join(' ')}`.toLowerCase().includes(item.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'))).length;
-                return (
-                  <button
-                    key={item}
-                    className={`community-topic-btn ${activeTopic === item ? 'active' : ''}`}
-                    onClick={() => setActiveTopic(item)}
-                  >
-                    <span>{item}</span>
-                    <span className="community-topic-count">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
+        {/* LEFT COLUMN: Unified Sidebar matching Company Prep */}
+        <aside className="community-sidebar">
+          {/* Section 1: Topics Directory */}
+          <div className="panel-label">
+            <span>
+              <Users size={12} style={{ display: 'inline', marginRight: 6 }} />
+              TOPICS DIRECTORY
+            </span>
+            <span>{posts.length} POSTS</span>
           </div>
-
-          {/* Card 2: Trending Company Scope */}
-          <div className="detail-card" style={{ padding: 0, overflow: 'hidden', background: '#ffffff' }}>
-            <div className="panel-label">
-              <span>
-                <Briefcase size={12} style={{ display: 'inline', marginRight: 6 }} />
-                DISCUSS BY COMPANY
-              </span>
-              <span>HOT</span>
-            </div>
-            <div className="community-pill-row">
-              {trendingCompanies.map(comp => (
+          <div className="community-topic-list">
+            {topics.map(item => {
+              const count = item === 'All topics'
+                ? posts.length
+                : posts.filter(post => `${post.message} ${(post.tags || []).join(' ')}`.toLowerCase().includes(item.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'))).length;
+              return (
                 <button
-                  key={comp}
-                  className={`community-pill-chip ${companyFilter === comp ? 'active' : ''}`}
-                  onClick={() => setCompanyFilter(comp)}
+                  key={item}
+                  className={`community-topic-btn ${activeTopic === item ? 'active' : ''}`}
+                  onClick={() => setActiveTopic(item)}
                 >
-                  {comp === 'All' ? 'ALL' : `#${comp}`}
+                  <span>{item}</span>
+                  <span className="community-topic-count">{count}</span>
                 </button>
-              ))}
+              );
+            })}
+          </div>
+
+          {/* Section 2: Trending Company Scope */}
+          <div className="panel-label">
+            <span>
+              <Briefcase size={12} style={{ display: 'inline', marginRight: 6 }} />
+              DISCUSS BY COMPANY
+            </span>
+            <span>HOT</span>
+          </div>
+          <div className="community-pill-row">
+            {trendingCompanies.map(comp => (
+              <button
+                key={comp}
+                className={`community-pill-chip ${companyFilter === comp ? 'active' : ''}`}
+                onClick={() => setCompanyFilter(comp)}
+              >
+                {comp === 'All' ? 'ALL' : `#${comp}`}
+              </button>
+            ))}
+          </div>
+
+          {/* Section 3: Community Metrics */}
+          <div className="panel-label">
+            <span>
+              <TrendingUp size={12} style={{ display: 'inline', marginRight: 6 }} />
+              COMMUNITY SIGNAL
+            </span>
+            <span>VERIFIED</span>
+          </div>
+          <div className="community-metrics-grid">
+            <div className="community-metric-card">
+              <span className="community-metric-value">{uniqueAuthorsCount}</span>
+              <span className="community-metric-label">Contributors</span>
+            </div>
+            <div className="community-metric-card">
+              <span className="community-metric-value">{totalPYQsCount}</span>
+              <span className="community-metric-label">Debriefs &amp; PYQs</span>
+            </div>
+            <div className="community-metric-card">
+              <span className="community-metric-value">{totalRepliesCount}</span>
+              <span className="community-metric-label">Answers</span>
+            </div>
+            <div className="community-metric-card">
+              <span className="community-metric-value">{trackedCompaniesCount}</span>
+              <span className="community-metric-label">Companies</span>
             </div>
           </div>
 
-          {/* Card 3: Community Metrics */}
-          <div className="detail-card" style={{ padding: 0, overflow: 'hidden', background: '#ffffff' }}>
-            <div className="panel-label">
-              <span>
-                <TrendingUp size={12} style={{ display: 'inline', marginRight: 6 }} />
-                COMMUNITY SIGNAL
-              </span>
-              <span>VERIFIED</span>
-            </div>
-            <div className="community-metrics-grid">
-              <div className="community-metric-card">
-                <span className="community-metric-value">{uniqueAuthorsCount}</span>
-                <span className="community-metric-label">Contributors</span>
-              </div>
-              <div className="community-metric-card">
-                <span className="community-metric-value">{totalPYQsCount}</span>
-                <span className="community-metric-label">Debriefs &amp; PYQs</span>
-              </div>
-              <div className="community-metric-card">
-                <span className="community-metric-value">{totalRepliesCount}</span>
-                <span className="community-metric-label">Answers</span>
-              </div>
-              <div className="community-metric-card">
-                <span className="community-metric-value">{trackedCompaniesCount}</span>
-                <span className="community-metric-label">Companies</span>
-              </div>
-            </div>
+          {/* Section 4: Signal Guidelines */}
+          <div className="panel-label" style={{ background: 'var(--ink)', color: 'var(--mint)', borderBottomColor: 'var(--ink)' }}>
+            <span>
+              <Award size={12} style={{ display: 'inline', marginRight: 6 }} />
+              PEER SHARING TIPS
+            </span>
+            <span>STANDARDS</span>
           </div>
-
-          {/* Card 4: Signal Guidelines */}
-          <div className="detail-card" style={{ background: '#ffffff', color: 'var(--ink)', padding: 0, overflow: 'hidden' }}>
-            <div className="panel-label" style={{ background: 'var(--ink)', color: 'var(--mint)', borderBottomColor: 'var(--ink)' }}>
-              <span>
-                <Award size={12} style={{ display: 'inline', marginRight: 6 }} />
-                PEER SHARING TIPS
-              </span>
-              <span>STANDARDS</span>
-            </div>
-            <div style={{ padding: 16 }}>
-              <p style={{ margin: 0, font: '500 12px/1.6 Manrope, sans-serif', color: 'var(--ink)' }}>
-                When posting an interview debrief, include the <strong>Company</strong>, <strong>Role/Level</strong>, <strong>Round specifications</strong>, and <strong>trade-offs asked</strong>. This helps peers give precise, actionable feedback.
-              </p>
-            </div>
+          <div style={{ padding: '14px 16px', background: '#ffffff' }}>
+            <p style={{ margin: 0, font: '500 12px/1.6 Manrope, sans-serif', color: 'var(--ink)' }}>
+              Include the <strong>Company</strong>, <strong>Role/Level</strong>, <strong>Round specifications</strong>, and <strong>trade-offs asked</strong> for high-signal peer calibration.
+            </p>
           </div>
         </aside>
 

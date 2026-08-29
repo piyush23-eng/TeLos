@@ -756,18 +756,26 @@
   box-sizing: border-box;
 }
 
-/* Sidebar Widgets */
+/* Sidebar - Unified Brutalist Container matching Company Prep */
 .community-sidebar {
+  background: #ffffff;
+  border: 1px solid var(--ink, #101018);
+  box-shadow: 4px 4px 0 var(--ink, #101018);
   display: flex;
   flex-direction: column;
-  gap: 18px;
   position: sticky;
   top: 24px;
   max-height: calc(100vh - 48px);
   overflow-y: auto;
+  overflow-x: hidden;
   min-width: 320px;
   width: 100%;
   box-sizing: border-box;
+}
+
+:root[data-theme='dark'] .community-sidebar {
+  background: #1a1926;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
 }
 
 .community-sidebar::-webkit-scrollbar {
@@ -782,6 +790,7 @@
   display: flex;
   flex-direction: column;
   padding: 0;
+  border-bottom: 1px solid var(--ink, #101018);
 }
 
 .community-topic-btn {
@@ -791,7 +800,7 @@
   gap: 10px;
   padding: 12px 16px;
   border: 0;
-  border-bottom: 1px solid var(--ink, #101018);
+  border-bottom: 1px solid var(--line, rgba(16, 16, 24, 0.15));
   background: #ffffff;
   color: var(--ink, #101018);
   font: 600 12.5px/1.2 Manrope, sans-serif;
@@ -851,6 +860,7 @@
   gap: 6px;
   padding: 14px 16px;
   background: #ffffff;
+  border-bottom: 1px solid var(--ink, #101018);
 }
 
 :root[data-theme='dark'] .community-pill-row {
@@ -894,7 +904,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 1px;
   background: var(--ink, #101018);
-  border: 1px solid var(--ink, #101018);
+  border-bottom: 1px solid var(--ink, #101018);
 }
 
 .community-metric-card {
