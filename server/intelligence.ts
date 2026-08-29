@@ -282,13 +282,12 @@ export class IntelligenceProvider {
     const openRouterKey = customApiKey || process.env.OPENROUTER_API_KEY;
     if (openRouterKey && (modelProvider === 'openrouter' || modelProvider === 'auto' || modelProvider === 'gemini')) {
       const preferredModels = [
-        modelName || process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001',
+        modelName || process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct',
         'meta-llama/llama-3.3-70b-instruct',
         'deepseek/deepseek-chat',
         'mistralai/mistral-small-24b-instruct-2501',
-        'qwen/qwen-2.5-72b-instruct',
         'google/gemini-2.0-flash-exp:free',
-        'meta-llama/llama-3.3-70b-instruct:free'
+        'qwen/qwen-2.5-72b-instruct'
       ];
 
       for (const candidateModel of preferredModels) {
@@ -753,10 +752,11 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
     const openRouterKey = process.env.OPENROUTER_API_KEY;
     if (openRouterKey) {
       const preferredModels = [
-        process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001',
+        process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct',
         'meta-llama/llama-3.3-70b-instruct',
         'deepseek/deepseek-chat',
-        'mistralai/mistral-small-24b-instruct-2501'
+        'mistralai/mistral-small-24b-instruct-2501',
+        'google/gemini-2.0-flash-exp:free'
       ];
       for (const model of preferredModels) {
         try {
