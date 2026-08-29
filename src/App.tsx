@@ -2769,7 +2769,7 @@ function Community() {
   }, [posts, activeTopic, companyFilter, postTypeFilter, searchQuery, sort, votes, helpfulPosts]);
 
   return (
-    <main className="shell community-shell">
+    <main className="shell community-shell prep-shell">
       <section className="studio-head">
         <div>
           <p className="kicker">03 / LEARN WITH THE COMMUNITY</p>
@@ -2777,125 +2777,139 @@ function Community() {
         </div>
         <div className="session-meta">
           <b>TELOS DISCUSS HUB</b>
-          <span>REAL INTERVIEW LOGS</span>
-          <span>PEER MOCK INTERVIEWS</span>
+          <span>INTERVIEW EXPERIENCES</span>
+          <span>PEER MOCK PRACTICE</span>
         </div>
       </section>
 
-      <div className="community-layout">
-        {/* LEFT COLUMN: Structured Sidebar (Equalized Cards) */}
-        <aside className="community-sidebar">
-          {/* Card 1: Topics Directory */}
-          <div className="community-card">
-            <div className="community-card-head">
-              <span>
-                <Users size={12} style={{ display: 'inline', marginRight: 6 }} />
-                TOPICS DIRECTORY
-              </span>
-              <span>{posts.length} POSTS</span>
-            </div>
-            <div className="community-topic-list">
-              {topics.map(item => {
-                const count = item === 'All topics'
-                  ? posts.length
-                  : posts.filter(post => `${post.message} ${(post.tags || []).join(' ')}`.toLowerCase().includes(item.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'))).length;
-                return (
-                  <button
-                    key={item}
-                    className={`community-topic-btn ${activeTopic === item ? 'active' : ''}`}
-                    onClick={() => setActiveTopic(item)}
-                  >
-                    <span>{item}</span>
-                    <span className="community-topic-count">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
+      {/* LEFT COLUMN: Sidebar matching prep-sidebar */}
+      <aside className="prep-sidebar community-sidebar">
+        {/* Card 1: Topics Directory */}
+        <div className="detail-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="panel-label">
+            <span>
+              <Users size={12} style={{ display: 'inline', marginRight: 6 }} />
+              TOPICS DIRECTORY
+            </span>
+            <span>{posts.length} POSTS</span>
           </div>
-
-          {/* Card 2: Trending Company Scope */}
-          <div className="community-card">
-            <div className="community-card-head">
-              <span>
-                <Briefcase size={12} style={{ display: 'inline', marginRight: 6 }} />
-                DISCUSS BY COMPANY
-              </span>
-              <span>HOT</span>
-            </div>
-            <div className="trending-companies-grid">
-              {trendingCompanies.map(comp => (
+          <div className="community-topic-list">
+            {topics.map(item => {
+              const count = item === 'All topics'
+                ? posts.length
+                : posts.filter(post => `${post.message} ${(post.tags || []).join(' ')}`.toLowerCase().includes(item.toLowerCase().replace(' & ', ' ').replace(' experiences', ' experience'))).length;
+              return (
                 <button
-                  key={comp}
-                  className={`company-tag-pill ${companyFilter === comp ? 'active' : ''}`}
-                  onClick={() => setCompanyFilter(comp)}
+                  key={item}
+                  className={`community-topic-btn ${activeTopic === item ? 'active' : ''}`}
+                  onClick={() => setActiveTopic(item)}
                 >
-                  {comp === 'All' ? 'All Companies' : `#${comp}`}
+                  <span>{item}</span>
+                  <span className="community-topic-count">{count}</span>
                 </button>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Card 2: Trending Company Scope */}
+        <div className="detail-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="panel-label">
+            <span>
+              <Briefcase size={12} style={{ display: 'inline', marginRight: 6 }} />
+              DISCUSS BY COMPANY
+            </span>
+            <span>HOT</span>
+          </div>
+          <div className="pill-row">
+            {trendingCompanies.map(comp => (
+              <button
+                key={comp}
+                className={`pill-chip ${companyFilter === comp ? 'active' : ''}`}
+                onClick={() => setCompanyFilter(comp)}
+              >
+                {comp === 'All' ? 'ALL' : `#${comp}`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Card 3: Community Metrics */}
+        <div className="detail-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="panel-label">
+            <span>
+              <TrendingUp size={12} style={{ display: 'inline', marginRight: 6 }} />
+              COMMUNITY SIGNAL
+            </span>
+            <span>VERIFIED</span>
+          </div>
+          <div className="info-grid" style={{ margin: 0, gap: 1, background: 'var(--ink)' }}>
+            <div className="info-card" style={{ background: 'rgba(255,255,255,0.85)', padding: '12px 14px' }}>
+              <span style={{ font: "400 24px/1 'DM Serif Display', serif", color: 'var(--ink)' }}>{uniqueAuthorsCount}</span>
+              <span style={{ font: "700 8.5px/1 'DM Mono', monospace", color: 'var(--muted)', textTransform: 'uppercase', marginTop: 4 }}>Contributors</span>
+            </div>
+            <div className="info-card" style={{ background: 'rgba(255,255,255,0.85)', padding: '12px 14px' }}>
+              <span style={{ font: "400 24px/1 'DM Serif Display', serif", color: 'var(--ink)' }}>{totalPYQsCount}</span>
+              <span style={{ font: "700 8.5px/1 'DM Mono', monospace", color: 'var(--muted)', textTransform: 'uppercase', marginTop: 4 }}>Debriefs &amp; PYQs</span>
+            </div>
+            <div className="info-card" style={{ background: 'rgba(255,255,255,0.85)', padding: '12px 14px' }}>
+              <span style={{ font: "400 24px/1 'DM Serif Display', serif", color: 'var(--ink)' }}>{totalRepliesCount}</span>
+              <span style={{ font: "700 8.5px/1 'DM Mono', monospace", color: 'var(--muted)', textTransform: 'uppercase', marginTop: 4 }}>Answers</span>
+            </div>
+            <div className="info-card" style={{ background: 'rgba(255,255,255,0.85)', padding: '12px 14px' }}>
+              <span style={{ font: "400 24px/1 'DM Serif Display', serif", color: 'var(--ink)' }}>{trackedCompaniesCount}</span>
+              <span style={{ font: "700 8.5px/1 'DM Mono', monospace", color: 'var(--muted)', textTransform: 'uppercase', marginTop: 4 }}>Companies</span>
             </div>
           </div>
+        </div>
 
-          {/* Card 3: Community Metrics */}
-          <div className="community-card">
-            <div className="community-card-head">
-              <span>
-                <TrendingUp size={12} style={{ display: 'inline', marginRight: 6 }} />
-                COMMUNITY SIGNAL
-              </span>
-              <span>VERIFIED</span>
-            </div>
-            <div className="community-stats-grid">
-              <div className="community-stat-cell">
-                <span className="community-stat-val">{uniqueAuthorsCount}</span>
-                <span className="community-stat-lbl">Active Contributors</span>
-              </div>
-              <div className="community-stat-cell">
-                <span className="community-stat-val">{totalPYQsCount}</span>
-                <span className="community-stat-lbl">Debriefs &amp; PYQs</span>
-              </div>
-              <div className="community-stat-cell">
-                <span className="community-stat-val">{totalRepliesCount}</span>
-                <span className="community-stat-lbl">Community Answers</span>
-              </div>
-              <div className="community-stat-cell">
-                <span className="community-stat-val">{trackedCompaniesCount}</span>
-                <span className="community-stat-lbl">Companies Tracked</span>
-              </div>
-            </div>
+        {/* Card 4: Signal Guidelines */}
+        <div className="detail-card" style={{ background: 'var(--ink)', color: '#ffffff', padding: 0, overflow: 'hidden' }}>
+          <div className="panel-label" style={{ background: '#191826', color: 'var(--mint)', borderBottomColor: 'rgba(255,255,255,0.15)' }}>
+            <span>
+              <Award size={12} style={{ display: 'inline', marginRight: 6 }} />
+              HIGH-SIGNAL ADVICE
+            </span>
+            <span>STANDARDS</span>
           </div>
-
-          {/* Card 4: Signal Guidelines */}
-          <div className="community-card" style={{ background: 'var(--ink)', color: '#ffffff' }}>
-            <div className="community-card-head" style={{ background: '#191826', color: 'var(--mint)', borderBottomColor: 'rgba(255,255,255,0.15)' }}>
-              <span>
-                <Award size={12} style={{ display: 'inline', marginRight: 6 }} />
-                HIGH-SIGNAL ADVICE
-              </span>
-              <span>STANDARDS</span>
-            </div>
-            <div style={{ padding: 16 }}>
-              <p style={{ margin: 0, font: '400 11.5px/1.6 Manrope, sans-serif', color: '#d8d4e4' }}>
-                When posting an interview debrief, include the <strong>Company</strong>, <strong>Role/Level</strong>, <strong>Round specifications</strong>, and <strong>trade-offs asked</strong>. This helps peers give precise, actionable feedback.
-              </p>
-            </div>
+          <div style={{ padding: 16 }}>
+            <p style={{ margin: 0, font: '400 11.5px/1.6 Manrope, sans-serif', color: '#d8d4e4' }}>
+              When posting an interview debrief, include the <strong>Company</strong>, <strong>Role/Level</strong>, <strong>Round specifications</strong>, and <strong>trade-offs asked</strong>. This helps peers give precise, actionable feedback.
+            </p>
           </div>
-        </aside>
+        </div>
+      </aside>
 
-        {/* RIGHT COLUMN: Board Header, Filter Toolbar, Composer & Discussion Feed */}
-        <section className="community-board">
-          {/* Header Card */}
-          <div className="board-hero-card">
+      {/* RIGHT COLUMN: Feed matching Company Prep Detail Workspace */}
+      <section className="prep-detail community-board">
+        {/* Hero Card matching Company Prep Hero Gradient */}
+        <article className="detail-card hero-card">
+          <div className="detail-header">
             <div>
               <p className="kicker">COMMUNITY FORUM / {companyFilter.toUpperCase()}</p>
               <h2>{activeTopic}</h2>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span className="drill-tag-badge company-tag">{companyFilter === 'All' ? 'ALL COMPANIES' : companyFilter}</span>
-              <span className="drill-counter-pill">{visiblePosts.length} DISCUSSIONS</span>
+              <span className="metric-pill" style={{ background: 'var(--ink, #101018)', color: '#fff', border: '1px solid var(--ink, #101018)', fontWeight: 700, padding: '8px 14px' }}>
+                {companyFilter === 'All' ? 'ALL COMPANIES' : companyFilter.toUpperCase()}
+              </span>
+              <span className="meta-pill" style={{ background: 'var(--mint)', color: 'var(--ink)', fontWeight: 700 }}>
+                {visiblePosts.length} DISCUSSIONS
+              </span>
             </div>
           </div>
+          <p style={{ margin: '8px 0 14px', fontSize: 13, lineHeight: 1.6, color: 'var(--ink)' }}>
+            Share verified interview experiences, compare compensation packages, solve high-impact system design trade-offs, and partner up for peer mock interviews.
+          </p>
+          <div className="detail-meta-row">
+            <span className="meta-pill">Mode • Real-time Peer Hub</span>
+            <span className="meta-pill">Quality Bar • High Signal</span>
+            <span className="meta-pill">Coverage • 47 Global &amp; Indian Unicorns</span>
+          </div>
+        </article>
 
-          {/* Filter & Search Bar */}
+        {/* Filter & Search Bar Card */}
+        <article className="detail-card" style={{ padding: '12px 18px' }}>
           <div className="community-filter-bar">
             <div className="community-search-box">
               <Search size={14} />
@@ -2917,182 +2931,199 @@ function Community() {
 
             <div className="community-sort-tabs">
               <button
-                className={`community-sort-btn ${sort === 'popular' ? 'active' : ''}`}
+                className={`pill-chip ${sort === 'popular' ? 'active' : ''}`}
                 onClick={() => setSort('popular')}
               >
                 🔥 POPULAR
               </button>
               <button
-                className={`community-sort-btn ${sort === 'newest' ? 'active' : ''}`}
+                className={`pill-chip ${sort === 'newest' ? 'active' : ''}`}
                 onClick={() => setSort('newest')}
               >
                 ✨ NEWEST
               </button>
               <button
-                className={`community-sort-btn ${sort === 'replies' ? 'active' : ''}`}
+                className={`pill-chip ${sort === 'replies' ? 'active' : ''}`}
                 onClick={() => setSort('replies')}
               >
                 💬 MOST REPLIES
               </button>
               <button
-                className={`community-sort-btn ${sort === 'helpful' ? 'active' : ''}`}
+                className={`pill-chip ${sort === 'helpful' ? 'active' : ''}`}
                 onClick={() => setSort('helpful')}
               >
                 ⭐ HELPFUL
               </button>
             </div>
           </div>
+        </article>
 
-          {/* Rich Discussion Composer Card */}
-          <div className="composer-card">
-            <div className="composer-type-tabs">
-              <button
-                className={`composer-type-btn ${composerType === 'question' ? 'active' : ''}`}
-                onClick={() => setComposerType('question')}
+        {/* Discussion Composer Card with Company Prep Panel Styling */}
+        <article className="detail-card composer-detail-card">
+          <div className="panel-label">
+            <span>
+              <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
+              START A NEW TECHNICAL DISCUSSION
+            </span>
+            <span>{composerType.toUpperCase()}</span>
+          </div>
+
+          <div className="composer-type-tabs">
+            <button
+              className={`composer-type-btn ${composerType === 'question' ? 'active' : ''}`}
+              onClick={() => setComposerType('question')}
+            >
+              💡 QUESTION / DISCUSSION
+            </button>
+            <button
+              className={`composer-type-btn ${composerType === 'debrief' ? 'active' : ''}`}
+              onClick={() => setComposerType('debrief')}
+            >
+              📝 INTERVIEW DEBRIEF (PYQS)
+            </button>
+            <button
+              className={`composer-type-btn ${composerType === 'offer' ? 'active' : ''}`}
+              onClick={() => setComposerType('offer')}
+            >
+              💼 OFFER &amp; COMP REVIEW
+            </button>
+            <button
+              className={`composer-type-btn ${composerType === 'mock' ? 'active' : ''}`}
+              onClick={() => setComposerType('mock')}
+            >
+              👥 FIND MOCK PARTNER
+            </button>
+          </div>
+
+          <div className="composer-body">
+            <div className="composer-row-fields">
+              <input
+                className="composer-field-input"
+                value={author}
+                onChange={e => setAuthor(e.target.value)}
+                placeholder="Your Name (e.g. Aria S.)"
+              />
+              <input
+                className="composer-field-input"
+                value={role}
+                onChange={e => setRole(e.target.value)}
+                placeholder="Your Role / Target (e.g. SDE-2 Candidate)"
+              />
+              <select
+                className="composer-field-input"
+                value={targetCompany}
+                onChange={e => setTargetCompany(e.target.value)}
+                style={{ cursor: 'pointer' }}
               >
-                💡 QUESTION / DISCUSSION
-              </button>
-              <button
-                className={`composer-type-btn ${composerType === 'debrief' ? 'active' : ''}`}
-                onClick={() => setComposerType('debrief')}
-              >
-                📝 INTERVIEW DEBRIEF (PYQS)
-              </button>
-              <button
-                className={`composer-type-btn ${composerType === 'offer' ? 'active' : ''}`}
-                onClick={() => setComposerType('offer')}
-              >
-                💼 OFFER &amp; COMP REVIEW
-              </button>
-              <button
-                className={`composer-type-btn ${composerType === 'mock' ? 'active' : ''}`}
-                onClick={() => setComposerType('mock')}
-              >
-                👥 FIND MOCK PARTNER
-              </button>
+                {companyCatalog.map(comp => (
+                  <option key={comp.id} value={comp.name}>{comp.name}</option>
+                ))}
+                <option value="General">General / Other</option>
+              </select>
             </div>
 
-            <div className="composer-body">
+            {composerType === 'debrief' && (
               <div className="composer-row-fields">
                 <input
                   className="composer-field-input"
-                  value={author}
-                  onChange={e => setAuthor(e.target.value)}
-                  placeholder="Your Name (e.g. Aria S.)"
-                />
-                <input
-                  className="composer-field-input"
-                  value={role}
-                  onChange={e => setRole(e.target.value)}
-                  placeholder="Your Role / Target (e.g. SDE-2 Candidate)"
+                  value={levelOrRound}
+                  onChange={e => setLevelOrRound(e.target.value)}
+                  placeholder="Round / Level (e.g. Round 3 System Design / L4)"
                 />
                 <select
                   className="composer-field-input"
-                  value={targetCompany}
-                  onChange={e => setTargetCompany(e.target.value)}
+                  value={outcome}
+                  onChange={e => setOutcome(e.target.value as any)}
                   style={{ cursor: 'pointer' }}
                 >
-                  {companyCatalog.map(comp => (
-                    <option key={comp.id} value={comp.name}>{comp.name}</option>
-                  ))}
-                  <option value="General">General / Other</option>
+                  <option value="Offer">Outcome: Offer Received 🎉</option>
+                  <option value="Pending">Outcome: Result Pending</option>
+                  <option value="Reject">Outcome: Rejected (Shared for Learning)</option>
+                  <option value="N/A">Outcome: General Round Debrief</option>
                 </select>
+                <span style={{ font: '600 10px/2.5 "DM Mono", monospace', color: 'var(--muted)' }}>
+                  ✓ AUTO-TAGGED FOR COMMUNITY
+                </span>
+              </div>
+            )}
+
+            <input
+              className="composer-field-input"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Discussion Title (e.g. Google L4 Rate Limiter Round — Expected Complexity & Edge Cases)"
+              style={{ fontWeight: 600 }}
+            />
+
+            <textarea
+              className="composer-textarea"
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              placeholder={
+                composerType === 'debrief'
+                  ? "Share the interview questions, edge cases discussed, behavioral prompts, and specific tips that helped you..."
+                  : composerType === 'offer'
+                  ? "List base salary, stock/RSUs, joining bonus, location, and your competing counter-offers..."
+                  : composerType === 'mock'
+                  ? "Describe your target companies, topics (DSA / LLD / System Design), and weekly availability..."
+                  : "What would you like to discuss? Include company, round context, code snippets, or architecture questions."
+              }
+            />
+
+            <div className="composer-footer">
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span className="topic-chip">#{targetCompany.toLowerCase()}</span>
+                <span className="topic-chip">#{composerType}</span>
+                {activeTopic !== 'All topics' && (
+                  <span className="topic-chip">#{activeTopic.toLowerCase()}</span>
+                )}
               </div>
 
-              {composerType === 'debrief' && (
-                <div className="composer-row-fields">
-                  <input
-                    className="composer-field-input"
-                    value={levelOrRound}
-                    onChange={e => setLevelOrRound(e.target.value)}
-                    placeholder="Round / Level (e.g. Round 3 System Design / L4)"
-                  />
-                  <select
-                    className="composer-field-input"
-                    value={outcome}
-                    onChange={e => setOutcome(e.target.value as any)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <option value="Offer">Outcome: Offer Received 🎉</option>
-                    <option value="Pending">Outcome: Result Pending</option>
-                    <option value="Reject">Outcome: Rejected (Shared for Learning)</option>
-                    <option value="N/A">Outcome: General Round Debrief</option>
-                  </select>
-                  <span style={{ font: '600 10px/2.5 "DM Mono", monospace', color: 'var(--muted)' }}>
-                    ✓ AUTO-TAGGED FOR COMMUNITY
-                  </span>
-                </div>
-              )}
-
-              <input
-                className="composer-field-input"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="Discussion Title (e.g. Google L4 Rate Limiter Round — Expected Complexity & Edge Cases)"
-                style={{ fontWeight: 600 }}
-              />
-
-              <textarea
-                className="composer-textarea"
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                placeholder={
-                  composerType === 'debrief'
-                    ? "Share the interview questions, edge cases discussed, behavioral prompts, and specific tips that helped you..."
-                    : composerType === 'offer'
-                    ? "List base salary, stock/RSUs, joining bonus, location, and your competing counter-offers..."
-                    : composerType === 'mock'
-                    ? "Describe your target companies, topics (DSA / LLD / System Design), and weekly availability..."
-                    : "What would you like to discuss? Include company, round context, code snippets, or architecture questions."
-                }
-              />
-
-              <div className="composer-footer">
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <span className="tag-badge">#{targetCompany.toLowerCase()}</span>
-                  <span className="tag-badge">#{composerType}</span>
-                  {activeTopic !== 'All topics' && (
-                    <span className="tag-badge">#{activeTopic.toLowerCase()}</span>
-                  )}
-                </div>
-
-                <button
-                  className="brand-button"
-                  onClick={submitPost}
-                  disabled={!message.trim() || submitting}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}
-                >
-                  <Send size={13} />
-                  <span>{submitting ? 'POSTING...' : 'PUBLISH DISCUSSION'}</span>
-                </button>
-              </div>
+              <button
+                className="brand-button"
+                onClick={submitPost}
+                disabled={!message.trim() || submitting}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px' }}
+              >
+                <Send size={13} />
+                <span>{submitting ? 'POSTING...' : 'PUBLISH DISCUSSION'}</span>
+              </button>
             </div>
           </div>
+        </article>
 
-          {/* Discussion Thread Feed */}
-          <div className="thread-list">
-            {loading ? (
-              <div className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
-                <Sparkles size={24} style={{ margin: '0 auto 12px', color: 'var(--violet)' }} />
-                <h2>Loading discussions...</h2>
-              </div>
-            ) : visiblePosts.length === 0 ? (
-              <div className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
-                <MessageCircle size={28} style={{ margin: '0 auto 12px', color: 'var(--muted)' }} />
-                <h2>No discussions found for this view.</h2>
-                <p>Be the first to start a conversation or share an interview experience!</p>
-              </div>
-            ) : (
-              visiblePosts.map(post => {
-                const totalVotes = (post.upvotes || 0) + (votes[post.id] || 0);
-                const isUpvoted = upvotedPosts.has(post.id);
-                const isHelpful = helpfulPosts.has(post.id);
-                const isSaved = savedPosts.has(post.id);
-                const isExpanded = expandedReplies.has(post.id);
-                const repliesList = post.replies || [];
+        {/* Discussion Thread Feed */}
+        <div className="thread-list">
+          {loading ? (
+            <article className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
+              <Sparkles size={24} style={{ margin: '0 auto 12px', color: 'var(--violet)' }} />
+              <h2>Loading discussions...</h2>
+            </article>
+          ) : visiblePosts.length === 0 ? (
+            <article className="detail-card empty-state-card" style={{ padding: 40, textAlign: 'center' }}>
+              <p className="kicker">DISCUSS COMMUNITY</p>
+              <h2>No discussions found for this view.</h2>
+              <p>Be the first to start a conversation, share an interview debrief, or find a mock partner!</p>
+            </article>
+          ) : (
+            visiblePosts.map(post => {
+              const totalVotes = (post.upvotes || 0) + (votes[post.id] || 0);
+              const isUpvoted = upvotedPosts.has(post.id);
+              const isHelpful = helpfulPosts.has(post.id);
+              const isSaved = savedPosts.has(post.id);
+              const isExpanded = expandedReplies.has(post.id);
+              const repliesList = post.replies || [];
 
-                return (
-                  <article key={post.id} className="thread-item-card">
+              return (
+                <article key={post.id} className="detail-card thread-item-card">
+                  <div className="panel-label">
+                    <span>
+                      {post.company ? post.company.toUpperCase() : 'COMMUNITY'} • {post.postType ? post.postType.toUpperCase() : 'THREAD'}
+                    </span>
+                    <span>{new Date(post.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+
+                  <div className="thread-card-body">
                     {/* Vote Column */}
                     <div className="thread-vote-column">
                       <button
@@ -3115,22 +3146,26 @@ function Community() {
                           <div className="thread-user-titles">
                             <span className="thread-user-name">{post.author}</span>
                             <span className="thread-user-role">
-                              {post.role} • {new Date(post.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              {post.role}
                             </span>
                           </div>
                         </div>
 
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                           {post.company && (
-                            <span className="drill-tag-badge company-tag">{post.company}</span>
+                            <span className="pill-chip" style={{ background: 'var(--ink)', color: '#ffffff', padding: '4px 8px' }}>
+                              {post.company}
+                            </span>
                           )}
                           {post.outcome && (
-                            <span className={`drill-tag-badge difficulty-tag ${post.outcome === 'Offer' ? 'diff-easy' : 'diff-medium'}`}>
+                            <span className="topic-chip" style={{ background: post.outcome === 'Offer' ? 'var(--mint)' : 'var(--coral)', color: 'var(--ink)' }}>
                               {post.outcome.toUpperCase()}
                             </span>
                           )}
                           {post.postType && post.postType !== 'question' && (
-                            <span className="drill-tag-badge category-tag">{post.postType.toUpperCase()}</span>
+                            <span className="topic-chip">
+                              {post.postType.toUpperCase()}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -3143,7 +3178,7 @@ function Community() {
 
                       <div className="thread-badges-row">
                         {post.tags?.map(tag => (
-                          <span key={tag} className="tag-badge">#{tag}</span>
+                          <span key={tag} className="topic-chip">#{tag}</span>
                         ))}
                       </div>
 
@@ -3226,13 +3261,13 @@ function Community() {
                         </div>
                       )}
                     </div>
-                  </article>
-                );
-              })
-            )}
-          </div>
-        </section>
-      </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </div>
+      </section>
     </main>
   );
 }
