@@ -1,27 +1,28 @@
-# TeLos • Real-Time AI Technical Interview Studio
+# TeLos® • Real-Time AI Technical Interview & Verified Assessment Platform
 
 <div align="center">
 
 ```
   _______   ______ _      ____   _____ 
- |__   __| / _____| |    / __ \ / ____|
+ |__   __| / _____| |    / __  / ____|
     | |___| |__   | |   | |  | | (___  
-    | / _ \  __|  | |   | |  | |\___ \ 
+    | / _   __|  | |   | |  | |___  
     | |  __/ |____| |___| |__| |____) |
-    |_|\___|______|______\____/|_____/ 
+    |_|___|______|__________/|_____/ 
 ```
 
-**Real Systems. Deep Trade-Offs. Zero Canned Trivia.**
+**Real Systems. Deep Trade-Offs. Multi-Language Execution. Zero Canned Trivia.**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19.0-61dafb.svg?style=flat-square)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-18.3-61dafb.svg?style=flat-square)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.4-646cff.svg?style=flat-square)](https://vitejs.dev/)
 [![Express](https://img.shields.io/badge/Express-4.21-000000.svg?style=flat-square)](https://expressjs.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-6.4-2D3748.svg?style=flat-square)](https://www.prisma.io/)
+[![Prisma](https://img.shields.io/badge/Prisma-6.2-2D3748.svg?style=flat-square)](https://www.prisma.io/)
+[![OpenJDK](https://img.shields.io/badge/Java-OpenJDK%2021-orange.svg?style=flat-square)](https://adoptium.net/)
+[![GCC](https://img.shields.io/badge/C%2B%2B-GCC%2013-blue.svg?style=flat-square)](https://gcc.gnu.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/piyush23-eng/TeLos)
 
-[Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [Quick Start](#-quick-start) • [Environment Setup](#-environment-configuration) • [Debrief Rubric](#-calibrated-scoring-rubric)
+[Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [47 Company Blueprints](#-47-company-prep-blueprints) • [Multi-Language Runner](#-polyglot-execution-engine) • [Quick Start](#-quick-start) • [Deployment](#-deployment-guide)
 
 </div>
 
@@ -29,9 +30,9 @@
 
 ## ⚡ Overview
 
-**TeLos** is an open-source, proctored AI technical interview studio engineered for **college students, new grads, campus placement seekers, and software engineering candidates at every stage**—from cracking your dream tech internship or entry-level SDE-1 role to leveling up into core systems and senior architecture.
+**TeLos®** is an intelligent, voice-first technical interview simulation and verified candidate assessment platform. Engineered for software engineers, university candidates, and system architects, TeLos bridges the gap between solitary LeetCode grinding and high-stakes technical screens at top global tech companies and product unicorns.
 
-Unlike generic LLM wrappers that ask canned interview trivia, TeLos actively parses your **real resume projects, college hackathon builds, tech stack choices, and target job descriptions** to challenge core CS fundamentals, algorithms, system design trade-offs, and behavioral experiences in real time.
+Unlike standard chatbots or generic LLM wrappers, TeLos actively grounds the conversation in **your real resume projects, architecture choices, and target job descriptions**—challenging concurrency models, distributed bottlenecks, failure modes, and speaking cadence in real time.
 
 ---
 
@@ -39,140 +40,202 @@ Unlike generic LLM wrappers that ask canned interview trivia, TeLos actively par
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Frontend Client (React 19 + TypeScript + Vite)"]
-        Webcam["Webcam & Canvas (Proctoring & Stream)"]
-        Mic["Microphone Audio Stream"]
-        HUD["Live Telemetry HUD (WPM + Filler Decay)"]
-        Scratchpad["Distributed Arch Scratchpad (Envoy / Kafka / Redis)"]
-        Subtitles["Frosted Subtitle Strip & Voice Equalizer"]
-        DebriefView["Debrief Modal (Radial SVG Gauges + Markdown Export)"]
+    subgraph Client ["Frontend Client (React 18 + TypeScript + Vite)"]
+        Dashboard["Candidate Dashboard & Readiness Trajectory"]
+        Studio["Live Voice Studio & Voice Orb Visualizer"]
+        Prep["47 Company Prep Hub (6-Week Blueprints & PYQs)"]
+        Drills["Practice Drills IDE (Python / Java / C++ / JS)"]
+        Proctor["Proctored Assessment (MediaPipe Attention & Focus)"]
+        Community["Community Discuss (Debriefs & Offers)"]
+        AutoDemo["Auto-Demo Engine (Self-Running Tour & Voice Narration)"]
     end
 
-    subgraph Server ["Orchestration Engine (Node.js + Express + TypeScript)"]
-        SSE["SSE Token Streamer (/api/interviewer/next/stream)"]
-        ContextEngine["Candidate Grounding Context Engine (CV + JD Injection)"]
-        DebriefEngine["Bar Raiser Evaluation Pipeline (/api/interview/debrief)"]
-        CodeRunner["Sandboxed Code Executor (/api/code/run)"]
+    subgraph Server ["Backend Gateway (Node.js + Express + TypeScript)"]
+        SSEStreamer["SSE Token Streamer (/api/interviewer/next/stream)"]
+        ContextEngine["Candidate Grounding Engine (CV + JD Ingest)"]
+        DebriefEngine["6-Dimension Calibration Pipeline (/api/interview/debrief)"]
+        RunnerEngine["Polyglot Execution Engine (/api/code/run)"]
+        AuthService["OAuth2 & Session Store (Google / LinkedIn / Email)"]
         PrismaORM["Prisma Client (SQLite / PostgreSQL)"]
     end
 
     subgraph Intelligence ["Multi-Model Fallback Cascade (OpenRouter)"]
-        Primary["google/gemini-2.0-flash-001 (Fast Latency ~400ms)"]
-        Fallback1["meta-llama/llama-3.3-70b-instruct (Deep Reasoning)"]
-        Fallback2["deepseek/deepseek-chat (Coding & System Architecture)"]
-        Fallback3["mistralai/mistral-small-24b-instruct-2501"]
+        PrimaryLLM["meta-llama/llama-3.3-70b-instruct (Deep Reasoning)"]
+        FallbackLLM1["google/gemini-2.0-flash-001 (Fast Latency ~400ms)"]
+        FallbackLLM2["deepseek/deepseek-chat (Systems & Coding)"]
     end
 
-    subgraph SpeechServices ["Voice & Audio Infrastructure"]
-        Deepgram["Deepgram Nova-2 (Real-Time Audio Ingest)"]
-        BrowserTTS["Web Speech Synthesis & Voice Profile Engine"]
+    subgraph ExecutionLayer ["Code Runner Subsystem"]
+        LocalHost["Native Compilers (javac, g++, python3, vm)"]
+        WandboxCloud["Wandbox Cloud Compiler (GCC 13, OpenJDK 21, C11)"]
     end
 
-    Mic --> Deepgram
-    Deepgram --> HUD
-    Mic --> HUD
-    ContextEngine --> Primary
-    Primary -. Fallback .-> Fallback1
-    Fallback1 -. Fallback .-> Fallback2
-    Fallback2 -. Fallback .-> Fallback3
-    Primary --> SSE
-    SSE --> Subtitles
-    SSE --> BrowserTTS
-    Scratchpad --> CodeRunner
+    subgraph AudioSpeech ["Voice Infrastructure"]
+        DeepgramSTT["Deepgram Nova-3 (Sub-second Audio Ingest)"]
+        BrowserTTS["Web Speech Synthesis & Natural Voice Engine"]
+    end
+
+    Studio <--> DeepgramSTT
+    Studio <--> BrowserTTS
+    Studio --> ContextEngine
+    ContextEngine --> PrimaryLLM
+    PrimaryLLM -. Fallback .-> FallbackLLM1
+    FallbackLLM1 -. Fallback .-> FallbackLLM2
+    PrimaryLLM --> SSEStreamer
+    SSEStreamer --> Studio
+    Drills --> RunnerEngine
+    RunnerEngine --> LocalHost
+    LocalHost -. Host Fallback .-> WandboxCloud
     DebriefEngine --> PrismaORM
-    PrismaORM --> DebriefView
+    PrismaORM --> Dashboard
 ```
 
 ---
 
 ## 🚀 Core Capabilities
 
-### 1. 🎙️ Real-Time Project Grounding & Conversational Stage
-* **Zero Scripted Trivia**: Alex dynamically extracts your actual CV achievements (e.g. *Lucas RAG pipeline*, *Qwen fine-tuning*, *PySpark batch jobs*, *Kafka cluster partitioning*) and targets your specific architectural bottlenecks.
-* **Natural Barge-In Interruptibility (`✋ INTERRUPT ALEX`)**: Cut TTS playback at any millisecond to naturally interject, clarify assumptions, or pivot your answer without desyncing the session.
-* **Voice Activity Equalizer**: Replaced legacy graphics with a sleek 5-bar sinusoidal voice visualizer indicating live audio energy and mute state.
+### 1. 🎙️ Live Conversational Interview Studio with Alex
+* **Zero Scripted Trivia**: Alex dynamically extracts your actual CV achievements and targets your specific architectural bottlenecks.
+* **Sub-Second Latency**: Bidirectional streaming speech recognition via Deepgram Nova-3 combined with fast LLM token streaming.
+* **Barge-In Interruptibility (`✋ INTERRUPT ALEX`)**: Cut audio playback at any millisecond to naturally clarify assumptions or pivot your explanation.
+* **Acoustic Voice Orb**: High-fidelity 3D/canvas multi-layer visualizer indicating real-time audio energy and speaking states.
 
 ### 2. 📊 Live Speech Telemetry HUD
 * **Speaking Pace (WPM)**: Live words-per-minute meter categorized into:
   * `Optimal (130–160 WPM)`
   * `Deliberate / Slow (<115 WPM)`
   * `Fast / Rushed (>170 WPM)`
-* **Vocal Filler Counter**: Real-time identification and tallying of verbal ticks (*"um"*, *"like"*, *"basically"*, *"you know"*).
+* **Vocal Filler Decay**: Real-time identification and tallying of verbal ticks (*"um"*, *"like"*, *"basically"*, *"you know"*).
+* **Talk-to-Listen Ratio**: Balances candidate explanation vs interviewer prompts.
 
-### 3. 🏗️ Distributed Systems Architecture Scratchpad
-Collapsible on-demand scratchpad with 1-click distributed architecture templates:
-* `+ API Gateway` *(Envoy / Kong token-bucket rate limiting & JWT auth)*
-* `+ Kafka Queue` *(Partitioned event streams & consumer lag handling)*
-* `+ Redis Cache` *(Multi-tier write-through cache with TTLs)*
-* `+ Sharded DB` *(Consistent hashing router & read replicas)*
-* `+ Worker` *(Idempotent distributed transaction saga coordinators)*
-* `+ Load Balancer` *(L4/L7 health-checked traffic routing)*
-
-### 4. 📈 Post-Interview Debrief & Senior Ideal Answer Diff
-* **Radial SVG Score Gauges**: Linear/Apple-style circular gauges for *Overall Readiness*, *Technical Depth*, *Problem Solving*, and *Communication*.
-* **"What You Said" vs "What You Should Say"**: Granular side-by-side comparison showing how to elevate junior explanations into high-bar senior architectural reasoning.
-* **What NOT To Say**: Anti-pattern detector highlighting hedging, vague terminology, or unaddressed single points of failure.
-* **1-Click Export**: Download clean `.md` Markdown scorecards or generate printable recruiter-ready PDFs.
+### 3. 📈 6-Dimension Calibration Debrief & Scorecard
+* **Hiring Verdict Badge**: Instant recommendation (*Strong Hire*, *Hire*, *Leaning Hire*, *No Hire*) with rationale.
+* **6-Gauge Radar Scorecard**:
+  1. *Overall Readiness*
+  2. *Technical Depth & Rigor*
+  3. *Systems Architecture & Concurrency*
+  4. *Communication & STAR Structure*
+  5. *Edge Cases & Failure Recovery*
+  6. *Speaking Cadence & Delivery*
+* **"What You Said" vs "Ideal High-Bar Response"**: Side-by-side diff showing how to elevate junior answers into Staff-level architectural reasoning.
+* **Anti-Pattern Traps**: Flags vague buzzwords, unaddressed single points of failure, or premature optimizations.
+* **48-Hour Action Roadmap**: Prioritized 3-day recovery plan with target practice problems.
+* **1-Click Markdown Export**: Download session scorecards directly as `.md`.
 
 ---
 
-## 🛠️ Tech Stack
+## 🏢 47 Company Prep Blueprints
 
-| Layer | Technology | Purpose |
+TeLos includes 47 deep-dive preparation roadmaps with authentic hiring round breakdowns, collapsible 6-week milestones, deliverables, and authentic past year questions (PYQs):
+
+```
+├── Global Tech Giants (17 Companies)
+│   ├── Google, Amazon, Meta, Microsoft, Apple, Netflix
+│   ├── Uber, Stripe, Atlassian, Adobe, Salesforce
+│   ├── Databricks, Snowflake, OpenAI, Airbnb, ByteDance (TikTok), Palantir
+│
+└── Indian Tech & Fintech Product Giants (30 Companies)
+    ├── Razorpay, Flipkart, Swiggy, Zomato, PhonePe, Cred, Zerodha, Zoho
+    ├── Meesho, Ola, Juspay, Groww, Urban Company, InMobi, Postman, BrowserStack
+    ├── Delhivery, Nykaa, Zepto, Blinkit, PayU, Slice, Navi, Clevertap
+    └── Khatabook, Sprinklr, Dream11, ShareChat, Cars24, Porter
+```
+
+---
+
+## 💻 Polyglot Execution Engine
+
+The Drills Workbench (`/bank`) provides 24 curated company algorithmic challenges backed by a zero-configuration polyglot runner:
+
+| Language | Environment | Execution Strategy |
 | :--- | :--- | :--- |
-| **Frontend** | React 19, TypeScript, Vite | Zero-latency reactive user interface |
-| **Styling** | Custom Editorial Brutalist CSS | Precision typography (`DM Serif Display`, `Manrope`, `DM Mono`) |
-| **Backend** | Express 4, TypeScript, `tsx` | High-throughput streaming REST & SSE gateway |
-| **Database** | Prisma ORM with SQLite (Dev) / Postgres (Prod) | Structured session transcripts & telemetry persistence |
-| **AI Layer** | OpenRouter (`gemini-2.0-flash`, `llama-3.3-70b`, `deepseek`) | Multi-model fallback intelligence & candidate grounding |
-| **Speech** | Web Speech API, Deepgram Nova-2 | Bidirectional streaming speech recognition & synthesis |
-| **Charts** | Recharts | Answer quality trends and filler word decay curves |
+| **Python 3** | Python 3.10+ | Native subprocess with timeout & sandbox limits |
+| **Java** | OpenJDK 21 | Native single-file launch / `javac` with automated cloud compiler fallback |
+| **C++** | GCC 13.2 / Clang | `-std=c++17 -O2` with multi-binary alias probing & cloud compiler fallback |
+| **C** | GCC 13.2 / Clang | `-std=c11 -O2` compilation |
+| **JavaScript** | V8 VM Engine | Sandboxed in-process V8 VM with console logger proxy |
+
+> [!TIP]
+> **Zero Host Dependency Errors:** If deployed on a minimal container without native `g++` or `javac` installed, the runner automatically delegates to the **Wandbox High-Speed Compiler API**, ensuring code executes with zero configuration.
+
+---
+
+## 🛡️ Verified Proctored Assessment
+
+For recruiting teams and candidates seeking verified skill validation:
+* **Hardware Preflight**: Real-time microphone and camera check-in.
+* **Focus & Attention Tracking**: Head pose and gaze tracking via MediaPipe vision tasks.
+* **Clipboard Protection**: Intercepts unauthorized copy/cut/paste attempts.
+* **Immutable Signal Audit**: Logs focus-loss events and window blurs for verifiable assessment reports.
+
+---
+
+## 🎬 Hands-Free Auto-Demo Mode
+
+Click the **`🎬 AUTO-DEMO MODE`** button in the top navigation:
+* Automatically cycles through all platform views in sequence (Dashboard ➔ Studio ➔ Debrief ➔ 47 Companies ➔ Drills ➔ Discuss ➔ Analytics).
+* Speaks professional narration aloud via Web Speech Synthesis while rendering subtitle captions at the bottom.
+* Allows you to press **`Cmd + Shift + 5`** to record high-impact demo videos hands-free!
 
 ---
 
 ## 🚦 Quick Start
 
-### 1. Clone the Repository
+### 1. Clone & Install
 ```bash
 git clone https://github.com/piyush23-eng/TeLos.git
 cd TeLos
-```
-
-### 2. Install Dependencies
-```bash
 npm install
 ```
 
-### 3. Configure Environment
-Create a `.env` file in the project root:
+### 2. Environment Configuration
+Create a `.env` file in the root directory:
 ```env
 PORT=8787
 VITE_API_BASE_URL=http://localhost:8787
 
-# OpenRouter Multi-Model Intelligence (Recommended)
+# OpenRouter Multi-Model Key (Required for live AI interviews)
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL=google/gemini-2.0-flash-001
+OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct
 
-# Deepgram Speech-to-Text (Optional for enhanced voice accuracy)
+# Deepgram Speech-to-Text (Optional for real-time voice streaming)
 DEEPGRAM_API_KEY=your_deepgram_api_key_here
 
-# Google OAuth (Optional)
+# OAuth & Social Sign-In (Optional)
 GOOGLE_CLIENT_ID=your_google_client_id_here
 VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
+LINKEDIN_CLIENT_ID=your_linkedin_client_id_here
 ```
 
-### 4. Initialize Database
+### 3. Database Initialization
 ```bash
 npx prisma db push
 npm run seed
 ```
 
-### 5. Launch Development Server
+### 4. Run Locally
 ```bash
 npm run dev
 ```
 * **Frontend Web App**: `http://localhost:5173`
-* **Backend API Gateway**: `http://localhost:8787`
+* **Backend Gateway**: `http://localhost:8787`
+
+---
+
+## 🚀 Deployment Guide
+
+### Deploying to Render
+1. Push your repository to GitHub.
+2. In Render, select **"New Web Service"** and connect your repo.
+3. Configure the build settings:
+   - **Environment:** `Node` or `Docker`
+   - **Build Command:** `npm run build:prod`
+   - **Start Command:** `npm run start:prod`
+4. Add environment variables:
+   - `OPENROUTER_API_KEY`
+   - `DEEPGRAM_API_KEY`
+   - `DATABASE_URL` (defaults to `./dev.db` SQLite if omitted)
+5. Click **"Deploy"**!
 
 ---
 
@@ -183,51 +246,40 @@ TeLos/
 ├── server/
 │   ├── index.ts              # Express API gateway, auth, & SSE streaming routes
 │   ├── intelligence.ts       # OpenRouter client & multi-model fallback cascade
-│   └── mockData.ts           # Practice catalog, seeded personas & analytics
+│   ├── runner.ts             # Polyglot code runner (Python, Java, C++, JS + Cloud fallback)
+│   └── mockData.ts           # Practice catalog, personas & analytics
 ├── src/
 │   ├── components/
-│   │   └── VoiceOrbVisualizer.tsx # Multi-layer acoustic voice visualizer
+│   │   ├── AutoTourController.tsx  # Automated product demo tour & voice narration
+│   │   └── VoiceOrbVisualizer.tsx  # Multi-layer acoustic voice visualizer
 │   ├── App.tsx               # Main application orchestration & state container
 │   ├── Assessment.tsx        # Proctored technical assessment interface
-│   ├── AuthModal.tsx         # OAuth2 (Google / Email) authentication modal
+│   ├── AuthModal.tsx         # OAuth2 (Google / LinkedIn / Email) authentication
 │   ├── UserDashboard.tsx     # Candidate interview ledger & telemetry stats
-│   ├── companyPrepData.ts    # Curated company interview playbooks
-│   ├── voiceMetrics.ts       # WPM cadence math, filler word parser & MD exporter
-│   ├── roadmap.css           # Editorial brutalist design system
+│   ├── companyPrepData.ts    # 47 Curated company interview playbooks & PYQs
+│   ├── voiceMetrics.ts       # WPM cadence math, filler parser & MD exporter
+│   ├── roadmap.css           # Modern brutalist design system & dark mode
 │   └── styles.css            # Base utility styles
 ├── prisma/
-│   └── schema.prisma         # Session, Question, Score, and User schemas
-├── package.json              # Project scripts & dependency declarations
-└── tsconfig.json             # Strict TypeScript compiler configuration
-```
-
----
-
-## 📊 Calibrated Scoring Rubric
-
-Candidates are evaluated adaptively across four core engineering dimensions:
-
-```
-┌──────────────────────────────┬───────────────┬────────────────────────────────────────────────────────┐
-│ Dimension                    │ Target Bar    │ Evaluation Criteria                                    │
-├──────────────────────────────┼───────────────┼────────────────────────────────────────────────────────┤
-│ 1. Technical Depth & CS Core │ ≥ 80%         │ Mechanism details, DSA complexity (O(N)), cache & DBs │
-│ 2. Practical Implementation  │ ≥ 80%         │ Tech stack choices, API contracts, failure handling    │
-│ 3. Communication & Structure │ ≥ 85%         │ Cadence (130-160 WPM), STAR framework, zero fillers   │
-│ 4. Problem Solving Instincts │ ≥ 80%         │ Clarifying assumptions, edge cases, structured design  │
-└──────────────────────────────┴───────────────┴────────────────────────────────────────────────────────┘
+│   ├── schema.prisma         # User, Session, Question, Score schemas
+│   └── seed.ts               # Starter candidate telemetry seed data
+├── scripts/
+│   └── setup-jdk.mjs         # OpenJDK 17 automated Linux bootstrapper
+├── Dockerfile                # Multi-stage production container with GCC & OpenJDK
+├── render.yaml               # Render infrastructure blueprint
+└── package.json              # Project dependencies & build scripts
 ```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are warmly welcomed! To get started:
+Contributions are warmly welcomed! To contribute:
 
-1. Fork the Project.
-2. Create your Feature Branch (`git checkout -b feat/CampusPlacementPlaybooks`).
-3. Commit your Changes (`git commit -m 'feat: add campus placement interview tracks'`).
-4. Push to the Branch (`git push origin feat/CampusPlacementPlaybooks`).
+1. Fork the repository.
+2. Create your Feature Branch (`git checkout -b feat/NewCompanyBlueprint`).
+3. Commit your Changes (`git commit -m 'feat: add Netflix distributed systems roadmap'`).
+4. Push to the Branch (`git push origin feat/NewCompanyBlueprint`).
 5. Open a Pull Request.
 
 ---
@@ -236,8 +288,6 @@ Contributions are warmly welcomed! To get started:
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
----
-
 <div align="center">
-<sub>Built with precision for students & engineers launching breakthrough tech careers. © 2026 TeLos Studio.</sub>
+<sub>Built with precision for engineers launching breakthrough tech careers. © 2026 TeLos Studio.</sub>
 </div>
