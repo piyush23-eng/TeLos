@@ -22,7 +22,7 @@
 [![GCC](https://img.shields.io/badge/C%2B%2B-GCC%2013-blue.svg?style=flat-square)](https://gcc.gnu.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-[Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [47 Company Blueprints](#-47-company-prep-blueprints) • [Multi-Language Runner](#-polyglot-execution-engine) • [Quick Start](#-quick-start) • [Deployment](#-deployment-guide)
+[Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [47 Company Blueprints](#-47-company-prep-blueprints) • [Multi-Language Runner](#-polyglot-execution-engine) • [Quick Start](#-quick-start)
 
 </div>
 
@@ -212,23 +212,6 @@ npm run dev
 
 ---
 
-## 🚀 Deployment Guide
-
-### Deploying to Render
-1. Push your repository to GitHub.
-2. In Render, select **"New Web Service"** and connect your repo.
-3. Configure the build settings:
-   - **Environment:** `Node` or `Docker`
-   - **Build Command:** `npm run build:prod`
-   - **Start Command:** `npm run start:prod`
-4. Add environment variables:
-   - `OPENROUTER_API_KEY`
-   - `DEEPGRAM_API_KEY`
-   - `DATABASE_URL` (defaults to `./dev.db` SQLite if omitted)
-5. Click **"Deploy"**!
-
----
-
 ## 📁 Repository Structure
 
 ```
@@ -240,7 +223,6 @@ TeLos/
 │   └── mockData.ts           # Practice catalog, personas & analytics
 ├── src/
 │   ├── components/
-│   │   ├── AutoTourController.tsx  # Automated product demo tour & voice narration
 │   │   └── VoiceOrbVisualizer.tsx  # Multi-layer acoustic voice visualizer
 │   ├── App.tsx               # Main application orchestration & state container
 │   ├── Assessment.tsx        # Proctored technical assessment interface
