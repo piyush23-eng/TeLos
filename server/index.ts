@@ -324,4 +324,4 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-app.listen(port, () => console.log(`TeLos API listening on http://localhost:${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`TeLos API listening on port ${port}`));
