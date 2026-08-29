@@ -31,6 +31,12 @@ declare global {
   }
 }
 
+const isValidGoogleClientId = (id?: string): boolean =>
+  typeof id === 'string' &&
+  id.trim().length > 0 &&
+  !id.includes('your_google_client_id') &&
+  /^[0-9]+-[a-zA-Z0-9_]+\.apps\.googleusercontent\.com$/.test(id.trim());
+
 export function AuthModal({ onClose, onAuthenticated }: Props) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [name, setName] = useState('');
@@ -43,7 +49,9 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
   const [socialName, setSocialName] = useState('');
   
   const googleButton = useRef<HTMLDivElement>(null);
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const rawClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const isGoogleConfigured = isValidGoogleClientId(rawClientId);
+  const clientId = isGoogleConfigured ? rawClientId!.trim() : undefined;
 
   const complete = async (path: string, payload: unknown) => {
     setBusy(true);
@@ -56,8 +64,8 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not authenticate.');
-      localStorage.setItem('telos-token', data.token);
-      onAuthenticated(data.user);
+      if (data.token) localStorage.setItem('telos-token', data.token);
+      if (data.user) onAuthenticated(data.user);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not authenticate.');
     } finally {
@@ -66,26 +74,36 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
   };
 
   const openOAuthPopup = (url: string, targetName = 'telos_oauth_window') => {
-    const width = 540;
-    const height = 640;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    const validTarget = targetName.replace(/[^a-zA-Z0-9_]/g, '_');
-    return window.open(
-      url,
-      validTarget,
-      `width=${width},height=${height},left=${left},top=${top},status=0,menubar=0,toolbar=0`
-    );
+    if (!url) return null;
+    try {
+      const width = 540;
+      const height = 640;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      const validTarget = (targetName || 'telos_oauth_window').replace(/[^a-zA-Z0-9_]/g, '_');
+      return window.open(
+        url,
+        validTarget,
+        `width=${width},height=${height},left=${left},top=${top},status=0,menubar=0,toolbar=0`
+      );
+    } catch (e) {
+      console.warn('OAuth popup fallback:', e);
+      return null;
+    }
   };
 
   const handleGoogleClick = async () => {
     setBusy(true);
     setError('');
     try {
-      if (clientId && window.google) {
-        window.google.accounts.id.prompt();
-        setBusy(false);
-        return;
+      if (clientId && window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.prompt();
+          setBusy(false);
+          return;
+        } catch {
+          // Fall through to API or dialog fallback
+        }
       }
       const res = await fetch(`${API}/api/auth/google/url`);
       const data = await res.json();
@@ -143,34 +161,39 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
 
   const handleSocialSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!socialEmail || !socialEmail.includes('@')) {
+    const cleanEmail = socialEmail.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
       setError('Please enter a valid email address.');
       return;
     }
     const path = socialProvider === 'google' ? '/api/auth/google' : '/api/auth/linkedin';
     void complete(path, {
-      email: socialEmail,
-      name: socialName || (socialProvider === 'google' ? 'Google Candidate' : 'LinkedIn Candidate'),
-      linkedinUrl: socialProvider === 'linkedin' ? `https://linkedin.com/in/${socialEmail.split('@')[0]}` : undefined
+      email: cleanEmail,
+      name: (socialName || '').trim() || (socialProvider === 'google' ? 'Google Candidate' : 'LinkedIn Candidate'),
+      linkedinUrl: socialProvider === 'linkedin' ? `https://linkedin.com/in/${cleanEmail.split('@')[0]}` : undefined
     });
   };
 
   useEffect(() => {
     if (!clientId) return;
     const start = () => {
-      if (!window.google) return;
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response: { credential: string }) =>
-          void complete('/api/auth/google', { credential: response.credential }),
-      });
-      if (googleButton.current) {
-        window.google.accounts.id.renderButton(googleButton.current, {
-          theme: 'outline',
-          size: 'large',
-          width: 328,
-          text: mode === 'signin' ? 'signin_with' : 'signup_with',
+      if (!window.google?.accounts?.id) return;
+      try {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: (response: { credential: string }) =>
+            void complete('/api/auth/google', { credential: response.credential }),
         });
+        if (googleButton.current) {
+          window.google.accounts.id.renderButton(googleButton.current, {
+            theme: 'outline',
+            size: 'large',
+            width: 328,
+            text: mode === 'signin' ? 'signin_with' : 'signup_with',
+          });
+        }
+      } catch (err) {
+        console.warn('Google GSI initialization notice:', err);
       }
     };
     const existing = document.querySelector('script[data-telos-google]');
@@ -313,7 +336,26 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
           <form
             onSubmit={event => {
               event.preventDefault();
-              void complete(mode === 'signin' ? '/api/auth/login' : '/api/auth/signup', { name, email, password });
+              const cleanEmail = email.trim().toLowerCase();
+              const cleanPassword = password.trim();
+              const cleanName = name.trim();
+              if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+                setError('Please enter a valid email address.');
+                return;
+              }
+              if (cleanPassword.length < 8) {
+                setError('Password must be at least 8 characters.');
+                return;
+              }
+              if (mode === 'signup' && cleanName.length < 2) {
+                setError('Please enter your full name (at least 2 characters).');
+                return;
+              }
+              void complete(mode === 'signin' ? '/api/auth/login' : '/api/auth/signup', {
+                name: cleanName || 'Candidate',
+                email: cleanEmail,
+                password: cleanPassword,
+              });
             }}
             style={{ display: 'grid', gap: 12 }}
           >
