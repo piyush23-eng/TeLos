@@ -277,22 +277,6 @@ public class Solution {
 `
   };
 
-  const companyPresets = ['Google', 'Microsoft', 'Amazon', 'Meta', 'Uber', 'Stripe', 'Flipkart', 'TCS Prime', 'Razorpay', 'Apple', 'Netflix', 'Adobe', 'Atlassian'];
-  const levelPresets = [
-    'College / Intern (Entry Level)',
-    'SDE-1 (Junior / 0-2 YOE)',
-    'SDE-2 (Mid-Level / 2-5 YOE)',
-    'Senior SDE (L5/SDE-3 / 5+ YOE)',
-    'Staff Systems Architect'
-  ];
-  const focusPresets = [
-    'Distributed Systems & Architecture',
-    'DSA & Algorithmic Complexity',
-    'Low-Level Design & Concurrency',
-    'Database Internals & Caching',
-    'Behavioral & Leadership (STAR)'
-  ];
-
   const playSpeakerTestChime = () => {
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -803,7 +787,7 @@ public class Solution {
                     </div>
                   </div>
 
-                  {/* 01 / Target Company Track */}
+                  {/* 01 / Target Company Track (Manual Input Only) */}
                   <div className="brutalist-field-box">
                     <div className="brutalist-field-header">
                       <span className="field-title">01 / TARGET COMPANY TRACK</span>
@@ -829,24 +813,9 @@ public class Solution {
                         {context.company.trim() ? '✓ SAVED' : 'SAVE'}
                       </button>
                     </div>
-                    <div className="preset-pill-row">
-                      <span style={{ font: '700 8.5px "DM Mono", monospace', color: 'var(--muted)', alignSelf: 'center', marginRight: 4 }}>
-                        POPULAR:
-                      </span>
-                      {companyPresets.map(comp => (
-                        <button
-                          key={comp}
-                          type="button"
-                          className={`preset-pill-btn ${context.company.toLowerCase() === comp.toLowerCase() ? 'active' : ''}`}
-                          onClick={() => setContext(c => ({ ...c, company: comp }))}
-                        >
-                          #{comp}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
-                  {/* 02 / Interview Rigor & Seniority Level */}
+                  {/* 02 / Interview Rigor & Seniority Level (Manual Input Only) */}
                   <div className="brutalist-field-box">
                     <div className="brutalist-field-header">
                       <span className="field-title">02 / INTERVIEW RIGOR &amp; SENIORITY LEVEL</span>
@@ -872,24 +841,9 @@ public class Solution {
                         {context.role.trim() ? '✓ SAVED' : 'SAVE'}
                       </button>
                     </div>
-                    <div className="preset-pill-row">
-                      <span style={{ font: '700 8.5px "DM Mono", monospace', color: 'var(--muted)', alignSelf: 'center', marginRight: 4 }}>
-                        LEVEL:
-                      </span>
-                      {levelPresets.map(lvl => (
-                        <button
-                          key={lvl}
-                          type="button"
-                          className={`preset-pill-btn ${context.role === lvl ? 'active' : ''}`}
-                          onClick={() => setContext(c => ({ ...c, role: lvl }))}
-                        >
-                          {lvl}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
-                  {/* 03 / Technical Evaluation Focus */}
+                  {/* 03 / Technical Evaluation Focus (Manual Input Only) */}
                   <div className="brutalist-field-box">
                     <div className="brutalist-field-header">
                       <span className="field-title">03 / TECHNICAL EVALUATION FOCUS</span>
@@ -914,21 +868,6 @@ public class Solution {
                       >
                         {context.focus.trim() ? '✓ SAVED' : 'SAVE'}
                       </button>
-                    </div>
-                    <div className="preset-pill-row">
-                      <span style={{ font: '700 8.5px "DM Mono", monospace', color: 'var(--muted)', alignSelf: 'center', marginRight: 4 }}>
-                        TRACK:
-                      </span>
-                      {focusPresets.map(f => (
-                        <button
-                          key={f}
-                          type="button"
-                          className={`preset-pill-btn ${context.focus === f ? 'active' : ''}`}
-                          onClick={() => setContext(c => ({ ...c, focus: f }))}
-                        >
-                          {f}
-                        </button>
-                      ))}
                     </div>
                   </div>
                 </div>
