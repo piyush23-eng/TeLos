@@ -19,6 +19,7 @@
 [![Express](https://img.shields.io/badge/Express-4.21-000000.svg?style=flat-square)](https://expressjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-6.4-2D3748.svg?style=flat-square)](https://www.prisma.io/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/piyush23-eng/TeLos)
 
 [Live Architecture](#-architecture-blueprint) • [Core Capabilities](#-core-capabilities) • [Quick Start](#-quick-start) • [Environment Setup](#-environment-configuration) • [Debrief Rubric](#-calibrated-scoring-rubric)
 
