@@ -986,6 +986,8 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
 
     return {
       summary: parsed.summary || `In this ${company} technical interview session for ${role}, you demonstrated solid fundamentals and active problem-solving skills.`,
+      overallScore: overall,
+      recommendation: parsed.hiringRecommendation || parsed.recommendation || (overall >= 80 ? 'Strong Hire' : 'Leaning Hire'),
       hiringRecommendation: parsed.hiringRecommendation || parsed.recommendation || (overall >= 80 ? 'Strong Hire' : 'Leaning Hire'),
       hiringRationale: parsed.hiringRationale || parsed.rationale || `Demonstrated solid engineering depth and clear communication across core technical discussions.`,
       scores: {
