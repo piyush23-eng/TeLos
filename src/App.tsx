@@ -2500,6 +2500,37 @@ function CompanyPrep() {
     'goldman-sachs', 'jpmorgan', 'visa', 'mastercard', 'nvidia', 'servicenow', 'openai'
   ]), []);
 
+  const getMonogram = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower === 'google') return 'G';
+    if (lower.includes('microsoft')) return 'MS';
+    if (lower.includes('amazon')) return 'AMZ';
+    if (lower.includes('meta')) return 'META';
+    if (lower.includes('apple')) return 'AAPL';
+    if (lower.includes('netflix')) return 'NFLX';
+    if (lower.includes('uber')) return 'UBER';
+    if (lower.includes('goldman')) return 'GS';
+    if (lower.includes('jpmorgan')) return 'JPM';
+    if (lower.includes('tcs')) return 'TCS';
+    if (lower.includes('flipkart')) return 'FK';
+    if (lower.includes('swiggy')) return 'SWG';
+    if (lower.includes('zomato')) return 'ZOM';
+    if (lower.includes('razorpay')) return 'RZP';
+    if (lower.includes('cred')) return 'CRED';
+    if (lower.includes('zerodha')) return 'ZERO';
+    const words = name.split(/\s+/);
+    if (words.length > 1) return (words[0][0] + words[1][0]).toUpperCase();
+    return name.slice(0, 3).toUpperCase();
+  };
+
+  const getCompanyThemeClass = (company: CompanyPrepItem) => {
+    if (company.category === 'faang') return 'faang';
+    if (company.category === 'fintech') return 'fintech';
+    if (company.category === 'service-based') return 'service';
+    if (globalIds.has(company.id)) return 'global';
+    return 'india';
+  };
+
   const filteredCompanies = useMemo(() => {
     return companyPrepCatalog.filter(company => {
       const q = query.trim().toLowerCase();
@@ -2548,55 +2579,85 @@ function CompanyPrep() {
         <div className="prep-sidebar">
           <div className="panel-label">
             <span>SEARCH COMPANIES</span>
-            <span>{filteredCompanies.length} PLAYBOOKS MATCHING</span>
+            <span>{filteredCompanies.length} / {companyPrepCatalog.length} PLAYBOOKS</span>
           </div>
 
-          <label className="search-field">
-            <input
-              value={query}
-              onChange={event => setQuery(event.target.value)}
-              placeholder="Search TCS, Google, Flipkart, Swiggy, Uber, OpenAI..."
-            />
-          </label>
+          <div style={{ padding: '12px 14px 4px' }}>
+            <div className="prep-search-wrapper">
+              <Search size={14} className="prep-search-icon" />
+              <input
+                type="text"
+                className="prep-search-input"
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+                placeholder="Search Google, TCS, Flipkart, Uber, Stripe..."
+              />
+              {query && (
+                <button
+                  type="button"
+                  className="prep-search-clear"
+                  onClick={() => setQuery('')}
+                  title="Clear search"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
 
           <div className="pill-row">
             <button className={`pill-chip ${activeCategory === 'all' ? 'active' : ''}`} onClick={() => setActiveCategory('all')}>
               All ({companyPrepCatalog.length})
             </button>
+            <button className={`pill-chip ${activeCategory === 'global' ? 'active' : ''}`} onClick={() => setActiveCategory('global')}>
+              Global / US (21)
+            </button>
             <button className={`pill-chip ${activeCategory === 'india' ? 'active' : ''}`} onClick={() => setActiveCategory('india')}>
               India Tech (26)
             </button>
-            <button className={`pill-chip ${activeCategory === 'global' ? 'active' : ''}`} onClick={() => setActiveCategory('global')}>
-              Global (21)
-            </button>
             <button className={`pill-chip ${activeCategory === 'faang' ? 'active' : ''}`} onClick={() => setActiveCategory('faang')}>
-              FAANG
+              FAANG (6)
             </button>
             <button className={`pill-chip ${activeCategory === 'fintech' ? 'active' : ''}`} onClick={() => setActiveCategory('fintech')}>
-              Fintech
+              Fintech (9)
             </button>
             <button className={`pill-chip ${activeCategory === 'service' ? 'active' : ''}`} onClick={() => setActiveCategory('service')}>
-              IT Services
+              IT Services (7)
             </button>
           </div>
 
           <div className="prep-list">
-            {filteredCompanies.map((company, index) => (
-              <button
-                key={`${company.id}-${index}`}
-                className={`prep-card ${selectedCompany?.id === company.id ? 'selected' : ''}`}
-                onClick={() => setSelectedCompany(company)}
-              >
-                <div className="prep-card-top">
-                  <span className="index-badge">{company.category === 'faang' ? '★' : '●'}</span>
-                  <div>
-                    <strong>{company.name}</strong>
-                    <small>{company.region} • {company.hiringProcess[0]}</small>
+            {filteredCompanies.map((company, index) => {
+              const themeClass = getCompanyThemeClass(company);
+              const isGlobal = globalIds.has(company.id);
+              return (
+                <button
+                  key={`${company.id}-${index}`}
+                  className={`prep-card ${selectedCompany?.id === company.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedCompany(company)}
+                >
+                  <div className="prep-card-top">
+                    <span className={`company-monogram-badge ${themeClass}`}>
+                      {getMonogram(company.name)}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <strong>{company.name}</strong>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span className={`company-region-pill ${isGlobal ? 'global' : 'india'}`}>
+                          {isGlobal ? 'GLOBAL / US' : 'INDIA TECH'}
+                        </span>
+                        <small style={{ color: 'var(--muted)' }}>
+                          {company.hiringProcess.length} Rounds
+                        </small>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <span className="arrow-pill"><ArrowRight size={16} /></span>
-              </button>
-            ))}
+                  <span className="arrow-pill"><ArrowRight size={15} /></span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -2608,38 +2669,68 @@ function CompanyPrep() {
               <article className="detail-card hero-card">
                 <div className="detail-header">
                   <div>
-                    <p className="kicker">COMPANY PLAYBOOK / {selectedCompany.region}</p>
-                    <h2>{selectedCompany.name}</h2>
+                    <p className="kicker">
+                      COMPANY PLAYBOOK / {globalIds.has(selectedCompany.id) ? 'GLOBAL / US' : 'INDIA TECH'} • {selectedCompany.region.toUpperCase()}
+                    </p>
+                    <div className="company-title-header">
+                      <h2>{selectedCompany.name}</h2>
+                      <span className={`company-category-tag ${selectedCompany.category === 'faang' ? 'faang' : selectedCompany.category === 'fintech' ? 'fintech' : 'product'}`}>
+                        {selectedCompany.category === 'faang'
+                          ? 'FAANG TIER-1'
+                          : selectedCompany.category === 'fintech'
+                          ? 'FINTECH HIGH-SCALE'
+                          : selectedCompany.category === 'service-based'
+                          ? 'IT SERVICES & CONSULTING'
+                          : globalIds.has(selectedCompany.id)
+                          ? 'GLOBAL ENTERPRISE'
+                          : 'INDIAN TECH UNICORN'}
+                      </span>
+                    </div>
                   </div>
                   <span className="metric-pill" style={{ background: 'var(--ink, #101018)', color: '#fff', border: '1px solid var(--ink, #101018)', fontWeight: 700, padding: '8px 14px' }}>
-                    {activeRoadmap?.duration || '6-WEEK SPRINT'}
+                    {activeRoadmap?.duration?.toUpperCase() || '6-WEEK SPRINT'}
                   </span>
                 </div>
                 <p style={{ margin: '8px 0 14px', fontSize: 13, lineHeight: 1.6 }}>{selectedCompany.interviewStyle}</p>
                 <div className="detail-meta-row">
-                  <span className="meta-pill">Region • {selectedCompany.region}</span>
-                  <span className="meta-pill">Hiring Stages • {selectedCompany.hiringProcess.length} Rounds</span>
-                  <span className="meta-pill">Prep Angle • {selectedCompany.prepNotes?.[0] || 'Ownership & Trade-offs'}</span>
+                  <span className="meta-pill">
+                    <b>REGION:</b> {selectedCompany.region}
+                  </span>
+                  <span className="meta-pill">
+                    <b>HIRING LOOP:</b> {selectedCompany.hiringProcess.length} Stages
+                  </span>
+                  <span className="meta-pill">
+                    <b>PREP ANGLE:</b> {selectedCompany.prepNotes?.[0] || 'Ownership & Trade-offs'}
+                  </span>
+                  <span className="meta-pill">
+                    <b>PRIMARY TRACK:</b> {selectedCompany.pyqTopics[0] || 'Systems & Algorithms'}
+                  </span>
                 </div>
                 <div className="info-grid">
                   <div className="info-card">
-                    <strong>Hiring Process Loop</strong>
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Layers size={13} color="var(--violet, #6e54f6)" /> Hiring Process Stages
+                    </strong>
                     <span>{selectedCompany.hiringProcess.join('  ⟶  ')}</span>
                   </div>
                   <div className="info-card">
-                    <strong>What They Calibrate &amp; Reward</strong>
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Award size={13} color="var(--mint, #16a34a)" /> What They Calibrate &amp; Reward
+                    </strong>
                     <span>{selectedCompany.prepNotes?.[0] || 'Strong ownership, trade-off clarity, and measurable impact.'}</span>
                   </div>
                   <div className="info-card">
-                    <strong>Preparation Angle</strong>
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Zap size={13} color="#f59e0b" /> Core Preparation Strategy
+                    </strong>
                     <span>{selectedCompany.prepNotes?.[1] || 'Anchor answers around constraints, execution quality, and business impact.'}</span>
                   </div>
-                  {selectedCompany.culturalValues && selectedCompany.culturalValues.length > 0 && (
-                    <div className="info-card">
-                      <strong>Core Cultural Values</strong>
-                      <span>{selectedCompany.culturalValues.slice(0, 2).join(' • ')}</span>
-                    </div>
-                  )}
+                  <div className="info-card">
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <ShieldCheck size={13} color="#0284c7" /> Cultural DNA &amp; Core Values
+                    </strong>
+                    <span>{selectedCompany.culturalValues?.slice(0, 3).join(' • ') || 'Scalability, Empathy, and High Ownership'}</span>
+                  </div>
                 </div>
               </article>
 
