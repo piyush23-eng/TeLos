@@ -94,7 +94,7 @@ const faangRoadmaps: Record<string, PrepRoadmap> = {
 };
 
 const companyNames = [
-  'Google', 'Microsoft', 'Amazon', 'Meta', 'Adobe', 'Apple', 'Netflix', 'Uber', 'Airbnb', 'Stripe',
+  'All Top Tech (General Prep)', 'Google', 'Microsoft', 'Amazon', 'Meta', 'Adobe', 'Apple', 'Netflix', 'Uber', 'Airbnb', 'Stripe',
   'Dropbox', 'Datadog', 'Atlassian', 'Salesforce', 'Palantir', 'Snowflake', 'NVIDIA', 'Intel', 'Oracle',
   'SAP', 'Tesla', 'SpaceX', 'OpenAI', 'Anthropic', 'LinkedIn', 'GitHub', 'Twilio', 'Plaid', 'Notion',
   'Figma', 'Canva', 'Robinhood', 'Coinbase', 'Discord', 'Slack', 'Spotify', 'Snap', 'Pinterest', 'Shopify',

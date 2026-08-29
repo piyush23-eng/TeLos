@@ -143,50 +143,146 @@ app.post('/api/run', async (req, res, next) => {
 
 app.post('/api/tts', async (req, res, next) => {
   try {
-    const text = String(req.body.text || '').trim();
-    const requestedVoice = String(req.body.voice || 'coral');
-    const voice = ['coral', 'sage', 'marin', 'cedar', 'alloy', 'nova'].includes(requestedVoice) ? requestedVoice : 'coral';
-    const profile = String(req.body.profile || 'natural');
-
+    let text = String(req.body.text || '').trim();
     if (!text) {
       return res.status(400).send('Text is required');
     }
 
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini-tts',
-        voice,
-        input: text,
-        instructions: profile === 'warm'
-          ? 'Speak like a thoughtful senior interviewer: warm, natural, encouraging, with subtle pauses and no synthetic cadence.'
-          : profile === 'broadcast'
-            ? 'Speak with crisp executive clarity, confident pace, and human conversational emphasis.'
-            : 'Speak naturally like a professional human interviewer. Use warm, confident conversational pacing and subtle pauses.',
-        response_format: 'mp3',
-      }),
-    });
+    // Natural Pacing: Clean formatting for realistic conversational cadence
+    // Insert natural breathing pauses for short acknowledgments
+    text = text
+      .replace(/^(okay|got it|makes sense|alright|cool|right),?\s+/i, '$1... ')
+      .replace(/(\w)—(\w)/g, '$1 — $2');
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`TTS failed: ${response.status} ${errorText}`);
+    const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY || (req.headers['x-elevenlabs-key'] as string);
+    // ElevenLabs "Adam" (pNInz6obpgDQGcFmaJgB) - Natural Conversational Male Preset
+    const elevenLabsVoiceId = String(req.body.voiceId || process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB');
+
+    // 1. ElevenLabs Ultra-Realistic Conversational Voice Engine
+    if (elevenLabsApiKey) {
+      try {
+        const elevenRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${elevenLabsVoiceId}?output_format=mp3_44100_128`, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': elevenLabsApiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text,
+            model_id: 'eleven_turbo_v2_5', // Ultra-fast low-latency natural human model
+            voice_settings: {
+              stability: 0.38, // 0.35-0.50: Prevents robotic monotone and preserves natural pitch variation
+              similarity_boost: 0.80, // 0.75-0.85: Keeps natural tone consistent
+              style: 0.28, // 0.20-0.40: Adds natural conversational inflection and warmth
+              use_speaker_boost: true, // Enhances clarity without artifacts
+            },
+          }),
+        });
+
+        if (elevenRes.ok) {
+          const buffer = Buffer.from(await elevenRes.arrayBuffer());
+          res.setHeader('Content-Type', 'audio/mpeg');
+          res.setHeader('Content-Length', buffer.length);
+          return res.send(buffer);
+        } else {
+          console.warn('ElevenLabs API error status:', elevenRes.status, await elevenRes.text().catch(() => ''));
+        }
+      } catch (elevenErr) {
+        console.warn('ElevenLabs TTS error:', elevenErr);
+      }
     }
 
-    const audioBuffer = Buffer.from(await response.arrayBuffer());
+    // 2. Deepgram Aura TTS (High-speed natural conversational voice fallback)
+    if (process.env.DEEPGRAM_API_KEY) {
+      try {
+        const deepgramVoice = req.body.voice === 'asteria' ? 'aura-asteria-en' : 'aura-arcas-en';
+        const dgRes = await fetch(`https://api.deepgram.com/v1/speak?model=${deepgramVoice}&encoding=mp3`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${process.env.DEEPGRAM_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text }),
+        });
 
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Length', audioBuffer.length);
-    res.send(audioBuffer);
+        if (dgRes.ok) {
+          const buffer = Buffer.from(await dgRes.arrayBuffer());
+          res.setHeader('Content-Type', 'audio/mpeg');
+          res.setHeader('Content-Length', buffer.length);
+          return res.send(buffer);
+        }
+      } catch (dgErr) {
+        console.warn('Deepgram TTS fallback:', dgErr);
+      }
+    }
+
+    // 2. Try OpenAI TTS (tts-1)
+    if (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('uvwx')) {
+      const requestedVoice = String(req.body.voice || 'alloy');
+      const voice = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].includes(requestedVoice) ? requestedVoice : 'alloy';
+
+      const response = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'tts-1',
+          voice,
+          input: text,
+          speed: 0.98,
+          response_format: 'mp3',
+        }),
+      });
+
+      if (response.ok) {
+        const audioBuffer = Buffer.from(await response.arrayBuffer());
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Length', audioBuffer.length);
+        return res.send(audioBuffer);
+      }
+    }
+
+    res.status(503).json({ error: 'Cloud TTS unavailable, using browser natural neural synthesis.' });
   } catch (error) {
     next(error);
   }
 });
 
-app.post('/api/report', (_req, res) => res.json({ starScore: 84, accuracy: 82, fillerRate: 3.2, strongest: 'Clear problem decomposition', improve: 'Close answers with measurable impact' }));
+app.post('/api/interview/debrief', async (req, res, next) => {
+  try {
+    const { transcript = [], company, role, resume, focus, speechStats } = req.body;
+    const report = await intelligence.generateDebriefReport({
+      transcript,
+      company,
+      role,
+      resume,
+      focus,
+      speechStats
+    });
+    return res.json(report);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/report', async (req, res, next) => {
+  try {
+    const { transcript = [], company, role, resume, focus, speechStats } = req.body;
+    const report = await intelligence.generateDebriefReport({
+      transcript,
+      company,
+      role,
+      resume,
+      focus,
+      speechStats
+    });
+    return res.json(report);
+  } catch (error) {
+    next(error);
+  }
+});
 
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => console.log(`TeLos API listening on http://localhost:${port}`));

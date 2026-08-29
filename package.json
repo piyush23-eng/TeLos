@@ -16,10 +16,12 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@convai/web-sdk": "^1.7.0",
     "@deepgram/sdk": "^3.9.0",
     "@google/generative-ai": "^0.24.1",
     "@mediapipe/tasks-vision": "^1.0.1",
     "@prisma/client": "^6.2.1",
+    "@types/three": "^0.185.4",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
@@ -29,6 +31,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.15.0",
+    "simli-client": "^3.0.2",
+    "three": "^0.185.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {

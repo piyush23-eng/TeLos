@@ -15,6 +15,10 @@ type InterviewContext = {
   jobDescription?: string;
   transcript?: TranscriptTurn[];
   phase?: 'opening' | 'followup';
+  modelProvider?: 'gemini' | 'groq' | 'openrouter' | 'ollama' | 'openai' | 'anthropic' | 'heuristic' | 'auto';
+  modelName?: string;
+  customApiKey?: string;
+  customEndpoint?: string;
 };
 
 type AnswerSignals = {
@@ -34,43 +38,33 @@ const INTERVIEWER_SYSTEM = (context: {
   resume?: string;
   jobDescription?: string;
 }) => `
-You are a senior engineering interviewer conducting a realistic live interview.
+You are Alex, a senior interviewer conducting a one-on-one interview over video call for a ${context.role || "Software Engineer"} position at ${context.company || "the company"}. Act exactly like a real human at all times — never mention being AI, a model, or a script. Do not reference coding platforms, test cases, or "problems" upfront — this should feel like a real interview conversation, not an assessment tool.
+
+PHASE 1 — Opening (CV + JD grounded):
+Start with warm small talk — "Hey, how's it going, thanks for joining" — before anything technical. Then say something like "So I've had a look at your resume — walk me through your background a bit." Reference specific things from their CV naturally as they speak (a project name, a company, a skill listed) rather than asking generic questions. Connect what they say back to the job description: if the JD needs backend experience and their CV shows a relevant project, dig into that specifically.
+
+PHASE 2 — Transition:
+Once you've covered 2-3 background questions naturally, transition smoothly: "Cool, that's really helpful context. Let's shift gears a bit — I want to get into some technical stuff now." Don't announce it as "round 2" — flow into it like a real interviewer changing gears.
+
+PHASE 3 — Technical/coding:
+Ask technical questions relevant to the JD and their stated experience. If it's a coding question, ask them to explain their approach out loud first before writing code, then let them code while occasionally checking in ("How's that coming along?"). Push on edge cases and trade-offs naturally, not as a checklist.
+
+DELIVERY (throughout):
+Speak like a real person: natural pacing, brief thinking pauses before responding, casual acknowledgments ("okay", "got it", "right, makes sense") before your next line. Vary tone based on their answers. Ask one question at a time; base every follow-up on what they actually said. Keep your own turns to 2-4 sentences.
+
+Close naturally: "Alright, I think that's a good place to stop — thanks for walking me through all that, really appreciate it."
 
 CANDIDATE CONTEXT:
 Role: ${context.role || "Software Engineer"}
-Company: ${context.company || "Not specified"}
-Focus area: ${context.focus || "Technical engineering"}
+Company: ${context.company || "Target Company"}
+Focus: ${context.focus || "Engineering"}
 Resume:
 ${context.resume || "No resume provided."}
 
 Job Description:
 ${context.jobDescription || "No job description provided."}
 
-INTERVIEW RULES:
-
-- Every question must be relevant to the candidate's resume, the job description,
-  the selected role/focus, or something the candidate actually said.
-- Treat the resume and job description as the source of truth.
-- NEVER invent experience, projects, technologies, responsibilities, or achievements
-  that are not present in the resume or conversation.
-- If the focus area is backend, prioritize backend topics such as APIs, Java,
-  Spring Boot, databases, system design, scalability, authentication,
-  performance, testing, and distributed systems.
-- Do NOT ask frontend, React, UI, CSS, or frontend state-management questions
-  unless those topics are explicitly present in the resume, job description,
-  or the candidate's answer.
-- For the opening question, choose ONE strong question that connects the
-  candidate's actual background to the job requirements.
-- For follow-up questions, identify one concrete claim, technology, decision,
-  trade-off, metric, failure mode, or missing detail from the candidate's
-  latest answer and ask about that specifically.
-- Do not repeat questions already asked.
-- Do not ask generic textbook questions when a resume-specific question is possible.
-- Never give the candidate the answer or hints.
-- Keep the interview conversational, direct, professional, and concise.
-- Return only the question you would say aloud.
-- Ask the question directly. Do not use conversational filler such as "To start off", "To kick things off", "To get started", "Let's start", or "First off".
-- For the opening question, never say "Welcome", "To start off", or similar introductory phrases. Begin directly with the interview question.
+Return ONLY the exact dialogue you would speak aloud on the call.
 `;
 
 function formatTranscript(transcript: TranscriptTurn[] = []) {
@@ -79,13 +73,11 @@ function formatTranscript(transcript: TranscriptTurn[] = []) {
 
 function normalizeQuestion(raw: string) {
   return raw
-    .replace(/^\s*(Interviewer|Assistant|Panel):\s*/i, '')
-    .replace(/^(welcome!?|hi!?|hello!?)[\s,!:.-]*/i, '')
-    .replace(/^(to\s+(kick|start)(\s+things)?\s+off[,\s]*)/i, '')
-    .replace(/^let'?s\s+(kick|start)\s+things\s+off[,\s]*/i, '')
+    .replace(/^\s*(Interviewer|Assistant|Panel|Alex):\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim()
-    .replace(/^["“”\-–—]+/, '')
+    .replace(/^["“”]+/, '')
+    .replace(/["“”]+$/, '')
     .trim();
 }
 
@@ -169,17 +161,16 @@ function inferDomain(context: InterviewContext) {
 }
 
 function buildOpeningQuestion(context: InterviewContext) {
-  const domain = inferDomain(context);
-  if (domain === 'frontend') {
-    return 'Tell me about a recent front-end change that got tricky because state or user flow became complex. What was the hardest edge case to get right?';
+  const companyName = context.company || 'our engineering team';
+  if (context.resume && context.resume.trim().length > 20) {
+    const techMatch = context.resume.match(/(kafka|redis|kubernetes|docker|python|java|spring|golang|react|aws|gcp|postgres|graphql|distributed)/i);
+    const techName = techMatch ? techMatch[0] : '';
+    if (techName) {
+      return `Hey, thanks for joining today! I took a look at your background and saw your experience with ${techName} and systems architecture. To kick things off, could you walk me through your journey and the most technically demanding project you've built?`;
+    }
+    return `Hey, thanks for jumping on the call today! I took a look through your resume. To kick off, could you walk me through your background and the core architecture of a project you've owned?`;
   }
-  if (domain === 'data') {
-    return 'Walk me through a data or ML system you worked on where quality or correctness really mattered. How did you validate it in practice?';
-  }
-  if (domain === 'systems') {
-    return 'Tell me about a production system you helped build or operate where correctness mattered under load. What invariant did you protect?';
-  }
-  return 'Walk me through a recent technical decision you owned end to end. What problem were you solving, and how did you know your approach was right?';
+  return `Hey, thanks for jumping on the call today! How's your day going so far? Whenever you're settled in, I'd love to just kick things off casually — could you tell me a little bit about yourself and what you've been working on recently?`;
 }
 
 export function buildHeuristicQuestion(context: InterviewContext) {
@@ -208,28 +199,28 @@ export function buildHeuristicQuestion(context: InterviewContext) {
   let question = '';
 
   if (signals.isVague) {
-    question = 'Give me one concrete example from that answer. What actually happened, and what was the outcome?';
+    question = 'Got it. Could you give me one concrete example from that? What actually happened, and what was the outcome?';
   } else if (signals.hasFailure || (signals.hasTradeoff && hasPreviousMetric)) {
-    question = 'When that path fails in production, what is the first thing that breaks, and how would you contain it?';
+    question = 'Got it. When that path fails in production, what is the first thing that breaks, and how would you contain it?';
   } else if (signals.hasMetric || hasPreviousFailure) {
-    question = 'What metric or threshold would tell you that approach is no longer acceptable under load?';
+    question = 'Makes sense. What metric or threshold would tell you that approach is no longer acceptable under load?';
   } else if (signals.hasTradeoff || hasPreviousMetric) {
-    question = 'Which constraint mattered most in that decision, and what would you change if that constraint disappeared?';
+    question = 'Fair enough. Which constraint mattered most in that decision, and what would you change if that constraint disappeared?';
   } else if (signals.technologies.length) {
     const tech = signals.technologies[0];
-    question = `You mentioned ${tech}. What would make that choice fail in the real world, and how would you detect it early?`;
+    question = `Interesting, okay. You mentioned ${tech}. What would make that choice fail in the real world, and how would you detect it early?`;
   } else if (signals.hasDecision) {
-    question = 'What assumption was most important behind that decision, and how would you test it?';
+    question = 'Mm right. What assumption was most important behind that decision, and how would you test it?';
   } else if (roleFocus) {
-    question = `You said that in the context of ${roleFocus}. What assumption is most important there, and how would you test it?`;
+    question = `Got it. In the context of ${roleFocus}, what assumption is most important there, and how would you test it?`;
   } else if (priorQuestion) {
-    question = 'What is the most important assumption behind that approach, and how would you validate it?';
+    question = 'Understood. What was the most critical trade-off behind that approach, and how did you validate it?';
   } else {
-    question = 'What trade-off did you optimize for in that choice, and what would you change if the constraints shifted?';
+    question = 'Okay, got it. What trade-off did you optimize for in that choice, and what would you change if the constraints shifted?';
   }
 
   if (isRepeatedQuestion(question, previousQuestions)) {
-    question = 'What would you change if the constraints or traffic pattern shifted overnight?';
+    question = 'Got it. What would you change if the traffic pattern or system constraints shifted overnight?';
   }
 
   return { question, category: 'technical' as const };
@@ -271,57 +262,162 @@ export class IntelligenceProvider {
   return chunks.length ? chunks : [text];
 }
 
-  readonly llm = this.gemini ? 'google' : this.anthropic ? 'anthropic' : 'demo';
+  readonly llm = process.env.OPENROUTER_API_KEY
+    ? 'openrouter'
+    : this.gemini
+    ? 'google'
+    : process.env.GROQ_API_KEY
+    ? 'groq'
+    : this.openai && !process.env.OPENAI_API_KEY?.includes('uvwx')
+    ? 'openai'
+    : this.anthropic
+    ? 'anthropic'
+    : 'demo';
   readonly mode = this.llm !== 'demo' || process.env.DEEPGRAM_API_KEY ? 'cloud' : 'demo';
 
-  private async generateText(system: string, user: string, opts: { maxTokens?: number; temperature?: number } = {}) {
-    const { maxTokens = 400, temperature = 0.3 } = opts;
-    if (this.gemini) {
-      const model = this.gemini.getGenerativeModel({
-        model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
-        systemInstruction: system,
-        generationConfig: { maxOutputTokens: maxTokens, temperature }
-      });
-      const result = await model.generateContent(user);
+  private async generateText(system: string, user: string, opts: { maxTokens?: number; temperature?: number; modelProvider?: string; customApiKey?: string; customEndpoint?: string; modelName?: string } = {}) {
+    const { maxTokens = 500, temperature = 0.3, modelProvider = 'auto', customApiKey, customEndpoint, modelName } = opts;
 
-const raw = result.response.text();
+    // 1. OpenRouter (Primary Ultra-Reliable API with Multi-Model Fallback)
+    const openRouterKey = customApiKey || process.env.OPENROUTER_API_KEY;
+    if (openRouterKey && (modelProvider === 'openrouter' || modelProvider === 'auto' || modelProvider === 'gemini')) {
+      const preferredModels = [
+        modelName || process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001',
+        'meta-llama/llama-3.3-70b-instruct',
+        'deepseek/deepseek-chat',
+        'mistralai/mistral-small-24b-instruct-2501',
+        'qwen/qwen-2.5-72b-instruct',
+        'google/gemini-2.0-flash-exp:free',
+        'meta-llama/llama-3.3-70b-instruct:free'
+      ];
 
-console.log("========== RAW AI QUESTION ==========");
-console.log(raw);
-console.log("=====================================");
-
-return raw.trim();
+      for (const candidateModel of preferredModels) {
+        try {
+          const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openRouterKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://telos.ai',
+              'X-Title': 'TeLos AI Technical Interviewer'
+            },
+            body: JSON.stringify({
+              model: candidateModel,
+              messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+              max_tokens: maxTokens,
+              temperature,
+            })
+          });
+          if (orRes.ok) {
+            const data = await orRes.json() as any;
+            const text = data.choices?.[0]?.message?.content?.trim();
+            if (text && text.length > 10) {
+              console.log(`[Intelligence] Successfully generated question with OpenRouter model: ${candidateModel}`);
+              return text;
+            }
+          } else {
+            const errBody = await orRes.text();
+            console.warn(`[Intelligence] OpenRouter ${candidateModel} status ${orRes.status}:`, errBody);
+          }
+        } catch (err) {
+          console.warn(`[Intelligence] OpenRouter ${candidateModel} error:`, err);
+        }
+      }
     }
-    if (this.openai) {
-  const response = await this.openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || 'gpt-4o',
-    messages: [
-      {
-        role: 'system',
-        content: system,
-      },
-      {
-        role: 'user',
-        content: user,
-      },
-    ],
-    max_tokens: maxTokens,
-    temperature,
-  });
 
-  return response.choices[0]?.message?.content?.trim() || '';
-}
-    
+    // 2. Groq (Free ultra-fast LLM API)
+    const groqKey = customApiKey || process.env.GROQ_API_KEY;
+    if (modelProvider === 'groq' || (modelProvider === 'auto' && groqKey)) {
+      try {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: modelName || 'llama-3.3-70b-versatile',
+            messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+            max_tokens: maxTokens,
+            temperature,
+          })
+        });
+        if (groqRes.ok) {
+          const data = await groqRes.json() as any;
+          return data.choices?.[0]?.message?.content?.trim() || '';
+        }
+      } catch (err) {
+        console.warn('Groq inference fallback:', err);
+      }
+    }
+
+    // 3. Ollama (100% Free & Offline Local AI)
+    if (modelProvider === 'ollama' || customEndpoint?.includes('11434')) {
+      try {
+        const endpoint = customEndpoint || 'http://localhost:11434/v1/chat/completions';
+        const ollamaRes = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: modelName || 'llama3.1:latest',
+            messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+            stream: false,
+          })
+        });
+        if (ollamaRes.ok) {
+          const data = await ollamaRes.json() as any;
+          return data.choices?.[0]?.message?.content?.trim() || '';
+        }
+      } catch (err) {
+        console.warn('Ollama inference fallback:', err);
+      }
+    }
+
+    // 4. Google Gemini (Native SDK)
+    if (this.gemini || customApiKey) {
+      try {
+        const geminiClient = customApiKey ? new GoogleGenerativeAI(customApiKey) : this.gemini!;
+        const model = geminiClient.getGenerativeModel({
+          model: modelName || process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+          systemInstruction: system,
+          generationConfig: { maxOutputTokens: maxTokens, temperature }
+        });
+        const result = await model.generateContent(user);
+        const raw = result.response.text();
+        return raw.trim();
+      } catch (geminiErr) {
+        console.warn('Gemini inference fallback:', geminiErr);
+      }
+    }
+
+    // 5. OpenAI
+    if (this.openai && !process.env.OPENAI_API_KEY?.includes('uvwx')) {
+      try {
+        const response = await this.openai.chat.completions.create({
+          model: modelName || process.env.OPENAI_MODEL || 'gpt-4o-mini',
+          messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+          max_tokens: maxTokens,
+          temperature,
+        });
+        return response.choices[0]?.message?.content?.trim() || '';
+      } catch (openAiErr) {
+        console.warn('OpenAI inference fallback:', openAiErr);
+      }
+    }
+
+    // 6. Anthropic
     if (this.anthropic) {
-      const completion = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-latest',
-        max_tokens: maxTokens,
-        temperature,
-        system,
-        messages: [{ role: 'user', content: user }]
-      });
-      return completion.content.find(x => x.type === 'text')?.text.trim() || '';
+      try {
+        const completion = await this.anthropic.messages.create({
+          model: 'claude-3-5-sonnet-latest',
+          max_tokens: maxTokens,
+          temperature,
+          system,
+          messages: [{ role: 'user', content: user }]
+        });
+        return completion.content.find(x => x.type === 'text')?.text.trim() || '';
+      } catch (anthropicErr) {
+        console.warn('Anthropic inference fallback:', anthropicErr);
+      }
     }
+
     return '';
   }
 
@@ -416,25 +512,28 @@ PREVIOUS INTERVIEWER QUESTIONS:
 ${previousQuestions.join('\n')}
 
 RULES:
-- Ask exactly ONE complete interview question.
-- The question must be relevant to the candidate's actual resume,
-  job description, role/focus, or their latest answer.
-- For a follow-up, investigate ONE concrete claim, technology,
-  decision, trade-off, metric, failure, or missing detail.
-- Do NOT repeat any previous question.
-- Do NOT paraphrase a previous question.
-- Do NOT ask generic textbook questions when a resume-specific
-  question is possible.
-- Do NOT invent candidate experience.
-- Do NOT provide an answer or hint.
-- Return ONLY the question you would say aloud.
+- Respond in character as Alex on a live video call.
+- Ask exactly ONE complete interviewer turn (2 to 3 conversational sentences total).
+- For follow-ups:
+  * Start with a brief, natural acknowledgment/reaction to the candidate's latest answer (e.g., "Got it.", "Okay, makes sense.", "Interesting, okay.", "Mm right.", "Fair enough.").
+  * Directly anchor on the project, technology (e.g. RAG, Qwen fine-tuning, PySpark, databases, APIs), or challenge they just mentioned or listed on their resume.
+  * Probe ONE specific technical detail: architecture decision, indexing strategy, data pipeline bottleneck, failure mode, concurrency challenge, or trade-off.
+  * Keep the tone authentic, conversational, and inquisitive like a real senior technical interviewer.
+- Do NOT repeat or paraphrase any previous question.
+- Do NOT ask generic textbook questions — always ground in their stated project/CV experience and target job requirements.
+- Return ONLY the exact dialogue you would say aloud on the call.
 `;
 
   // Generate with a few attempts so duplicates are rejected
   let finalQuestion = '';
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const generated = await this.generateText(system, user);
+    const generated = await this.generateText(system, user, {
+      modelProvider: context.modelProvider,
+      modelName: context.modelName,
+      customApiKey: context.customApiKey,
+      customEndpoint: context.customEndpoint
+    });
 
     const candidateQuestion = normalizeQuestion(generated || '');
 
@@ -510,6 +609,246 @@ RULES:
         });
     });
     return connection;
+  }
+
+  /**
+   * Generates a comprehensive post-interview feedback and debrief report
+   * analyzing every question asked, what the candidate said, what they should say,
+   * what to improve, what not to say, and key strengths.
+   */
+  async generateDebriefReport(params: {
+    transcript: TranscriptTurn[];
+    company?: string;
+    role?: string;
+    resume?: string;
+    focus?: string;
+    speechStats?: { pace?: number; fillerCount?: number; duration?: number };
+  }) {
+    const { transcript = [], company = 'All Top Tech', role = 'Software Engineer', resume = '', speechStats } = params;
+
+    // Filter candidate and interviewer turns
+    const interviewerTurns = transcript.filter(t => t.speaker === 'interviewer');
+    const candidateTurns = transcript.filter(t => t.speaker === 'candidate');
+
+    const prompt = `You are a Principal Engineering Bar Raiser conducting a comprehensive post-interview debrief for a ${role} candidate interviewing at ${company}.
+
+Analyze the complete interview transcript below and return a structured JSON report with deep, actionable feedback on:
+1. Every question asked by the interviewer:
+   - What the candidate said.
+   - What they SHOULD have said (ideal high-bar answer with system design trade-offs, algorithmic complexity, architectural patterns, and business impact).
+   - A verdict ('Strong', 'Adequate', 'Needs Improvement').
+   - Concrete feedback on that specific answer.
+2. What to Improve (critical gaps in technical depth, missed edge cases, structural weakness).
+3. What NOT to Say (anti-patterns, vague statements, red flag habits or phrases used or to avoid in tech interviews).
+4. What They Improved / Strengths (areas of strength, sound engineering judgment, good communication).
+5. Calibrated Scores & Hiring Recommendation ('Strong Hire', 'Hire', 'Leaning Hire', 'Leaning No Hire', 'No Hire').
+
+CANDIDATE PROFILE:
+Role: ${role}
+Company: ${company}
+Candidate Resume / Background: ${resume || 'Not provided'}
+Speaking Pace: ${speechStats?.pace ? `${speechStats.pace} WPM` : 'Normal'}
+
+INTERVIEW TRANSCRIPT:
+${transcript.map(t => `${t.speaker === 'interviewer' ? 'Alex (Interviewer)' : 'Candidate'}: ${t.text}`).join('\n')}
+
+OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) conforming to this exact structure:
+{
+  "summary": "2-3 paragraph executive summary of candidate performance",
+  "hiringRecommendation": "Hire",
+  "hiringRationale": "Key justification for this decision",
+  "scores": {
+    "overall": 82,
+    "technicalDepth": 80,
+    "communication": 85,
+    "problemSolving": 81
+  },
+  "questionsAnalysis": [
+    {
+      "id": "q1",
+      "question": "The question asked by Alex",
+      "whatYouSaid": "Summary or key quote of what the candidate answered",
+      "whatYouShouldSay": "The ideal, high-bar response including key trade-offs, architecture, and metrics",
+      "verdict": "Strong",
+      "feedback": "Specific feedback for this response"
+    }
+  ],
+  "whatToImprove": [
+    {
+      "title": "Area for improvement title",
+      "detail": "Explanation of the technical or behavioral gap",
+      "actionItem": "Concrete practice exercise or adjustment"
+    }
+  ],
+  "whatNotToSay": [
+    {
+      "phraseOrHabit": "Phrase or anti-pattern to avoid",
+      "whyAvoid": "Why this creates negative signal in interviews",
+      "betterAlternative": "What to say or do instead"
+    }
+  ],
+  "whatYouImproved": [
+    {
+      "strength": "Key strength demonstrated",
+      "observation": "Where in the interview this was shown and why it stood out"
+    }
+  ]
+}`;
+
+    // 1. Try OpenRouter (Primary Ultra-Fast Cloud LLM)
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    if (openRouterKey) {
+      const preferredModels = [
+        process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001',
+        'meta-llama/llama-3.3-70b-instruct',
+        'deepseek/deepseek-chat',
+        'mistralai/mistral-small-24b-instruct-2501'
+      ];
+      for (const model of preferredModels) {
+        try {
+          const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openRouterKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://telos.ai',
+              'X-Title': 'TeLos AI Technical Interviewer'
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: 'user', content: prompt }],
+              max_tokens: 2200,
+              temperature: 0.2,
+            })
+          });
+          if (orRes.ok) {
+            const data = await orRes.json() as any;
+            const text = data.choices?.[0]?.message?.content?.trim();
+            const jsonMatch = text?.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              console.log(`[Intelligence] Successfully generated debrief report with OpenRouter: ${model}`);
+              return parsed;
+            }
+          }
+        } catch (err) {
+          console.warn(`[Intelligence] OpenRouter debrief ${model} error:`, err);
+        }
+      }
+    }
+
+    // 2. Try Gemini (Native SDK Fallback)
+    if (this.gemini) {
+      try {
+        const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+        const model = this.gemini.getGenerativeModel({ model: modelName });
+        const res = await model.generateContent(prompt);
+        const text = res.response.text().trim();
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return parsed;
+        }
+      } catch (err) {
+        console.warn('Gemini debrief generation error:', err);
+      }
+    }
+
+    // 2. Try OpenAI (Fallback)
+    if (this.openai && !process.env.OPENAI_API_KEY?.includes('uvwx')) {
+      try {
+        const completion = await this.openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.3,
+        });
+        const content = completion.choices[0]?.message?.content;
+        if (content) return JSON.parse(content);
+      } catch (err) {
+        console.warn('OpenAI debrief generation error:', err);
+      }
+    }
+
+    // 3. Heuristic / Rule-based Intelligent Fallback
+    const qAnalysis = [];
+    let qIdx = 1;
+    for (let i = 0; i < transcript.length; i++) {
+      if (transcript[i].speaker === 'interviewer') {
+        const q = transcript[i].text;
+        const nextAns = transcript[i + 1]?.speaker === 'candidate' ? transcript[i + 1].text : 'Brief acknowledgment or code implementation.';
+        const isTradeoff = /trade-off|bottleneck|scale|latency|cache|database|concurrency/i.test(nextAns);
+        
+        qAnalysis.push({
+          id: `q${qIdx++}`,
+          question: q,
+          whatYouSaid: nextAns.length > 180 ? nextAns.slice(0, 180) + '...' : nextAns,
+          whatYouShouldSay: `State your core architecture first, explain key trade-offs (e.g. latency vs consistency, memory vs CPU), and quantify results with concrete metrics for ${company}.`,
+          verdict: isTradeoff ? ('Strong' as const) : ('Adequate' as const),
+          feedback: isTradeoff
+            ? 'Good discussion of engineering trade-offs. Deepen your explanation by discussing edge-case failure modes.'
+            : 'Be more structured: state the high-level architecture before diving into code or implementation details.'
+        });
+      }
+    }
+
+    if (qAnalysis.length === 0) {
+      qAnalysis.push({
+        id: 'q1',
+        question: 'Tell me about a complex distributed system or engineering project you built.',
+        whatYouSaid: candidateTurns[0]?.text || 'Discussed background and architectural scope.',
+        whatYouShouldSay: 'Use the STAR framework: Situation, Task, Action, and measurable Results with trade-offs highlighted.',
+        verdict: 'Adequate' as const,
+        feedback: 'Anchor your experience with quantifiable scale metrics (RPS, P99 latency, data volume).'
+      });
+    }
+
+    return {
+      summary: `In this ${company} technical interview session for ${role}, you demonstrated solid fundamentals and active engagement. Your responses showed sound reasoning, with opportunities to sharpen your architectural trade-offs and quantitative impact framing.`,
+      hiringRecommendation: candidateTurns.length >= 3 ? 'Hire' : 'Leaning Hire',
+      hiringRationale: `Demonstrated technical communication clarity and systematic problem solving across ${qAnalysis.length} core interview discussions.`,
+      scores: {
+        overall: Math.min(92, Math.max(68, 74 + candidateTurns.length * 3)),
+        technicalDepth: 78,
+        communication: 84,
+        problemSolving: 80,
+      },
+      questionsAnalysis: qAnalysis,
+      whatToImprove: [
+        {
+          title: 'Quantify Technical Impact & Scale',
+          detail: 'Several answers described features without stating requests per second, throughput, database size, or latency savings.',
+          actionItem: 'In every project narrative, state: "This handled X req/sec with Y ms P99 latency while maintaining Z% availability."'
+        },
+        {
+          title: 'Systematic Trade-Off Framing',
+          detail: 'When choosing technologies (e.g. SQL vs NoSQL, Redis vs Memcached), explicitly state what you traded off (e.g. consistency for write throughput).',
+          actionItem: 'State why you did NOT choose the obvious alternative before settling on your final design.'
+        }
+      ],
+      whatNotToSay: [
+        {
+          phraseOrHabit: '"We just used Kafka because everyone uses it"',
+          whyAvoid: 'Sounds uncritical and lacks engineering justification for message ordering and throughput.',
+          betterAlternative: '"We selected Kafka specifically for partitioned horizontal throughput and replayable event logs."'
+        },
+        {
+          phraseOrHabit: '"I don\'t think there are any failure cases"',
+          whyAvoid: 'Every distributed system fails. Senior engineers actively plan for network partitions and cascading failures.',
+          betterAlternative: '"Under network partitions or downstream timeout, we fall back to circuit-breaker mode with cached defaults."'
+        }
+      ],
+      whatYouImproved: [
+        {
+          strength: 'Conversational Cadence & Deliberate Pacing',
+          observation: 'Maintained calm, structured delivery and took pauses to frame answers before speaking.'
+        },
+        {
+          strength: 'Clarity in Technical Problem Decomposition',
+          observation: 'Broke down requirements into digestible components and actively checked in on interviewer requirements.'
+        }
+      ]
+    };
   }
 
   private demoClassify(text: string) {

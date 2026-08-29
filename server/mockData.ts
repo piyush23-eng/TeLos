@@ -8,6 +8,14 @@ export const demoSessions = [
 
 export const personas = [
   {
+    id: 'alex-senior-interviewer',
+    name: 'Alex (Senior Technical Interviewer)',
+    focus: ['systems design', 'backend architecture', 'trade-offs & failure modes', 'live video-call pacing'],
+    difficulty: 'intermediate / senior',
+    style: 'casual yet sharp, natural video-call flow, probing follow-ups, realistic production pressure',
+    rubric: ['clarify constraints & metrics', 'analyze failure modes under load', 'justify architectural trade-offs']
+  },
+  {
     id: 'google-swe-panel',
     name: 'Google SWE Panel',
     focus: ['systems design', 'trade-offs', 'operational excellence'],
