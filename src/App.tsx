@@ -1985,10 +1985,6 @@ function SiteFooter({ onNavigate }: { onNavigate: (page: Page) => void }) {
           <p className="footer-tagline">
             High-signal AI technical interview calibration studio grounded in real candidate project context, multi-model intelligence, and live telemetry.
           </p>
-          <div className="footer-status-pill">
-            <span className="live-dot" />
-            <span>AI INTERVIEW ENGINE • OPENROUTER ACTIVE</span>
-          </div>
         </div>
 
         <div className="footer-links-col">
