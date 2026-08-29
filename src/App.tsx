@@ -2131,7 +2131,7 @@ function CompanyPrep() {
         <div className="prep-detail">
           {selectedCompany ? (
             <>
-              {/* Hero Banner Card */}
+              {/* ── Hero Banner Card ── */}
               <article className="detail-card hero-card">
                 <div className="detail-header">
                   <div>
@@ -2168,40 +2168,58 @@ function CompanyPrep() {
                 </div>
               </article>
 
-              {/* 6-Week Master Roadmap Card */}
+              {/* ── Detailed 6-Week Prep Roadmap ── */}
               {activeRoadmap && (
                 <article className="detail-card roadmap-card">
                   <div className="panel-label">
                     <span>
-                      <BookOpen size={13} /> CURATED {selectedCompany.name.toUpperCase()} ROADMAP
+                      <BookOpen size={13} /> {selectedCompany.name.toUpperCase()} 6-WEEK STEP-BY-STEP PREP BLUEPRINT
                     </span>
                     <span>{activeRoadmap.duration.toUpperCase()}</span>
                   </div>
                   <p className="roadmap-intro">
-                    A practical week-by-week plan built around the rounds, topics, and proof points {selectedCompany.name} is calibrated to assess. Complete each milestone before progressing to the next.
+                    A rigorous, high-signal preparation roadmap calibrated specifically for {selectedCompany.name}'s technical bar. Follow the weekly milestones in sequence to build deep pattern mastery and interview confidence.
                   </p>
+
                   <div className="roadmap-weeks">
                     {activeRoadmap.weeks.map((week: any, index: number) => (
-                      <div className="roadmap-week" key={week.label}>
-                        <span className="roadmap-number">0{index + 1}</span>
-                        <div>
-                          <strong>{week.label} / {week.focus}</strong>
-                          <p>{week.target}{week.deliverable ? ` • Deliverable: ${week.deliverable}` : ''}</p>
-                          {week.topics && week.topics.length > 0 && (
+                      <div className="roadmap-week" key={week.label} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span className="roadmap-number">0{index + 1}</span>
+                          <div style={{ flex: 1 }}>
+                            <strong>{week.label} / {week.focus}</strong>
+                          </div>
+                          <Check size={16} aria-hidden="true" />
+                        </div>
+
+                        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: '#d8d4e5' }}>{week.target}</p>
+
+                        {week.topics && week.topics.length > 0 && (
+                          <div style={{ marginTop: 4 }}>
+                            <span style={{ fontSize: 9, fontFamily: "'DM Mono', monospace", letterSpacing: '1px', color: 'var(--coral, #f3a184)', fontWeight: 700 }}>
+                              HIGH-PRIORITY TOPICS &amp; PATTERNS:
+                            </span>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
                               {week.topics.map((t: string) => (
-                                <span key={t} style={{ fontSize: 10, background: 'rgba(255, 255, 255, 0.1)', padding: '2px 6px', borderRadius: 2, color: '#d8d4e5', fontFamily: 'DM Mono, monospace' }}>
+                                <span key={t} style={{ fontSize: 10, background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255,255,255,0.12)', padding: '3px 8px', fontFamily: "'DM Mono', monospace", color: '#d8d4e5' }}>
                                   ✓ {t}
                                 </span>
                               ))}
                             </div>
-                          )}
-                        </div>
-                        <Check size={16} aria-hidden="true" />
+                          </div>
+                        )}
+
+                        {week.deliverable && (
+                          <div style={{ marginTop: 6, padding: '6px 10px', background: 'rgba(214,244,209,0.08)', border: '1px solid rgba(214,244,209,0.15)', fontSize: 11, fontFamily: "'DM Mono', monospace", lineHeight: 1.5 }}>
+                            <b style={{ color: 'var(--mint, #d6f4d1)', marginRight: 8 }}>MILESTONE DELIVERABLE:</b>
+                            <span style={{ color: '#d8d4e5' }}>{week.deliverable}</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                  <div className="curated-grid">
+
+                  <div className="curated-grid" style={{ marginTop: 20 }}>
                     {activeRoadmap.curatedPrep.map((item: any) => (
                       <div className="curated-item" key={item.title}>
                         <span>CRITICAL STRATEGY</span>
@@ -2213,46 +2231,109 @@ function CompanyPrep() {
                 </article>
               )}
 
-              {/* Round Readiness & Questions Card */}
+              {/* ── Interview Round Sequence ── */}
               <article className="detail-card">
                 <div className="panel-label">
-                  <span>ROUND READINESS &amp; FREQUENT PYQS</span>
-                  <span>HIGH SIGNAL</span>
+                  <span>INTERVIEW ROUND SEQUENCE</span>
+                  <span>{selectedCompany.name.toUpperCase()} HIRING LOOP</span>
                 </div>
-                <div className="info-grid">
-                  {selectedCompany.sampleQuestions?.slice(0, 4).map((question: string) => (
-                    <div key={question} className="info-card">
-                      <strong>Sample Question</strong>
-                      <span>{question}</span>
+                <div className="info-grid" style={{ gap: 0 }}>
+                  {selectedCompany.hiringProcess.map((roundText: string, idx: number) => (
+                    <div className="info-card" key={idx} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                      <span style={{ font: "800 18px/1 'Space Grotesk', sans-serif", color: 'var(--violet, #6e54f6)', minWidth: 28 }}>0{idx + 1}</span>
+                      <div>
+                        <strong>{roundText.split(':')[0]}</strong>
+                        <span style={{ display: 'block', marginTop: 2 }}>{roundText.split(':')[1] || roundText}</span>
+                      </div>
                     </div>
                   ))}
+                </div>
+              </article>
+
+              {/* ── Frequent PYQs & Sample Questions ── */}
+              <article className="detail-card">
+                <div className="panel-label">
+                  <span>FREQUENT REPEATED QUESTIONS</span>
+                  <span>TAGGED FOR {selectedCompany.name.toUpperCase()}</span>
+                </div>
+                <div className="info-grid">
+                  {selectedCompany.sampleQuestions?.map((q: string, idx: number) => (
+                    <div key={idx} className="info-card" style={{ position: 'relative' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', color: 'var(--violet, #6e54f6)' }}>PYQ #{idx + 1}</span>
+                        <span style={{ font: "700 8px/1 'DM Mono', monospace", letterSpacing: '1px', padding: '2px 6px', border: '1px solid var(--ink)', background: q.toLowerCase().includes('hard') ? 'var(--coral, #f3a184)' : q.toLowerCase().includes('easy') ? 'var(--mint, #d6f4d1)' : 'rgba(255,255,255,0.6)' }}>
+                          {q.toLowerCase().includes('hard') ? 'HARD' : q.toLowerCase().includes('easy') ? 'EASY' : 'MEDIUM'}
+                        </span>
+                      </div>
+                      <span>{q}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="info-grid" style={{ marginTop: 12 }}>
                   <div className="info-card">
                     <strong>Frequent PYQ Topics</strong>
                     <span>{selectedCompany.pyqTopics.join(' • ')}</span>
                   </div>
-                  {selectedCompany.systemDesignArchetypes && selectedCompany.systemDesignArchetypes.length > 0 && (
-                    <div className="info-card">
-                      <strong>System Design Archetypes</strong>
-                      <span>{selectedCompany.systemDesignArchetypes.join(' • ')}</span>
-                    </div>
-                  )}
                 </div>
-                {selectedCompany.communityInsights && selectedCompany.communityInsights.length > 0 && (
-                  <div className="info-grid" style={{ marginTop: 12 }}>
-                    {selectedCompany.communityInsights.map((insight: any) => (
-                      <div key={insight.title} className="info-card">
-                        <strong>{insight.title}</strong>
-                        <span>{insight.detail}</span>
+              </article>
+
+              {/* ── System Design Archetypes ── */}
+              {selectedCompany.systemDesignArchetypes && selectedCompany.systemDesignArchetypes.length > 0 && (
+                <article className="detail-card">
+                  <div className="panel-label">
+                    <span>COMPANY-SPECIFIC ARCHITECTURES</span>
+                    <span>SYSTEM DESIGN DRILLS</span>
+                  </div>
+                  <div className="info-grid">
+                    {selectedCompany.systemDesignArchetypes.map((arch: string, idx: number) => (
+                      <div className="info-card" key={idx}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', color: 'var(--coral, #f3a184)' }}>SYSTEM DRILL 0{idx + 1}</span>
+                        </div>
+                        <strong>{arch}</strong>
+                        <span>Focus on component trade-offs, data models, scale calculations (QPS &amp; Storage), and failure modes.</span>
                       </div>
                     ))}
                   </div>
-                )}
-              </article>
+                </article>
+              )}
+
+              {/* ── Culture & Behavioral Blueprint ── */}
+              {selectedCompany.culturalValues && selectedCompany.culturalValues.length > 0 && (
+                <article className="detail-card">
+                  <div className="panel-label">
+                    <span>CULTURE &amp; LEADERSHIP VALUES</span>
+                    <span>EVALUATION BLUEPRINT</span>
+                  </div>
+                  <div className="info-grid">
+                    {selectedCompany.culturalValues.map((val: string, idx: number) => (
+                      <div className="info-card" key={idx}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ font: "700 9px/1 'DM Mono', monospace", letterSpacing: '1px', color: 'var(--mint, #d6f4d1)' }}>CORE VALUE 0{idx + 1}</span>
+                        </div>
+                        <strong>{val.split(':')[0]}</strong>
+                        {val.includes(':') && <span>{val.split(':')[1]}</span>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {selectedCompany.communityInsights && selectedCompany.communityInsights.length > 0 && (
+                    <div className="info-grid" style={{ marginTop: 12 }}>
+                      {selectedCompany.communityInsights.map((insight: any, idx: number) => (
+                        <div className="info-card" key={idx}>
+                          <strong>{insight.title}</strong>
+                          <span>{insight.detail}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              )}
             </>
           ) : (
             <article className="detail-card empty-state-card">
               <p className="kicker">READY</p>
-              <h2>Select a company to see the prep map.</h2>
+              <h2>Select a company to view the complete playbook.</h2>
               <p>Each company card surfaces the hiring process, the likely rounds, and the questions that matter most.</p>
             </article>
           )}
