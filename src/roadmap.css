@@ -3798,3 +3798,175 @@
 .live-meter i {
   display: none !important;
 }
+
+/* Debrief Telemetry HUD & Extended Insights */
+.debrief-scorecard-grid.radial-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  border: 0;
+  background: transparent;
+}
+@media (max-width: 900px) {
+  .debrief-scorecard-grid.radial-grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .debrief-scorecard-grid.radial-grid-6 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.debrief-telemetry-hud {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  background: var(--paper, #ffffff);
+  border: 1px solid var(--ink, #101018);
+  padding: 14px 16px;
+}
+@media (max-width: 768px) {
+  .debrief-telemetry-hud {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.telemetry-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.telemetry-stat-item .telemetry-label {
+  font: 700 9px 'DM Mono', monospace;
+  letter-spacing: 0.06em;
+  color: var(--muted, #686771);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.telemetry-stat-item .telemetry-val {
+  font: 700 15px 'DM Mono', monospace;
+  color: var(--ink, #101018);
+}
+.telemetry-stat-item .telemetry-sub {
+  font: 500 11px Manrope, sans-serif;
+  color: var(--muted, #686771);
+}
+
+/* Company Rubric Cards */
+.rubric-card {
+  border: 1px solid var(--ink, #101018);
+  background: var(--paper, #ffffff);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rubric-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rubric-card-title {
+  font: 700 14px Manrope, sans-serif;
+  color: var(--ink, #101018);
+}
+.rubric-status-pill {
+  font: 700 9px 'DM Mono', monospace;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border: 1px solid var(--ink, #101018);
+  border-radius: 0;
+}
+.rubric-status-pill.strong {
+  background: var(--mint, #d6f4d1);
+  color: #101018;
+}
+.rubric-status-pill.adequate {
+  background: var(--violet, #6e54f6);
+  color: #ffffff;
+}
+.rubric-status-pill.needs-cal {
+  background: var(--coral, #f3a184);
+  color: #101018;
+}
+.rubric-bar-container {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border: 1px solid var(--ink, #101018);
+  overflow: hidden;
+}
+.rubric-bar-fill {
+  height: 100%;
+  background: var(--violet, #6e54f6);
+  transition: width 0.8s ease;
+}
+.rubric-note {
+  margin: 0;
+  font: 500 12px/1.55 Manrope, sans-serif;
+  color: var(--ink, #101018);
+}
+
+/* 48-Hour Practice Roadmap Cards */
+.roadmap-timeline-card {
+  border: 1px solid var(--ink, #101018);
+  background: var(--paper, #ffffff);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+.roadmap-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font: 700 9.5px 'DM Mono', monospace;
+  background: var(--ink, #101018);
+  color: var(--paper, #ffffff);
+  padding: 3px 8px;
+}
+.roadmap-title {
+  margin: 0;
+  font: 700 14px Manrope, sans-serif;
+  color: var(--ink, #101018);
+}
+.roadmap-focus {
+  margin: 0;
+  font: 500 12.5px/1.55 Manrope, sans-serif;
+  color: var(--muted, #686771);
+}
+.roadmap-drill-box {
+  background: #f1f0fb;
+  border: 1px solid var(--violet, #6e54f6);
+  padding: 10px 12px;
+  font: 600 11.5px/1.4 'DM Mono', monospace;
+  color: #101018;
+}
+
+/* Dark mode overrides for debrief elements */
+body.dark-theme .debrief-telemetry-hud,
+body.dark-theme .rubric-card,
+body.dark-theme .roadmap-timeline-card {
+  background: #14141d;
+  border-color: #2e2e3e;
+}
+body.dark-theme .telemetry-stat-item .telemetry-val,
+body.dark-theme .rubric-card-title,
+body.dark-theme .rubric-note,
+body.dark-theme .roadmap-title {
+  color: #f1f0fb;
+}
+body.dark-theme .rubric-bar-container {
+  background: #252536;
+  border-color: #3f3f56;
+}
+body.dark-theme .roadmap-drill-box {
+  background: #1d1b2d;
+  border-color: #7c65fa;
+  color: #f1f0fb;
+}

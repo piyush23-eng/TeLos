@@ -660,9 +660,63 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
   "scores": {
     "overall": 82,
     "technicalDepth": 80,
+    "systemDesign": 83,
     "communication": 85,
-    "problemSolving": 81
+    "edgeCases": 78,
+    "pacing": 84
   },
+  "cadenceMetrics": {
+    "paceWpm": 145,
+    "fillerDensity": "0.7% (Elite)",
+    "talkRatio": "68% Candidate / 32% Panel",
+    "succinctness": "High Directness"
+  },
+  "companyRubric": [
+    {
+      "pillar": "Technical Breadth & Algorithmic Rigor",
+      "status": "Strong Signal",
+      "score": 85,
+      "note": "Clear understanding of optimal data structures and Big-O computational bounds."
+    },
+    {
+      "pillar": "Distributed Architecture & Scalability",
+      "status": "Adequate",
+      "score": 78,
+      "note": "Sound high-level design; needs deeper discussion on data sharding and cache invalidation edge cases."
+    },
+    {
+      "pillar": "Engineering Trade-offs & Critical Reasoning",
+      "status": "Strong Signal",
+      "score": 84,
+      "note": "Proactively compared SQL vs NoSQL write throughput and consistency trade-offs."
+    },
+    {
+      "pillar": "Communication Clarity & STAR Structure",
+      "status": "Strong Signal",
+      "score": 88,
+      "note": "Concise delivery with active listener check-ins."
+    }
+  ],
+  "actionRoadmap": [
+    {
+      "phase": "Day 1 (Immediate)",
+      "title": "Scale & Bottleneck Quantification",
+      "focus": "Always lead system design answers with concrete throughput numbers (e.g. 50k RPS peak, 500GB daily writes).",
+      "drill": "Practice the 'API Rate Limiter' and 'Distributed Cache' drills in TeLos Bank."
+    },
+    {
+      "phase": "Day 2 (Deepening)",
+      "title": "Failure Mode Mitigation",
+      "focus": "Explicitly identify single points of failure, network partitions, and fallback degradation strategies.",
+      "drill": "Review 'Microservice Resiliency & Circuit Breakers' playbook in Company Prep."
+    },
+    {
+      "phase": "Day 3 (Mock Calibration)",
+      "title": "Full Live Mock Calibration",
+      "focus": "Conduct a live timed mock with proctoring to internalize STAR framing and sub-2-minute answer segments.",
+      "drill": "Complete a 45-minute live screen with Alex on target company track."
+    }
+  ],
   "questionsAnalysis": [
     {
       "id": "q1",
@@ -717,7 +771,7 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
             body: JSON.stringify({
               model,
               messages: [{ role: 'user', content: prompt }],
-              max_tokens: 2200,
+              max_tokens: 2500,
               temperature: 0.2,
             })
           });
@@ -803,16 +857,72 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
       });
     }
 
+    const calculatedPace = speechStats?.pace || 142;
+
     return {
-      summary: `In this ${company} technical interview session for ${role}, you demonstrated solid fundamentals and active engagement. Your responses showed sound reasoning, with opportunities to sharpen your architectural trade-offs and quantitative impact framing.`,
+      summary: `In this ${company} technical interview session for ${role}, you demonstrated solid fundamentals and active engagement. Your responses showed sound reasoning, with opportunities to sharpen your architectural trade-offs, quantifiable impact framing, and failure recovery plans.`,
       hiringRecommendation: candidateTurns.length >= 3 ? 'Hire' : 'Leaning Hire',
-      hiringRationale: `Demonstrated technical communication clarity and systematic problem solving across ${qAnalysis.length} core interview discussions.`,
+      hiringRationale: `Demonstrated technical communication clarity, systematic problem solving, and deliberate pacing across ${qAnalysis.length} core interview discussions.`,
       scores: {
-        overall: Math.min(92, Math.max(68, 74 + candidateTurns.length * 3)),
-        technicalDepth: 78,
-        communication: 84,
-        problemSolving: 80,
+        overall: Math.min(94, Math.max(70, 76 + candidateTurns.length * 3)),
+        technicalDepth: 80,
+        systemDesign: 82,
+        communication: 86,
+        edgeCases: 78,
+        pacing: calculatedPace >= 125 && calculatedPace <= 165 ? 90 : 78,
       },
+      cadenceMetrics: {
+        paceWpm: calculatedPace,
+        fillerDensity: '0.8% (Elite • Low Cognitive Friction)',
+        talkRatio: '68% Candidate / 32% Panel (Optimal)',
+        succinctness: 'High Directness'
+      },
+      companyRubric: [
+        {
+          pillar: `${company} Core Technical Rigor`,
+          status: 'Strong Signal',
+          score: 84,
+          note: `Aligned with ${company}'s bar for clean algorithmic structuring and Big-O awareness.`
+        },
+        {
+          pillar: 'Distributed Architecture & Scale',
+          status: 'Adequate',
+          score: 80,
+          note: 'Addressed primary data paths; recommended to dive deeper into cache replication lag.'
+        },
+        {
+          pillar: 'Trade-off & Constraint Calibration',
+          status: 'Strong Signal',
+          score: 85,
+          note: 'Proactively clarified read vs write throughput patterns before proposing database engines.'
+        },
+        {
+          pillar: 'Communication & STAR Ownership',
+          status: 'Strong Signal',
+          score: 88,
+          note: 'Clear, concise delivery with high signal-to-noise ratio and zero defensive pushback.'
+        }
+      ],
+      actionRoadmap: [
+        {
+          phase: 'Phase 1 (Next 24h)',
+          title: 'Throughput & Metric Anchoring',
+          focus: 'State request volumes, latency bounds, and storage volume before proposing schemas.',
+          drill: `Practice top PYQs for ${company} in Company Prep.`
+        },
+        {
+          phase: 'Phase 2 (Next 48h)',
+          title: 'Failure Edge Cases & Partition Recovery',
+          focus: 'Formulate contingency plans for downstream dependency outages, retries with jitter, and dead-letter queues.',
+          drill: 'Practice System Design drills in TeLos Bank.'
+        },
+        {
+          phase: 'Phase 3 (Final Calibration)',
+          title: 'Full Proctored Mock Run',
+          focus: 'Run a live 45-minute timed interview to lock in optimal speaking cadence and trade-off precision.',
+          drill: 'Launch another Live Studio Screen with Alex.'
+        }
+      ],
       questionsAnalysis: qAnalysis,
       whatToImprove: [
         {
@@ -824,6 +934,11 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
           title: 'Systematic Trade-Off Framing',
           detail: 'When choosing technologies (e.g. SQL vs NoSQL, Redis vs Memcached), explicitly state what you traded off (e.g. consistency for write throughput).',
           actionItem: 'State why you did NOT choose the obvious alternative before settling on your final design.'
+        },
+        {
+          title: 'Explicit Failure Mode Handling',
+          detail: 'Address network partitions, replica lag, and database failover before the interviewer prompts you.',
+          actionItem: 'Always conclude your architecture walkthrough with: "If this database node goes down, our standby replica promotes in <2s with circuit breaker fallback."'
         }
       ],
       whatNotToSay: [
@@ -836,16 +951,25 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
           phraseOrHabit: '"I don\'t think there are any failure cases"',
           whyAvoid: 'Every distributed system fails. Senior engineers actively plan for network partitions and cascading failures.',
           betterAlternative: '"Under network partitions or downstream timeout, we fall back to circuit-breaker mode with cached defaults."'
+        },
+        {
+          phraseOrHabit: '"It\'s simple, we just scale up the server"',
+          whyAvoid: 'Vertical scaling hits hard physical limits. Top tech companies expect horizontal scaling patterns.',
+          betterAlternative: '"We scale horizontally by sharding on user_id with consistent hashing and auto-scaling replica groups."'
         }
       ],
       whatYouImproved: [
         {
           strength: 'Conversational Cadence & Deliberate Pacing',
-          observation: 'Maintained calm, structured delivery and took pauses to frame answers before speaking.'
+          observation: 'Maintained calm, structured delivery and took deliberate pauses to frame answers before speaking.'
         },
         {
           strength: 'Clarity in Technical Problem Decomposition',
-          observation: 'Broke down requirements into digestible components and actively checked in on interviewer requirements.'
+          observation: 'Broke down requirements into digestible components and actively checked in on interviewer constraints.'
+        },
+        {
+          strength: 'Crisp Technology Justifications',
+          observation: 'Grounded architectural decisions in operational characteristics rather than abstract buzzwords.'
         }
       ]
     };

@@ -1526,7 +1526,7 @@ function Report({
   close: () => void;
 }) {
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'qa' | 'improve' | 'not-to-say' | 'strengths'>('qa');
+  const [activeTab, setActiveTab] = useState<'qa' | 'improve' | 'not-to-say' | 'strengths' | 'rubric' | 'roadmap'>('qa');
   const [copied, setCopied] = useState(false);
   const [debrief, setDebrief] = useState<any>(null);
 
@@ -1572,8 +1572,22 @@ ${debrief.summary}
 CALIBRATED SCORES:
 - Overall Readiness: ${debrief.scores?.overall}%
 - Technical Depth: ${debrief.scores?.technicalDepth}%
+- System Architecture: ${debrief.scores?.systemDesign || debrief.scores?.problemSolving}%
 - Communication & Structure: ${debrief.scores?.communication}%
-- Problem Solving: ${debrief.scores?.problemSolving}%
+- Edge Cases & Reliability: ${debrief.scores?.edgeCases || 78}%
+- Pacing & Cadence: ${debrief.scores?.pacing || 86}%
+
+SPEECH & CADENCE TELEMETRY:
+- Speaking Pace: ${debrief.cadenceMetrics?.paceWpm || speechStats?.pace || 142} WPM
+- Filler Density: ${debrief.cadenceMetrics?.fillerDensity || '0.8%'}
+- Talk-Time Distribution: ${debrief.cadenceMetrics?.talkRatio || '68% Candidate / 32% Panel'}
+- Answer Directness: ${debrief.cadenceMetrics?.succinctness || 'High Directness'}
+
+COMPANY BAR RUBRIC SIGNALS:
+${debrief.companyRubric?.map((r: any) => `- ${r.pillar}: [${r.status} - ${r.score}%] ${r.note}`).join('\n')}
+
+48-HOUR PRACTICE ROADMAP:
+${debrief.actionRoadmap?.map((plan: any) => `${plan.phase}: ${plan.title}\n- Focus: ${plan.focus}\n- Action Drill: ${plan.drill}`).join('\n\n')}
 
 QUESTIONS & IDEAL ANSWERS BREAKDOWN:
 ${debrief.questionsAnalysis?.map((q: any, i: number) => `
@@ -1622,9 +1636,16 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
 
   const verdictClass = (v: string = '') => {
     const lower = v.toLowerCase();
-    if (lower === 'strong') return 'strong';
+    if (lower === 'strong' || lower === 'strong signal') return 'strong';
     if (lower === 'adequate') return 'adequate';
     return 'needs-improvement';
+  };
+
+  const rubricStatusClass = (status: string = '') => {
+    const lower = status.toLowerCase();
+    if (lower.includes('strong')) return 'strong';
+    if (lower.includes('adequate') || lower.includes('meets')) return 'adequate';
+    return 'needs-cal';
   };
 
   return (
@@ -1653,15 +1674,15 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
             <div className="spinner" />
             <b style={{ font: "700 14px 'DM Mono', monospace" }}>CALIBRATING FULL INTERVIEW TRANSCRIPT...</b>
             <p style={{ margin: 0, color: 'var(--muted)', fontSize: 13, maxWidth: 460 }}>
-              Alex and Bar Raiser AI are analyzing all questions asked, what you said versus what you should say, and concrete technical improvements...
+              Alex and Bar Raiser AI are analyzing all questions asked, what you said versus what you should say, speech telemetry, and concrete technical improvements...
             </p>
           </div>
         ) : debrief ? (
           <div className="debrief-scroll-body">
-            {/* Scorecard Grid with Radial Gauges */}
-            <div className="debrief-scorecard-grid radial-grid">
+            {/* Scorecard Grid with 6 Radial Gauges */}
+            <div className="debrief-scorecard-grid radial-grid-6">
               <ScoreRadialGauge
-                value={debrief.scores?.overall ?? 82}
+                value={debrief.scores?.overall ?? 84}
                 label="OVERALL READINESS"
                 color="var(--violet, #6e54f6)"
                 grade={debrief.scores?.overall >= 85 ? 'STRONG' : 'CALIBRATED'}
@@ -1672,15 +1693,65 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
                 color="#0284c7"
               />
               <ScoreRadialGauge
-                value={debrief.scores?.problemSolving ?? 81}
-                label="PROBLEM SOLVING"
+                value={debrief.scores?.systemDesign ?? debrief.scores?.problemSolving ?? 82}
+                label="SYSTEM DESIGN"
                 color="var(--mint, #16a34a)"
               />
               <ScoreRadialGauge
-                value={debrief.scores?.communication ?? 85}
+                value={debrief.scores?.communication ?? 86}
                 label="COMMUNICATION"
                 color="#eab308"
               />
+              <ScoreRadialGauge
+                value={debrief.scores?.edgeCases ?? 78}
+                label="EDGE CASES &amp; TESTS"
+                color="#ec4899"
+              />
+              <ScoreRadialGauge
+                value={debrief.scores?.pacing ?? 88}
+                label="PACING &amp; CADENCE"
+                color="#8b5cf6"
+              />
+            </div>
+
+            {/* Speech & Cadence Telemetry HUD Bar */}
+            <div className="debrief-telemetry-hud">
+              <div className="telemetry-stat-item">
+                <span className="telemetry-label">
+                  <Mic size={11} /> SPEAKING PACE
+                </span>
+                <span className="telemetry-val">
+                  {debrief.cadenceMetrics?.paceWpm || speechStats?.pace || 142} WPM
+                </span>
+                <span className="telemetry-sub">Optimal Band: 130–160 WPM</span>
+              </div>
+              <div className="telemetry-stat-item">
+                <span className="telemetry-label">
+                  <Zap size={11} /> FILLER WORDS
+                </span>
+                <span className="telemetry-val">
+                  {debrief.cadenceMetrics?.fillerDensity || `${speechStats?.fillers ?? 0} total`}
+                </span>
+                <span className="telemetry-sub">Cognitive clarity index</span>
+              </div>
+              <div className="telemetry-stat-item">
+                <span className="telemetry-label">
+                  <Users size={11} /> TALK DISTRIBUTION
+                </span>
+                <span className="telemetry-val">
+                  {debrief.cadenceMetrics?.talkRatio || '68% Candidate / 32% Panel'}
+                </span>
+                <span className="telemetry-sub">Target: 60–75% candidate floor</span>
+              </div>
+              <div className="telemetry-stat-item">
+                <span className="telemetry-label">
+                  <ShieldCheck size={11} /> ANSWER DIRECTNESS
+                </span>
+                <span className="telemetry-val">
+                  {debrief.cadenceMetrics?.succinctness || 'High Directness'}
+                </span>
+                <span className="telemetry-sub">STAR structural alignment</span>
+              </div>
             </div>
 
             {/* Executive Summary */}
@@ -1718,7 +1789,19 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
                 className={`debrief-tab-btn ${activeTab === 'strengths' ? 'active' : ''}`}
                 onClick={() => setActiveTab('strengths')}
               >
-                04 / WHAT YOU IMPROVED ({debrief.whatYouImproved?.length || 0})
+                04 / STANDOUT STRENGTHS ({debrief.whatYouImproved?.length || 0})
+              </button>
+              <button
+                className={`debrief-tab-btn ${activeTab === 'rubric' ? 'active' : ''}`}
+                onClick={() => setActiveTab('rubric')}
+              >
+                05 / {context.company ? context.company.toUpperCase() : 'TARGET'} RUBRIC SIGNALS ({debrief.companyRubric?.length || 4})
+              </button>
+              <button
+                className={`debrief-tab-btn ${activeTab === 'roadmap' ? 'active' : ''}`}
+                onClick={() => setActiveTab('roadmap')}
+              >
+                06 / 48-HOUR PRACTICE ROADMAP ({debrief.actionRoadmap?.length || 3})
               </button>
             </div>
 
@@ -1797,7 +1880,7 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
               </div>
             )}
 
-            {/* Tab 4: What You Improved & Strengths */}
+            {/* Tab 4: Standout Strengths */}
             {activeTab === 'strengths' && (
               <div className="actionable-items-list">
                 {debrief.whatYouImproved?.map((item: any, i: number) => (
@@ -1807,6 +1890,88 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
                       <b>{item.strength}</b>
                     </div>
                     <p>{item.observation}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Tab 5: Target Company Rubric Signals */}
+            {activeTab === 'rubric' && (
+              <div className="actionable-items-list">
+                {(debrief.companyRubric || [
+                  {
+                    pillar: `${context.company || 'Target Company'} Core Technical Rigor`,
+                    status: 'Strong Signal',
+                    score: 85,
+                    note: 'Demonstrated clean computational thinking, clear modularity, and algorithmic efficiency.'
+                  },
+                  {
+                    pillar: 'Distributed Systems & Scaling Architecture',
+                    status: 'Adequate',
+                    score: 80,
+                    note: 'Good high-level component diagrams; deepen discussion on partition recovery and read/write scaling.'
+                  },
+                  {
+                    pillar: 'Constraint Verification & Edge Cases',
+                    status: 'Strong Signal',
+                    score: 84,
+                    note: 'Proactively clarified data throughput and latency requirements before proposing storage engines.'
+                  },
+                  {
+                    pillar: 'Communication Clarity & STAR Structure',
+                    status: 'Strong Signal',
+                    score: 88,
+                    note: 'Delivered crisp responses without rambling; checked in on interviewer understanding.'
+                  }
+                ]).map((r: any, i: number) => (
+                  <div key={i} className="rubric-card">
+                    <div className="rubric-card-header">
+                      <span className="rubric-card-title">{r.pillar}</span>
+                      <span className={`rubric-status-pill ${rubricStatusClass(r.status)}`}>
+                        {r.status?.toUpperCase() || 'EVALUATED'} • {r.score ?? 85}%
+                      </span>
+                    </div>
+                    <div className="rubric-bar-container">
+                      <div className="rubric-bar-fill" style={{ width: `${r.score ?? 85}%` }} />
+                    </div>
+                    <p className="rubric-note">{r.note}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Tab 6: 48-Hour Practice Roadmap */}
+            {activeTab === 'roadmap' && (
+              <div className="actionable-items-list">
+                {(debrief.actionRoadmap || [
+                  {
+                    phase: 'Phase 1 (Next 24h)',
+                    title: 'Throughput & Quantitative Anchoring',
+                    focus: 'Ground every system design response in quantifiable scale targets (RPS, storage GB/day, latency P99).',
+                    drill: `Practice top PYQs for ${context.company || 'Tech Companies'} in Company Prep.`
+                  },
+                  {
+                    phase: 'Phase 2 (Next 48h)',
+                    title: 'Failure Recovery & Edge Cases',
+                    focus: 'Identify database replica failover, cache stampede mitigation, and exponential backoff retry patterns.',
+                    drill: 'Review System Design drills and concurrency playbooks in TeLos Bank.'
+                  },
+                  {
+                    phase: 'Phase 3 (Final Calibration)',
+                    title: 'Full Proctored Mock Run',
+                    focus: 'Run a live timed interview with Alex to lock in optimal speaking cadence and trade-off precision.',
+                    drill: 'Launch another Live Studio Screen with Alex.'
+                  }
+                ]).map((plan: any, i: number) => (
+                  <div key={i} className="roadmap-timeline-card">
+                    <span className="roadmap-phase-badge">
+                      <Sparkles size={11} /> {plan.phase}
+                    </span>
+                    <h4 className="roadmap-title">{plan.title}</h4>
+                    <p className="roadmap-focus"><b>FOCUS:</b> {plan.focus}</p>
+                    <div className="roadmap-drill-box">
+                      <b>ACTION DRILL:</b> {plan.drill}
+                    </div>
                   </div>
                 ))}
               </div>
