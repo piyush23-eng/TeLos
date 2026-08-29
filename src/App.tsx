@@ -2017,22 +2017,41 @@ function Bank() {
         </div>
       </div>
 
-      {/* Main Split: Left Question, Right Coding (50/50 Equal Columns) */}
+      {/* Main Split: Left Question Box, Right Workspace Box (100% Symmetrical Equal Dual-Pane) */}
       <section className="drill-workspace-shell">
-        {/* LEFT COLUMN: Question & Specifications */}
-        <div className="drill-column drill-left-pane">
-          {selected ? (
-            <>
-              {/* Question Hero Card */}
-              <article className="detail-card hero-card drill-prompt-card">
-                <div className="detail-header">
-                  <div>
-                    <p className="kicker">ACTIVE DRILL / {selected.company}</p>
-                    <h2>{selected.title}</h2>
+        {/* LEFT EQUAL BOX: Question Details & Specs */}
+        <div className="drill-box drill-question-box">
+          <div className="panel-label">
+            <span>
+              <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
+              ACTIVE DRILL • {selected?.company?.toUpperCase() || 'SPECIFICATIONS'}
+            </span>
+            <span>{selected?.difficulty?.toUpperCase() || 'DRILL DETAILS'}</span>
+          </div>
+
+          <div className="drill-question-scroll">
+            {selected ? (
+              <>
+                <div className="drill-question-hero">
+                  <p className="kicker">DRILL SPECIFICATION / {selected.company}</p>
+                  <h2>{selected.title}</h2>
+                  <div className="drill-meta-pills">
+                    <span className={`drill-tag-badge difficulty-tag diff-${selected.difficulty?.toLowerCase()}`}>
+                      {selected.difficulty} DIFFICULTY
+                    </span>
+                    {selected.category && (
+                      <span className="drill-tag-badge category-tag">{selected.category}</span>
+                    )}
+                    <span className="metric-pill">
+                      TARGET: {selected.details?.expectedComplexity || 'O(N) TIME'}
+                    </span>
                   </div>
-                  <span className="metric-pill">{selected.difficulty}</span>
                 </div>
-                <p className="problem-statement">{selected.details?.prompt || selected.description}</p>
+
+                <div className="problem-statement-block">
+                  <p className="problem-statement">{selected.details?.prompt || selected.description}</p>
+                </div>
+
                 <div className="problem-io">
                   <div>
                     <strong>INPUT</strong>
@@ -2043,21 +2062,18 @@ function Bank() {
                     <span>{selected.details?.output || 'Expected return value.'}</span>
                   </div>
                   <div>
-                    <strong>TARGET</strong>
+                    <strong>COMPLEXITY</strong>
                     <span>{selected.details?.expectedComplexity || 'Optimal time and auxiliary space.'}</span>
                   </div>
                 </div>
-              </article>
 
-              {/* Examples & Constraints Card */}
-              <article className="detail-card">
-                <div className="panel-label">
-                  <span>EXAMPLES + CONSTRAINTS</span>
-                  <span>READ BEFORE CODING</span>
-                </div>
-                <div className="problem-details-grid">
+                {selected.details?.examples && selected.details.examples.length > 0 && (
                   <div className="example-stack">
-                    {selected.details?.examples?.map((example: any, index: number) => (
+                    <div className="panel-label" style={{ padding: '8px 0', border: 0, borderBottom: '1px solid var(--line)' }}>
+                      <span>EXAMPLES</span>
+                      <span>TEST CASES</span>
+                    </div>
+                    {selected.details.examples.map((example: any, index: number) => (
                       <article className="example-card" key={index}>
                         <strong>EXAMPLE {index + 1}</strong>
                         <code>Input: {example.input}</code>
@@ -2066,103 +2082,102 @@ function Bank() {
                       </article>
                     ))}
                   </div>
-                  <div className="constraint-card">
-                    <strong>CONSTRAINTS</strong>
-                    <ul>
-                      {(selected.details?.constraints || ['1 <= nums.length <= 10^5', 'Only one valid answer exists.']).map((constraint: string) => (
-                        <li key={constraint}>{constraint}</li>
-                      ))}
-                    </ul>
-                    {selected.hint && (
-                      <div className="hint-callout">
-                        <b>INTERVIEW HINT</b>
-                        <span>{selected.hint}</span>
-                      </div>
-                    )}
+                )}
+
+                <div className="constraint-card">
+                  <div className="panel-label" style={{ padding: '8px 0', border: 0, borderBottom: '1px solid var(--line)' }}>
+                    <span>CONSTRAINTS</span>
+                    <span>BOUNDARIES</span>
                   </div>
+                  <ul>
+                    {(selected.details?.constraints || ['1 <= nums.length <= 10^5', 'Optimal O(N) runtime required.']).map((constraint: string) => (
+                      <li key={constraint}>{constraint}</li>
+                    ))}
+                  </ul>
+                  {selected.hint && (
+                    <div className="hint-callout">
+                      <b>INTERVIEW HINT</b>
+                      <span>{selected.hint}</span>
+                    </div>
+                  )}
                 </div>
-              </article>
-            </>
-          ) : (
-            <article className="detail-card empty-state-card">
-              <p className="kicker">READY</p>
-              <h2>Select a drill to view specifications.</h2>
-              <p>Every drill includes prompt, I/O specs, constraints, examples, and interview hints.</p>
-            </article>
-          )}
+              </>
+            ) : (
+              <div className="empty-state">
+                Select a drill to view specifications.
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* RIGHT COLUMN: Coding Screen / Workspace */}
-        <div className="drill-column drill-right-pane">
-          <article className="detail-card code-zone-editor">
-            <div className="panel-label">
-              <span>
-                <Code2 size={13} style={{ display: 'inline', marginRight: 6 }} />
-                WORKSPACE • {language.toUpperCase()}
-              </span>
-              <span>TAB: 2 SPACES</span>
-            </div>
+        {/* RIGHT EQUAL BOX: Code Workspace & Terminal Output */}
+        <div className="drill-box drill-code-box">
+          <div className="panel-label">
+            <span>
+              <Terminal size={13} style={{ display: 'inline', marginRight: 6 }} />
+              WORKSPACE • {language.toUpperCase()}
+            </span>
+            <span>SANDBOX READY • TAB: 2 SPACES</span>
+          </div>
 
-            <div className="code-toolbar">
-              <label>
-                LANGUAGE
-                <select
-                  value={language}
-                  onChange={e => {
-                    const next = e.target.value as CodeLanguage;
-                    setLanguage(next);
-                    if (selected) {
-                      setCode(codeTemplate(selected, next));
-                      setOutput('Starter reset for ' + next.toUpperCase() + '.');
-                    }
-                  }}
-                >
-                  <option value="python">Python 3</option>
-                  <option value="js">JavaScript (Node.js)</option>
-                  <option value="cpp">C++</option>
-                  <option value="java">Java</option>
-                </select>
-              </label>
-              <span className="runtime-label">
-                {language === 'python'
-                  ? 'Python 3.11 Sandboxed'
-                  : language === 'js'
-                  ? 'Node.js 20 Sandboxed'
-                  : language === 'cpp'
-                  ? 'GCC C++20 Sandbox'
-                  : 'OpenJDK 17 Sandbox'}
-              </span>
-            </div>
+          <div className="drill-code-toolbar">
+            <label>
+              LANGUAGE
+              <select
+                value={language}
+                onChange={e => {
+                  const next = e.target.value as CodeLanguage;
+                  setLanguage(next);
+                  if (selected) {
+                    setCode(codeTemplate(selected, next));
+                    setOutput('Starter reset for ' + next.toUpperCase() + '.');
+                  }
+                }}
+              >
+                <option value="python">Python 3</option>
+                <option value="js">JavaScript (Node.js)</option>
+                <option value="cpp">C++ (GCC 12)</option>
+                <option value="java">Java (OpenJDK 17)</option>
+              </select>
+            </label>
+            <span className="runtime-label">
+              {language === 'python'
+                ? 'Python 3.11 Sandbox'
+                : language === 'js'
+                ? 'Node.js 20 Sandbox'
+                : language === 'cpp'
+                ? 'GCC C++20 Sandbox'
+                : 'OpenJDK 17 Sandbox'}
+            </span>
+          </div>
 
-            <textarea
-              className="code-input"
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              onKeyDown={handleKeyDown}
-              spellCheck={false}
-              placeholder="// Write your solution here..."
-            />
+          <textarea
+            className="drill-code-input"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            onKeyDown={handleKeyDown}
+            spellCheck={false}
+            placeholder="// Write your solution here..."
+          />
 
-            <div className="action-row" style={{ padding: '14px 18px', borderTop: '1px solid var(--ink)', margin: 0 }}>
-              <button className="brand-button" onClick={runCode} disabled={running}>
-                <Play size={16} fill="currentColor" /> {running ? 'RUNNING...' : 'RUN SOLUTION'}
-              </button>
-              <button className="ghost-button" onClick={() => selected && openProblem(selected)}>
-                <RotateCcw size={13} style={{ display: 'inline', marginRight: 4 }} /> RESET
-              </button>
-            </div>
+          <div className="drill-action-bar">
+            <button className="brand-button" onClick={runCode} disabled={running}>
+              <Play size={15} fill="currentColor" /> {running ? 'RUNNING...' : 'RUN SOLUTION'}
+            </button>
+            <button className="ghost-button" onClick={() => selected && openProblem(selected)}>
+              <RotateCcw size={13} style={{ display: 'inline', marginRight: 4 }} /> RESET CODE
+            </button>
+          </div>
 
-            <div className="output-pane">
-              <div className="panel-label" style={{ borderTop: '1px solid var(--ink)' }}>
-                <span>
-                  <Terminal size={12} style={{ display: 'inline', marginRight: 6 }} />
-                  SANDBOX CONSOLE
-                </span>
-                <span>{running ? 'EXECUTING...' : 'IDLE'}</span>
-              </div>
-              <pre className="output-box">{output || '// Click "RUN SOLUTION" to test your code against the sandbox.'}</pre>
+          <div className="drill-console-pane">
+            <div className="drill-console-header">
+              <span>SANDBOX CONSOLE / TEST OUTPUT</span>
+              <span>{running ? 'PROCESSING...' : 'RESULT'}</span>
             </div>
-          </article>
+            <pre className="drill-console-output">
+              {output || '// Click "RUN SOLUTION" to execute code against sandbox test cases.'}
+            </pre>
+          </div>
         </div>
       </section>
     </main>
