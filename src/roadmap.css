@@ -3349,6 +3349,89 @@
   }
 }
 
+/* Quick Selection Preset Chips for Calibration */
+.preset-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.6);
+  border-top: 1px dashed var(--line, rgba(16, 16, 24, 0.12));
+}
+
+:root[data-theme='dark'] .preset-pill-row {
+  background: rgba(26, 25, 38, 0.6);
+  border-top-color: rgba(244, 242, 250, 0.15);
+}
+
+.preset-pill-btn {
+  border: 1px solid var(--ink, #101018);
+  background: #ffffff;
+  padding: 4px 8px;
+  font: 600 9.5px/1 'DM Mono', monospace;
+  color: var(--ink, #101018);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.preset-pill-btn:hover {
+  background: var(--mint, #d6f4d1);
+  color: var(--ink, #101018);
+}
+
+.preset-pill-btn.active {
+  background: var(--ink, #101018);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+:root[data-theme='dark'] .preset-pill-btn {
+  background: #242334;
+  color: #f4f2fa;
+  border-color: rgba(244, 242, 250, 0.25);
+}
+
+:root[data-theme='dark'] .preset-pill-btn:hover {
+  background: var(--mint, #d6f4d1);
+  color: #101018;
+}
+
+:root[data-theme='dark'] .preset-pill-btn.active {
+  background: var(--violet, #a899ff);
+  color: #101018;
+}
+
+/* Audio Output Test Button */
+.audio-test-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--ink, #101018);
+  background: #ffffff;
+  font: 700 10.5px 'DM Mono', monospace;
+  color: var(--ink, #101018);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.audio-test-btn:hover {
+  background: var(--mint, #d6f4d1);
+  transform: translateY(-1px);
+}
+
+:root[data-theme='dark'] .audio-test-btn {
+  background: #262536;
+  color: #f4f2fa;
+  border-color: rgba(244, 242, 250, 0.3);
+}
+
+:root[data-theme='dark'] .audio-test-btn:hover {
+  background: var(--mint, #d6f4d1);
+  color: #101018;
+}
+
 /* Modern High-End Voice Activity Equalizer & Waveform */
 .voice-wave-container {
   display: inline-flex;

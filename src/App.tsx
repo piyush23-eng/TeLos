@@ -277,6 +277,43 @@ public class Solution {
 `
   };
 
+  const companyPresets = ['Google', 'Microsoft', 'Amazon', 'Meta', 'Uber', 'Stripe', 'Flipkart', 'TCS Prime', 'Razorpay', 'Apple', 'Netflix', 'Adobe', 'Atlassian'];
+  const levelPresets = [
+    'College / Intern (Entry Level)',
+    'SDE-1 (Junior / 0-2 YOE)',
+    'SDE-2 (Mid-Level / 2-5 YOE)',
+    'Senior SDE (L5/SDE-3 / 5+ YOE)',
+    'Staff Systems Architect'
+  ];
+  const focusPresets = [
+    'Distributed Systems & Architecture',
+    'DSA & Algorithmic Complexity',
+    'Low-Level Design & Concurrency',
+    'Database Internals & Caching',
+    'Behavioral & Leadership (STAR)'
+  ];
+
+  const playSpeakerTestChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.36);
+    } catch {
+      // fallback
+    }
+  };
+
   const handleLanguageChange = (nextLang: CodeLanguage) => {
     setLanguage(nextLang);
     setCode(starterCodeTemplates[nextLang]);
@@ -766,7 +803,7 @@ public class Solution {
                     </div>
                   </div>
 
-                  {/* 01 / Target Company Track (Manual Input Only) */}
+                  {/* 01 / Target Company Track */}
                   <div className="brutalist-field-box">
                     <div className="brutalist-field-header">
                       <span className="field-title">01 / TARGET COMPANY TRACK</span>
@@ -780,7 +817,7 @@ public class Solution {
                         autoComplete="off"
                         spellCheck={false}
                         className="brutalist-text-input"
-                        placeholder="e.g. Google, Flipkart, Stripe, OpenAI, Uber, Datadog, Razorpay, Startup..."
+                        placeholder="e.g. Google, Flipkart, Stripe, OpenAI, Uber, Datadog, Razorpay, TCS Prime..."
                         value={context.company}
                         onChange={e => setContext(c => ({ ...c, company: e.target.value }))}
                       />
@@ -792,9 +829,24 @@ public class Solution {
                         {context.company.trim() ? '✓ SAVED' : 'SAVE'}
                       </button>
                     </div>
+                    <div className="preset-pill-row">
+                      <span style={{ font: '700 8.5px "DM Mono", monospace', color: 'var(--muted)', alignSelf: 'center', marginRight: 4 }}>
+                        POPULAR:
+                      </span>
+                      {companyPresets.map(comp => (
+                        <button
+                          key={comp}
+                          type="button"
+                          className={`preset-pill-btn ${context.company.toLowerCase() === comp.toLowerCase() ? 'active' : ''}`}
+                          onClick={() => setContext(c => ({ ...c, company: comp }))}
+                        >
+                          #{comp}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* 02 / Interview Rigor & Seniority Level (Manual Input Only) */}
+                  {/* 02 / Interview Rigor & Seniority Level */}
                   <div className="brutalist-field-box">
                     <div className="brutalist-field-header">
                       <span className="field-title">02 / INTERVIEW RIGOR &amp; SENIORITY LEVEL</span>
@@ -820,9 +872,24 @@ public class Solution {
                         {context.role.trim() ? '✓ SAVED' : 'SAVE'}
                       </button>
                     </div>
+                    <div className="preset-pill-row">
+                      <span style={{ font: '700 8.5px "DM Mono", monospace', color: 'var(--muted)', alignSelf: 'center', marginRight: 4 }}>
+                        LEVEL:
+                      </span>
+                      {levelPresets.map(lvl => (
+                        <button
+                          key={lvl}
+                          type="button"
+                          className={`preset-pill-btn ${context.role === lvl ? 'active' : ''}`}
+                          onClick={() => setContext(c => ({ ...c, role: lvl }))}
+                        >
+                          {lvl}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* 03 / Technical Evaluation Focus (Manual Input Only) */}
+                  {/* 03 / Technical Evaluation Focus */}
                   <div className="brutalist-field-box">
                     <div className="brutalist-field-header">
                       <span className="field-title">03 / TECHNICAL EVALUATION FOCUS</span>
@@ -847,6 +914,21 @@ public class Solution {
                       >
                         {context.focus.trim() ? '✓ SAVED' : 'SAVE'}
                       </button>
+                    </div>
+                    <div className="preset-pill-row">
+                      <span style={{ font: '700 8.5px "DM Mono", monospace', color: 'var(--muted)', alignSelf: 'center', marginRight: 4 }}>
+                        TRACK:
+                      </span>
+                      {focusPresets.map(f => (
+                        <button
+                          key={f}
+                          type="button"
+                          className={`preset-pill-btn ${context.focus === f ? 'active' : ''}`}
+                          onClick={() => setContext(c => ({ ...c, focus: f }))}
+                        >
+                          {f}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -891,21 +973,44 @@ public class Solution {
                         className="brutalist-action-btn"
                         onClick={() =>
                           applyResumeText(
-                            `Name: Alex Chen\nExperience: 4 years building distributed systems, Java/Spring Boot APIs, Kafka event streams, Redis caching, Kubernetes microservices.\nKey Project: Led migration to partitioned Kafka event queues, cutting P99 latency by 35% under 85k RPS peak load.\nTarget role: Backend Engineer`,
+                            `Name: Alex Chen (Backend / Systems Candidate)\nExperience: 4 years building distributed systems, Java/Spring Boot APIs, Kafka event streams, Redis caching, Kubernetes microservices.\nKey Project: Led migration to partitioned Kafka event queues, cutting P99 latency by 35% under 85k RPS peak load.\nTarget role: Backend Engineer`,
                             'sample',
-                            'Sample backend CV'
+                            'Backend Systems CV'
                           )
                         }
                       >
-                        <FileText size={13} /> Load Sample CV
+                        <FileText size={13} /> + Systems CV
+                      </button>
+                      <button
+                        type="button"
+                        className="brutalist-action-btn"
+                        onClick={() =>
+                          applyResumeText(
+                            `Name: Rahul Sharma (College Senior / New Grad)\nEducation: B.Tech Computer Science & Engineering (Final Year).\nCoursework: DSA, Operating Systems, Database Management, Distributed Computing.\nProjects:\n1. Real-time Collaborative Code Editor (React, WebSockets, Redis, Docker).\n2. Distributed Key-Value Store in Go with Raft Consensus.\nSkills: C++, Java, Python, TypeScript, React, SQL, Git.`,
+                            'sample',
+                            'College / Grad CV'
+                          )
+                        }
+                      >
+                        <FileText size={13} /> + College CV
                       </button>
                       <button
                         type="button"
                         className="brutalist-action-btn primary"
                         onClick={() => resumeInputRef.current?.click()}
                       >
-                        <Upload size={13} /> Upload PDF Resume
+                        <Upload size={13} /> Upload PDF
                       </button>
+                      {context.resume && (
+                        <button
+                          type="button"
+                          className="brutalist-action-btn"
+                          style={{ color: '#ef4444' }}
+                          onClick={() => applyResumeText('', 'paste', 'No resume loaded')}
+                        >
+                          <X size={13} /> Clear
+                        </button>
+                      )}
                       <input ref={resumeInputRef} type="file" accept=".pdf,.txt,.md" onChange={handleResumeUpload} hidden />
                     </div>
                   </div>
@@ -961,13 +1066,21 @@ public class Solution {
                   </div>
 
                   <div className="lobby-device-bar">
-                    <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                       <span className={`mandatory-check-pill ${camera ? 'ok' : 'warn'}`}>
                         {camera ? <Check size={14} /> : <X size={14} />} Camera {camera ? 'Verified' : 'Required'}
                       </span>
                       <span className={`mandatory-check-pill ${mic ? 'ok' : 'warn'}`}>
                         {mic ? <Check size={14} /> : <X size={14} />} Mic {mic ? 'Verified' : 'Required'}
                       </span>
+                      <button
+                        type="button"
+                        className="audio-test-btn"
+                        onClick={playSpeakerTestChime}
+                        title="Test speaker / headphone output"
+                      >
+                        <Volume2 size={13} /> Test Speaker 🔊
+                      </button>
                     </div>
                     <LiveMeter active={mic} />
                   </div>
@@ -1292,6 +1405,29 @@ public class Solution {
               disabled={thinking}
             >
               <Lightbulb size={13} /> 🎯 Request Hint
+            </button>
+            <button
+              type="button"
+              className="quick-action-btn"
+              onClick={() => setShowScratchpad(true)}
+            >
+              <Code2 size={13} /> 📐 Open Scratchpad
+            </button>
+            <button
+              type="button"
+              className="quick-action-btn"
+              onClick={() => commitAnswer("Let me walk you through the key time versus space trade-offs and bottleneck mitigations for this design.")}
+              disabled={thinking}
+            >
+              <Zap size={13} /> ⚡ Explain Trade-offs
+            </button>
+            <button
+              type="button"
+              className="quick-action-btn"
+              onClick={() => commitAnswer("Let me validate this solution with a couple of edge cases: empty input, maximum threshold scale, and network partition timeouts.")}
+              disabled={thinking}
+            >
+              <CheckCircle2 size={13} /> 🧪 Edge Cases &amp; Tests
             </button>
           </div>
 
