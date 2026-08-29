@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } f
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bot, Check, CheckCheck, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, Copy, Download, ExternalLink, FileText, Github, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldCheck, Sparkles, Square, Sun, Terminal, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
-import { companyPrepCatalog } from './companyPrepData';
+import { companyPrepCatalog, type CompanyPrepItem } from './companyPrepData';
 import { Assessment } from './Assessment';
 import { AuthModal, type AuthUser } from './AuthModal';
 import { UserDashboard } from './UserDashboard';
@@ -2240,56 +2240,301 @@ function Bank() {
 }
 function CompanyPrep() {
   const [query, setQuery] = useState('');
-  const [faangOnly, setFaangOnly] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState(() => companyCatalog.find(company => company.id === 'google') || companyCatalog[0]);
-  const filteredCompanies = useMemo(() => companyCatalog.filter(company => {
-    const matchesQuery = company.name.toLowerCase().includes(query.toLowerCase()) || company.pyqTopics.some(topic => topic.toLowerCase().includes(query.toLowerCase()));
-    return matchesQuery && (!faangOnly || Boolean(company.faangRoadmap));
-  }), [query, faangOnly]);
-  const faangCount = companyCatalog.filter(company => company.faangRoadmap).length;
-  const activeRoadmap = selectedCompany?.roadmap || selectedCompany?.faangRoadmap;
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'faang' | 'high-growth' | 'ai' | 'fintech' | 'enterprise'>('all');
+  const [selectedCompany, setSelectedCompany] = useState<CompanyPrepItem>(
+    () => companyPrepCatalog.find(c => c.id === 'google') || companyPrepCatalog[0]
+  );
+  const [activeTab, setActiveTab] = useState<'roadmap' | 'rounds' | 'pyqs' | 'systems' | 'culture'>('roadmap');
 
-  return <main className="shell">
-    <section className="studio-head">
-      <div><p className="kicker">02 / COMPANY WISE PRACTICE</p><h1>COMPANY<br/><span>PLAYBOOKS</span></h1></div>
-      <div className="session-meta"><b>{faangCount} CURATED FAANG ROADMAPS</b><span>DSA / SYSTEM DESIGN / BEHAVIORAL</span><span>WEEK-BY-WEEK PREP PLANS</span></div>
-    </section>
-    <section className="prep-shell">
-      <div className="prep-sidebar">
-        <div className="panel-label"><span>SEARCH COMPANIES</span><span>{faangOnly ? 'FAANG ROADMAPS' : 'HIGH SIGNAL'}</span></div>
-        <label className="search-field"><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search Google, Meta, Apple, Amazon..."/></label>
-        <div className="pill-row">
-          <button className={`pill-chip ${!faangOnly ? 'active' : ''}`} onClick={() => setFaangOnly(false)}>All companies</button>
-          <button className={`pill-chip ${faangOnly ? 'active' : ''}`} onClick={() => setFaangOnly(true)}>FAANG roadmaps</button>
+  const filteredCompanies = useMemo(() => {
+    return companyPrepCatalog.filter(c => {
+      const matchesCategory = categoryFilter === 'all' || c.category === categoryFilter;
+      const matchesQuery =
+        !query ||
+        c.name.toLowerCase().includes(query.toLowerCase()) ||
+        c.pyqTopics.some(topic => topic.toLowerCase().includes(query.toLowerCase()));
+      return matchesCategory && matchesQuery;
+    });
+  }, [query, categoryFilter]);
+
+  const activeRoadmap = selectedCompany?.roadmap;
+
+  return (
+    <main className="shell">
+      <section className="studio-head">
+        <div>
+          <p className="kicker">02 / COMPANY WISE PRACTICE &amp; ROADMAPS</p>
+          <h1>COMPANY<br /><span>PLAYBOOKS.</span></h1>
         </div>
-        <div className="prep-list">{filteredCompanies.map((company, index) => <button key={`${company.id}-${index}`} className={`prep-card ${selectedCompany?.id === company.id ? 'selected' : ''}`} onClick={() => setSelectedCompany(company)}>
-          <div className="prep-card-top"><span className="index-badge">{company.faangRoadmap ? '★' : '●'}</span><div><strong>{company.name}</strong><small>{company.faangRoadmap ? 'Curated roadmap' : `${company.region} • ${company.hiringProcess[0]}`}</small></div></div>
-          <span className="arrow-pill"><ArrowRight size={16}/></span>
-        </button>)}</div>
-      </div>
-      <div className="prep-detail">{selectedCompany ? <>
-        <article className="detail-card hero-card">
-          <div className="detail-header"><div><p className="kicker">COMPANY PREP</p><h2>{selectedCompany.name}</h2></div><span className="metric-pill">{activeRoadmap?.duration || selectedCompany.region}</span></div>
-          <p>{selectedCompany.interviewStyle}</p>
-          <div className="detail-meta-row"><span className="meta-pill">Region • {selectedCompany.region}</span><span className="meta-pill">Round focus • {selectedCompany.hiringProcess[1] || 'Hiring loop'}</span><span className="meta-pill">Prep angle • {selectedCompany.prepNotes?.[0] || 'Ownership and trade-offs'}</span></div>
-          <div className="info-grid"><div className="info-card"><strong>Hiring process</strong><span>{selectedCompany.hiringProcess.join(' • ')}</span></div><div className="info-card"><strong>What they reward</strong><span>{selectedCompany.prepNotes?.[0] || 'Strong ownership, trade-off clarity, and measurable impact.'}</span></div><div className="info-card"><strong>Prep angle</strong><span>{selectedCompany.prepNotes?.[1] || 'Anchor answers around constraints, execution quality, and business impact.'}</span></div></div>
-        </article>
-        {activeRoadmap && <article className="detail-card roadmap-card">
-          <div className="panel-label"><span><BookOpen size={13}/> {selectedCompany.faangRoadmap ? 'CURATED' : 'FOCUSED'} {selectedCompany.name.toUpperCase()} ROADMAP</span><span>{activeRoadmap.duration.toUpperCase()}</span></div>
-          <p className="roadmap-intro">A practical plan built around the rounds, topics, and proof points this company is likely to assess. Finish each week before progressing to the next.</p>
-          <div className="roadmap-weeks">{activeRoadmap.weeks.map((week, index) => <div className="roadmap-week" key={week.label}>
-            <span className="roadmap-number">0{index + 1}</span><div><strong>{week.label} / {week.focus}</strong><p>{week.target}</p></div><Check size={16} aria-hidden="true"/>
-          </div>)}</div>
-          <div className="curated-grid">{activeRoadmap.curatedPrep.map(item => <div className="curated-item" key={item.title}><span>{selectedCompany.faangRoadmap ? 'CURATED' : 'FOCUS'}</span><strong>{item.title}</strong><p>{item.detail}</p></div>)}</div>
-        </article>}
-        <article className="detail-card">
-          <div className="panel-label"><span>ROUND READINESS</span><span>HIGH SIGNAL</span></div>
-          <div className="info-grid">{selectedCompany.sampleQuestions?.slice(0, 3).map(question => <div key={question} className="info-card"><strong>Sample question</strong><span>{question}</span></div>)}<div className="info-card"><strong>PYQ topics</strong><span>{selectedCompany.pyqTopics.join(' • ')}</span></div></div>
-          <div className="info-grid">{selectedCompany.communityInsights?.map(insight => <div key={insight.title} className="info-card"><strong>{insight.title}</strong><span>{insight.detail}</span></div>)}</div>
-        </article>
-      </> : <article className="detail-card empty-state-card"><p className="kicker">READY</p><h2>Select a company to see the prep map.</h2><p>Each company card surfaces the hiring process, the likely rounds, and the questions that matter most.</p></article>}</div>
-    </section>
-  </main>;
+        <div className="session-meta">
+          <b>{companyPrepCatalog.length} DETAILED COMPANY PLAYBOOKS</b>
+          <span>6-WEEK ACTIONABLE ROADMAPS</span>
+          <span>DSA • SYSTEM DESIGN • CULTURE</span>
+        </div>
+      </section>
+
+      <section className="prep-shell">
+        {/* Left Company Selector Sidebar */}
+        <div className="prep-sidebar">
+          <div className="panel-label">
+            <span>FILTER COMPANIES</span>
+            <span>{categoryFilter.toUpperCase()}</span>
+          </div>
+
+          <label className="search-field">
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search Google, Meta, Amazon, Stripe..."
+            />
+          </label>
+
+          <div className="pill-row">
+            <button className={`pill-chip ${categoryFilter === 'all' ? 'active' : ''}`} onClick={() => setCategoryFilter('all')}>
+              All
+            </button>
+            <button className={`pill-chip ${categoryFilter === 'faang' ? 'active' : ''}`} onClick={() => setCategoryFilter('faang')}>
+              FAANG / Big Tech
+            </button>
+            <button className={`pill-chip ${categoryFilter === 'high-growth' ? 'active' : ''}`} onClick={() => setCategoryFilter('high-growth')}>
+              High-Growth (Uber)
+            </button>
+            <button className={`pill-chip ${categoryFilter === 'fintech' ? 'active' : ''}`} onClick={() => setCategoryFilter('fintech')}>
+              FinTech (Stripe)
+            </button>
+            <button className={`pill-chip ${categoryFilter === 'ai' ? 'active' : ''}`} onClick={() => setCategoryFilter('ai')}>
+              AI Frontier (OpenAI)
+            </button>
+          </div>
+
+          <div className="prep-list">
+            {filteredCompanies.map(company => (
+              <button
+                key={company.id}
+                className={`prep-card ${selectedCompany?.id === company.id ? 'selected' : ''}`}
+                onClick={() => {
+                  setSelectedCompany(company);
+                  setActiveTab('roadmap');
+                }}
+              >
+                <div className="prep-card-top">
+                  <span className="index-badge">★</span>
+                  <div>
+                    <strong>{company.name}</strong>
+                    <small>{company.category?.toUpperCase()} • {company.region}</small>
+                  </div>
+                </div>
+                <span className="arrow-pill"><ArrowRight size={16} /></span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Detail Workspace */}
+        <div className="prep-detail">
+          {selectedCompany ? (
+            <>
+              {/* Header Hero Banner */}
+              <article className="detail-card hero-card">
+                <div className="detail-header">
+                  <div>
+                    <p className="kicker">COMPANY PLAYBOOK / {selectedCompany.region}</p>
+                    <h2>{selectedCompany.name}</h2>
+                  </div>
+                  <span className="metric-pill">{activeRoadmap?.duration || '6-WEEK SPRINT'}</span>
+                </div>
+                <p style={{ margin: '8px 0 14px', fontSize: 13, lineHeight: 1.6, color: 'var(--ink)' }}>
+                  {selectedCompany.interviewStyle}
+                </p>
+                <div className="detail-meta-row">
+                  <span className="meta-pill">Category • {selectedCompany.category?.toUpperCase() || 'BIG TECH'}</span>
+                  <span className="meta-pill">Hiring Stages • {selectedCompany.hiringProcess.length} Rounds</span>
+                  <span className="meta-pill">Core Topics • {selectedCompany.pyqTopics.slice(0, 2).join(', ')}</span>
+                </div>
+              </article>
+
+              {/* Navigation Tabs Bar */}
+              <div className="company-tabs-nav">
+                <button className={`company-tab-btn ${activeTab === 'roadmap' ? 'active' : ''}`} onClick={() => setActiveTab('roadmap')}>
+                  <BookOpen size={13} /> 01 / 6-WEEK ROADMAP
+                </button>
+                <button className={`company-tab-btn ${activeTab === 'rounds' ? 'active' : ''}`} onClick={() => setActiveTab('rounds')}>
+                  <Layers size={13} /> 02 / HIRING PROCESS ({selectedCompany.hiringProcess.length})
+                </button>
+                <button className={`company-tab-btn ${activeTab === 'pyqs' ? 'active' : ''}`} onClick={() => setActiveTab('pyqs')}>
+                  <Code2 size={13} /> 03 / FREQUENT PYQS ({selectedCompany.sampleQuestions.length})
+                </button>
+                {selectedCompany.systemDesignArchetypes && (
+                  <button className={`company-tab-btn ${activeTab === 'systems' ? 'active' : ''}`} onClick={() => setActiveTab('systems')}>
+                    <Sparkles size={13} /> 04 / SYSTEM DESIGN
+                  </button>
+                )}
+                <button className={`company-tab-btn ${activeTab === 'culture' ? 'active' : ''}`} onClick={() => setActiveTab('culture')}>
+                  <Award size={13} /> 05 / CULTURE &amp; BEHAVIORAL
+                </button>
+              </div>
+
+              {/* Tab 1: Detailed 6-Week Structured Roadmap */}
+              {activeTab === 'roadmap' && activeRoadmap && (
+                <article className="detail-card roadmap-card">
+                  <div className="panel-label">
+                    <span><BookOpen size={13} /> {selectedCompany.name.toUpperCase()} 6-WEEK STEP-BY-STEP PREP BLUEPRINT</span>
+                    <span>{activeRoadmap.duration.toUpperCase()}</span>
+                  </div>
+                  <p className="roadmap-intro">
+                    A rigorous, high-signal preparation roadmap calibrated specifically for {selectedCompany.name}'s technical bar. Follow the weekly milestones in sequence to build deep pattern mastery and interview confidence.
+                  </p>
+
+                  <div className="roadmap-weeks-detailed">
+                    {activeRoadmap.weeks.map((week: any, index: number) => (
+                      <div className="detailed-week-card" key={week.label}>
+                        <div className="week-header-row">
+                          <span className="detailed-week-badge">WEEK 0{index + 1}</span>
+                          <h4 className="detailed-week-title">{week.focus}</h4>
+                        </div>
+
+                        <p className="detailed-week-target">{week.target}</p>
+
+                        {week.topics && week.topics.length > 0 && (
+                          <div className="week-topics-block">
+                            <span className="topics-heading">HIGH-PRIORITY TOPICS &amp; PATTERNS:</span>
+                            <div className="week-topic-chips">
+                              {week.topics.map((t: string) => (
+                                <span key={t} className="topic-chip">✓ {t}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {week.deliverable && (
+                          <div className="week-deliverable-strip">
+                            <b>MILESTONE DELIVERABLE:</b>
+                            <span>{week.deliverable}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="curated-grid" style={{ marginTop: 20 }}>
+                    {activeRoadmap.curatedPrep.map((item: any) => (
+                      <div className="curated-item" key={item.title}>
+                        <span>CRITICAL STRATEGY</span>
+                        <strong>{item.title}</strong>
+                        <p>{item.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              )}
+
+              {/* Tab 2: Hiring Stages & Pipeline */}
+              {activeTab === 'rounds' && (
+                <article className="detail-card">
+                  <div className="panel-label">
+                    <span>INTERVIEW ROUND SEQUENCE</span>
+                    <span>{selectedCompany.name.toUpperCase()} HIRING LOOP</span>
+                  </div>
+                  <div className="rounds-timeline-list">
+                    {selectedCompany.hiringProcess.map((roundText: string, idx: number) => (
+                      <div className="round-timeline-item" key={idx}>
+                        <div className="round-step-num">0{idx + 1}</div>
+                        <div className="round-step-body">
+                          <strong>{roundText.split(':')[0]}</strong>
+                          <p>{roundText.split(':')[1] || roundText}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              )}
+
+              {/* Tab 3: Sample PYQs & Problems */}
+              {activeTab === 'pyqs' && (
+                <article className="detail-card">
+                  <div className="panel-label">
+                    <span>FREQUENT REPEATED QUESTIONS</span>
+                    <span>TAGGED FOR {selectedCompany.name.toUpperCase()}</span>
+                  </div>
+                  <div className="pyq-questions-grid">
+                    {selectedCompany.sampleQuestions.map((q: string, idx: number) => (
+                      <div className="pyq-card-item" key={idx}>
+                        <div className="pyq-card-head">
+                          <span className="pyq-badge">PYQ #{idx + 1}</span>
+                          <span className="pyq-diff-badge">{q.includes('Hard') ? 'HARD' : q.includes('Easy') ? 'EASY' : 'MEDIUM'}</span>
+                        </div>
+                        <p className="pyq-prompt-text">{q}</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              )}
+
+              {/* Tab 4: System Design Archetypes */}
+              {activeTab === 'systems' && (
+                <article className="detail-card">
+                  <div className="panel-label">
+                    <span>COMPANY-SPECIFIC ARCHITECTURES</span>
+                    <span>SYSTEM DESIGN DRILLS</span>
+                  </div>
+                  <div className="systems-archetypes-grid">
+                    {(selectedCompany.systemDesignArchetypes || [
+                      'High-throughput distributed cache invalidation',
+                      'Multi-datacenter global rate limiting',
+                      'Real-time event streaming and ingestion pipeline'
+                    ]).map((arch: string, idx: number) => (
+                      <div className="archetype-card" key={idx}>
+                        <span className="arch-num">SYSTEM DRILL 0{idx + 1}</span>
+                        <h4>{arch}</h4>
+                        <p>Focus on component trade-offs, data models, scale calculations (QPS &amp; Storage), and failure modes.</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              )}
+
+              {/* Tab 5: Culture & Behavioral Blueprint */}
+              {activeTab === 'culture' && (
+                <article className="detail-card">
+                  <div className="panel-label">
+                    <span>CULTURE &amp; LEADERSHIP VALUES</span>
+                    <span>EVALUATION BLUEPRINT</span>
+                  </div>
+                  <div className="culture-values-grid">
+                    {(selectedCompany.culturalValues || [
+                      'Intellectual Humility & Curiosity',
+                      'Bias for Action & Extreme Ownership',
+                      'Rigorous Engineering Craft & System Empathy'
+                    ]).map((val: string, idx: number) => (
+                      <div className="culture-val-card" key={idx}>
+                        <span className="val-badge">CORE VALUE 0{idx + 1}</span>
+                        <h4>{val.split(':')[0]}</h4>
+                        <p>{val.split(':')[1] || val}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="info-grid" style={{ marginTop: 20 }}>
+                    {selectedCompany.communityInsights.map((insight: any, idx: number) => (
+                      <div className="info-card" key={idx}>
+                        <strong>{insight.title}</strong>
+                        <span>{insight.detail}</span>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              )}
+            </>
+          ) : (
+            <article className="detail-card empty-state-card">
+              <p className="kicker">READY</p>
+              <h2>Select a company to view the complete playbook.</h2>
+            </article>
+          )}
+        </div>
+      </section>
+    </main>
+  );
 }
 
 function Community() {
