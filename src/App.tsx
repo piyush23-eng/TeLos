@@ -14,8 +14,15 @@ import './roadmap.css';
 import { buildSessionReport, calculateSpeakingPace, countFillerWords, exportDebriefToMarkdown } from './voiceMetrics';
 
 import { apiUrl, safeStorage } from './apiConfig';
-
-const companyCatalog = companyPrepCatalog;
+import {
+  getStoredOpenRouterKey,
+  setStoredOpenRouterKey,
+  getStoredOpenRouterModel,
+  setStoredOpenRouterModel,
+  testDirectOpenRouterCall,
+  generateQuestionDirectly,
+  type OpenRouterTelemetry
+} from './openrouter';
 
 type Page = 'dashboard' | 'studio' | 'prep' | 'community' | 'analytics' | 'bank' | 'assessment';
 type Message = { id: number; speaker: 'PANEL' | 'YOU'; text: string; time: string; pending?: boolean };
@@ -237,6 +244,43 @@ if __name__ == "__main__":
   // Model Provider selector (Free & Open Tier Models)
   const [modelProvider, setModelProvider] = useState<'auto' | 'openrouter' | 'gemini' | 'groq' | 'ollama' | 'openai' | 'heuristic'>('auto');
   const [aiModelStatus, setAiModelStatus] = useState<'online' | 'fallback' | 'checking'>('online');
+  const [openRouterKeyInput, setOpenRouterKeyInput] = useState(() => getStoredOpenRouterKey());
+  const [openRouterModelInput, setOpenRouterModelInput] = useState(() => getStoredOpenRouterModel());
+  const [lastTelemetry, setLastTelemetry] = useState<OpenRouterTelemetry | null>(null);
+  const [testingApi, setTestingApi] = useState(false);
+  const [testApiResult, setTestApiResult] = useState<{ ok: boolean; message: string; latency?: number } | null>(null);
+  const [showKey, setShowKey] = useState(false);
+
+  const handleTestApi = async (keyToTest?: string, modelToTest?: string) => {
+    setTestingApi(true);
+    setTestApiResult(null);
+    try {
+      const k = keyToTest || openRouterKeyInput || getStoredOpenRouterKey();
+      const m = modelToTest || openRouterModelInput || getStoredOpenRouterModel();
+      const res = await testDirectOpenRouterCall(k, m);
+      setLastTelemetry(res);
+      if (res.ok) {
+        setTestApiResult({
+          ok: true,
+          message: `HTTP 200 OK | Latency: ${res.latencyMs}ms | Model: ${res.model} | Response: "${res.responsePreview}"`,
+          latency: res.latencyMs
+        });
+        setAiModelStatus('online');
+      } else {
+        setTestApiResult({
+          ok: false,
+          message: res.error || `HTTP ${res.status}: Verification failed`
+        });
+      }
+    } catch (err: any) {
+      setTestApiResult({
+        ok: false,
+        message: err?.message || 'Failed to connect to OpenRouter'
+      });
+    } finally {
+      setTestingApi(false);
+    }
+  };
 
   const startRef = useRef(Date.now());
   const streamRef = useRef<MediaStream | null>(null);
@@ -577,7 +621,7 @@ public class Solution {
       const response = await fetch(apiUrl('/api/interviewer/next/stream'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...context, modelProvider, transcript: toTranscript(msgs), phase })
+        body: JSON.stringify({ ...context, modelProvider, customApiKey: openRouterKeyInput, transcript: toTranscript(msgs), phase })
       });
       if (!response.ok || !response.body) throw new Error(`Stream error: ${response.status}`);
       const reader = response.body.getReader();
@@ -639,7 +683,7 @@ public class Solution {
         const jsonRes = await fetch(apiUrl('/api/interviewer/next'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...context, modelProvider, transcript: toTranscript(msgs), phase })
+          body: JSON.stringify({ ...context, modelProvider, customApiKey: openRouterKeyInput, transcript: toTranscript(msgs), phase })
         });
         if (jsonRes.ok) {
           const data = await jsonRes.json();
@@ -664,6 +708,50 @@ public class Solution {
         }
       } catch (jsonErr) {
         console.warn('[Interview] JSON endpoint backup failed:', jsonErr);
+      }
+    }
+
+    // 2.5 Resilient Client-Side Direct OpenRouter Call (Guarantees Real API Call Even If Backend is Unreachable)
+    if (!success) {
+      try {
+        const directKey = openRouterKeyInput || getStoredOpenRouterKey();
+        if (directKey) {
+          console.log('[Interview] Dispatching direct browser OpenRouter call with model:', openRouterModelInput);
+          const candAnswers = msgs.filter(m => m.speaker === 'YOU').map(m => m.text);
+          const latestCandAnswer = candAnswers[candAnswers.length - 1] || 'Hello!';
+          const candTurnCount = candAnswers.length;
+
+          const directSystem = `You are Alex Rivera, an authentic, senior software engineer conducting a live technical video interview at ${context.company || 'the company'}.
+Say exactly ONE complete turn (2 to 3 natural conversational sentences).
+Start with a natural conversational acknowledgment ("Got it.", "Makes sense.", "Fair enough.", "Right, interesting.").
+Ask ONE focused, thoughtful technical question based on the candidate's latest answer.
+Never break character. Return ONLY the spoken dialogue.`;
+
+          const directUser = `INTERVIEW CONTEXT:
+Role: ${context.role || 'Software Engineer'}
+Company: ${context.company || 'Tech Company'}
+Candidate CV: ${(context.resume || 'No resume provided').slice(0, 1000)}
+Turn #${candTurnCount + 1}.
+Candidate just said: "${latestCandAnswer}"
+Ask the next authentic follow-up question.`;
+
+          const directResult = await generateQuestionDirectly({
+            systemPrompt: directSystem,
+            userPrompt: directUser,
+            apiKey: directKey,
+            model: openRouterModelInput
+          });
+
+          if (directResult.question && directResult.question.length > 15) {
+            resolvedQuestion = directResult.question;
+            success = true;
+            setAiModelStatus('online');
+            setLastTelemetry(directResult.telemetry);
+            console.log('[OpenRouter Direct Browser Call] Success:', directResult.telemetry);
+          }
+        }
+      } catch (directErr) {
+        console.warn('[Interview] Direct OpenRouter client call failed:', directErr);
       }
     }
 
@@ -1036,6 +1124,97 @@ public class Solution {
                       </button>
                     </div>
                   </div>
+
+                  {/* 04 / Live OpenRouter AI Engine & Verification */}
+                  <div className="brutalist-field-box">
+                    <div className="brutalist-field-header">
+                      <span className="field-title">04 / OPENROUTER AI ENGINE (LIVE API)</span>
+                      <span className={openRouterKeyInput ? 'field-badge-ok' : 'field-tag'}>
+                        {openRouterKeyInput ? '✓ KEY CONFIGURED' : 'KEY REQUIRED'}
+                      </span>
+                    </div>
+                    <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, background: 'var(--paper)' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 4 }}>
+                          OPENROUTER API KEY
+                        </label>
+                        <div className="brutalist-input-feed-bar" style={{ marginBottom: 0 }}>
+                          <input
+                            type={showKey ? 'text' : 'password'}
+                            autoComplete="off"
+                            spellCheck={false}
+                            className="brutalist-text-input"
+                            placeholder="sk-or-v1-..."
+                            value={openRouterKeyInput}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setOpenRouterKeyInput(val);
+                              setStoredOpenRouterKey(val);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="brutalist-apply-btn"
+                            style={{ width: 'auto', padding: '0 10px', fontSize: 11 }}
+                            onClick={() => setShowKey(s => !s)}
+                          >
+                            {showKey ? 'HIDE' : 'SHOW'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 4 }}>
+                            MODEL (FREE TIER PRESET)
+                          </label>
+                          <select
+                            value={openRouterModelInput}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setOpenRouterModelInput(val);
+                              setStoredOpenRouterModel(val);
+                            }}
+                            style={{ width: '100%', height: 36, padding: '0 10px', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--ink)', fontSize: 12, fontWeight: 600 }}
+                          >
+                            <option value="nex-agi/nex-n2.5-mini:free">nex-agi/nex-n2.5-mini:free (Free • ~1.2s Fast)</option>
+                            <option value="openrouter/free">openrouter/free (Free • Meta-Router)</option>
+                            <option value="inclusionai/ling-3.0-flash-vl:free">inclusionai/ling-3.0-flash-vl:free (Free)</option>
+                            <option value="liquid/lfm-2.5-2.6b:free">liquid/lfm-2.5-2.6b:free (Free)</option>
+                            <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct (Paid Credits)</option>
+                            <option value="deepseek/deepseek-chat">deepseek/deepseek-chat (Paid Credits)</option>
+                          </select>
+                        </div>
+                        <div style={{ alignSelf: 'flex-end' }}>
+                          <button
+                            type="button"
+                            disabled={testingApi || !openRouterKeyInput}
+                            className="brutalist-apply-btn active"
+                            style={{ height: 36, padding: '0 14px', display: 'inline-flex', alignItems: 'center', gap: 6, width: 'auto', background: 'var(--ink)', color: '#fff' }}
+                            onClick={() => void handleTestApi()}
+                          >
+                            <Zap size={13} color={testingApi ? '#f59e0b' : '#4ade80'} />
+                            {testingApi ? 'TESTING...' : '⚡ TEST API CALL'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {testApiResult && (
+                        <div style={{
+                          padding: '8px 12px',
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          background: testApiResult.ok ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                          color: testApiResult.ok ? '#22c55e' : '#ef4444',
+                          border: `1px solid ${testApiResult.ok ? '#22c55e' : '#ef4444'}`
+                        }}>
+                          {testApiResult.ok ? '✓ LIVE API CALL VERIFIED: ' : '✗ API CALL ERROR: '}
+                          {testApiResult.message}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Right Column: JD, Resume Grounding & Continue Button */}
@@ -1376,6 +1555,82 @@ public class Solution {
                     style={{ minHeight: 44 }}
                   />
                 </label>
+
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)', gridColumn: '1 / -1' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--muted)' }}>
+                      OPENROUTER API KEY (ACTIVE)
+                    </span>
+                    <button
+                      type="button"
+                      disabled={testingApi || !openRouterKeyInput}
+                      className="brutalist-apply-btn active"
+                      style={{ height: 28, padding: '0 10px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4, width: 'auto', background: 'var(--ink)', color: '#fff' }}
+                      onClick={() => void handleTestApi()}
+                    >
+                      <Zap size={11} color={testingApi ? '#f59e0b' : '#4ade80'} />
+                      {testingApi ? 'TESTING...' : '⚡ TEST LIVE API'}
+                    </button>
+                  </div>
+                  <div className="brutalist-input-feed-bar" style={{ marginBottom: 8 }}>
+                    <input
+                      type={showKey ? 'text' : 'password'}
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="brutalist-text-input"
+                      placeholder="sk-or-v1-..."
+                      value={openRouterKeyInput}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setOpenRouterKeyInput(val);
+                        setStoredOpenRouterKey(val);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="brutalist-apply-btn"
+                      style={{ width: 'auto', padding: '0 10px', fontSize: 11 }}
+                      onClick={() => setShowKey(s => !s)}
+                    >
+                      {showKey ? 'HIDE' : 'SHOW'}
+                    </button>
+                  </div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 4 }}>
+                    ACTIVE MODEL
+                    <select
+                      value={openRouterModelInput}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setOpenRouterModelInput(val);
+                        setStoredOpenRouterModel(val);
+                      }}
+                      style={{ width: '100%', height: 36, padding: '0 10px', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--ink)', fontSize: 12, fontWeight: 600, marginTop: 4 }}
+                    >
+                      <option value="nex-agi/nex-n2.5-mini:free">nex-agi/nex-n2.5-mini:free (Free • ~1.2s Fast)</option>
+                      <option value="openrouter/free">openrouter/free (Free • Meta-Router)</option>
+                      <option value="inclusionai/ling-3.0-flash-vl:free">inclusionai/ling-3.0-flash-vl:free (Free)</option>
+                      <option value="liquid/lfm-2.5-2.6b:free">liquid/lfm-2.5-2.6b:free (Free)</option>
+                      <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b-instruct (Paid Credits)</option>
+                      <option value="deepseek/deepseek-chat">deepseek/deepseek-chat (Paid Credits)</option>
+                    </select>
+                  </label>
+
+                  {testApiResult && (
+                    <div style={{
+                      padding: '8px 12px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      marginTop: 8,
+                      background: testApiResult.ok ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: testApiResult.ok ? '#22c55e' : '#ef4444',
+                      border: `1px solid ${testApiResult.ok ? '#22c55e' : '#ef4444'}`
+                    }}>
+                      {testApiResult.ok ? '✓ LIVE VERIFICATION: ' : '✗ API ERROR: '}
+                      {testApiResult.message}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -3255,7 +3510,7 @@ function Community() {
   const [composerType, setComposerType] = useState<PostType>('question');
   const [author, setAuthor] = useState('TeLos User');
   const [role, setRole] = useState('SWE Candidate');
-  const [targetCompany, setTargetCompany] = useState(companyCatalog[0]?.name || 'Google');
+  const [targetCompany, setTargetCompany] = useState(companyPrepCatalog[0]?.name || 'Google');
   const [levelOrRound, setLevelOrRound] = useState('L4 / SDE II');
   const [outcome, setOutcome] = useState<'Offer' | 'Reject' | 'Pending' | 'N/A'>('Offer');
   const [title, setTitle] = useState('');
@@ -3274,7 +3529,7 @@ function Community() {
       if (p.company) map.set(p.company, (map.get(p.company) || 0) + 1);
     });
     const sortedActive = Array.from(map.entries()).sort((a, b) => b[1] - a[1]).map(([name]) => name);
-    const topCatalog = companyCatalog.map(c => c.name);
+    const topCatalog = companyPrepCatalog.map(c => c.name);
     const combined = Array.from(new Set([...sortedActive, ...topCatalog])).slice(0, 14);
     return ['All', ...combined];
   }, [posts]);
@@ -3298,7 +3553,7 @@ function Community() {
   }, [posts]);
 
   const trackedCompaniesCount = useMemo(() => {
-    return new Set([...companyCatalog.map(c => c.name), ...posts.map(p => p.company).filter(Boolean)]).size;
+    return new Set([...companyPrepCatalog.map(c => c.name), ...posts.map(p => p.company).filter(Boolean)]).size;
   }, [posts]);
 
   useEffect(() => {
@@ -3694,7 +3949,7 @@ function Community() {
                   onChange={e => setTargetCompany(e.target.value)}
                   style={{ cursor: 'pointer' }}
                 >
-                  {companyCatalog.map(comp => (
+                  {companyPrepCatalog.map(comp => (
                     <option key={comp.id} value={comp.name}>{comp.name}</option>
                   ))}
                   <option value="General">General / Other</option>
