@@ -235,7 +235,8 @@ if __name__ == "__main__":
   const [runningCode, setRunningCode] = useState(false);
 
   // Model Provider selector (Free & Open Tier Models)
-  const [modelProvider, setModelProvider] = useState<'gemini' | 'groq' | 'openrouter' | 'ollama' | 'openai' | 'heuristic'>('gemini');
+  const [modelProvider, setModelProvider] = useState<'auto' | 'openrouter' | 'gemini' | 'groq' | 'ollama' | 'openai' | 'heuristic'>('auto');
+  const [aiModelStatus, setAiModelStatus] = useState<'online' | 'fallback' | 'checking'>('online');
 
   const startRef = useRef(Date.now());
   const streamRef = useRef<MediaStream | null>(null);
@@ -477,11 +478,16 @@ public class Solution {
 
   const buildCompanySpecificQuestion = (phase: 'opening' | 'followup', msgs: Message[]) => {
     const candidateAnswers = msgs.filter(m => m.speaker === 'YOU');
+    const panelQuestions = msgs.filter(m => m.speaker === 'PANEL').map(m => m.text.toLowerCase().trim());
     const latestAnswer = [...msgs].reverse().find(m => m.speaker === 'YOU')?.text || '';
     const companyName = context.company.trim() || 'Target Company';
-    const roleName = context.role.trim() || 'Software Engineer';
     const resumeText = context.resume.trim();
     const count = candidateAnswers.length;
+
+    const isAlreadyAsked = (q: string) => {
+      const norm = q.toLowerCase().trim();
+      return panelQuestions.some(prev => prev === norm || (prev.length > 20 && norm.length > 20 && (prev.includes(norm.slice(0, 25)) || norm.includes(prev.slice(0, 25)))));
+    };
 
     // Phase 1: Warm Intro (Turn 1)
     if (phase === 'opening' || count === 0) {
@@ -497,13 +503,16 @@ public class Solution {
 
     // Phase 2: Resume & Project Deep-Dive (Turns 2-3)
     if (count <= 2) {
-      if (latestAnswer.toLowerCase().includes('concurren') || latestAnswer.toLowerCase().includes('lock') || latestAnswer.toLowerCase().includes('race')) {
-        return 'Got it, makes sense. How did you handle edge cases where multiple concurrent requests competed for the same record or key simultaneously?';
-      }
-      if (latestAnswer.toLowerCase().includes('latency') || latestAnswer.toLowerCase().includes('scale') || latestAnswer.toLowerCase().includes('cache') || latestAnswer.toLowerCase().includes('kafka')) {
-        return 'Makes sense. When the pipeline saturated or memory spiked under peak traffic, what was the first bottleneck that appeared, and how did you mitigate it?';
-      }
-      return `Got it. In that architecture, what was the most critical trade-off you personally owned, and what would you change if you had to redesign it from scratch today?`;
+      const p2Pool = [
+        latestAnswer.toLowerCase().includes('concurren') || latestAnswer.toLowerCase().includes('lock') || latestAnswer.toLowerCase().includes('race')
+          ? 'Got it, makes sense. How did you handle edge cases where multiple concurrent requests competed for the same record or key simultaneously?' : '',
+        latestAnswer.toLowerCase().includes('latency') || latestAnswer.toLowerCase().includes('scale') || latestAnswer.toLowerCase().includes('cache') || latestAnswer.toLowerCase().includes('kafka')
+          ? 'Makes sense. When the pipeline saturated or memory spiked under peak traffic, what was the first bottleneck that appeared, and how did you mitigate it?' : '',
+        `Got it. In that architecture, what was the most critical trade-off you personally owned, and what would you change if you had to redesign it from scratch today?`,
+        `Interesting. Could you walk me through how you structured data consistency and testing across asynchronous boundaries in that project?`,
+        `Fair enough. When that service operated in production, what telemetry or alerting signaled to your team that a performance regression had occurred?`
+      ].filter(Boolean);
+      return p2Pool.find(q => !isAlreadyAsked(q)) || p2Pool[count % p2Pool.length];
     }
 
     // Phase 3: Core Technical Challenge (Turns 4-6)
@@ -511,12 +520,22 @@ public class Solution {
       return `Awesome, that gives me great context on your background. Let's switch gears into a technical challenge that's very relevant to what we build here at ${companyName}. Let's design a high-throughput, distributed rate limiter and task coordinator that operates across multi-region API gateways with Redis and token buckets. How would you approach designing this from a high level? Feel free to open the scratchpad if you want to write code or sketch components.`;
     }
     if (count <= 5) {
-      return `Right, that's a good direction. How would you structure the core in-memory state and data structures for that? Walk me through your API contract and eviction policy.`;
+      const p3Pool = [
+        `Right, that's a good direction. How would you structure the core in-memory state and data structures for that? Walk me through your API contract and eviction policy.`,
+        `Interesting approach. How does your design synchronize quota counters across multiple geographical regions without paying a 150ms cross-region latency penalty on every check?`,
+        `Fair point. If the primary Redis cache cluster fails or suffers a network partition, how does your rate limiter fail open or fail closed?`
+      ];
+      return p3Pool.find(q => !isAlreadyAsked(q)) || p3Pool[(count - 4) % p3Pool.length];
     }
 
     // Phase 4: Edge Cases & Stress Testing (Turns 7-8)
     if (count <= 7) {
-      return `Got it, that makes sense. Now let's stress test this: what happens if traffic spikes 10x suddenly and one of the Redis nodes drops off the network? How does your system prevent a cascading failure to the primary database?`;
+      const p4Pool = [
+        `Got it, that makes sense. Now let's stress test this: what happens if traffic spikes 10x suddenly and one of the Redis nodes drops off the network? How does your system prevent a cascading failure to the primary database?`,
+        `Fair point. How do you prevent thundering herds and cache stampedes when hot keys expire simultaneously under peak load?`,
+        `What specific SLO or latency percentile would trigger automated circuit breaking in this architecture?`
+      ];
+      return p4Pool.find(q => !isAlreadyAsked(q)) || p4Pool[(count - 6) % p4Pool.length];
     }
 
     // Phase 5: Candidate Q&A & Wrap-Up (Turn 9+)
@@ -549,13 +568,18 @@ public class Solution {
     }
     const fallbackQuestion = buildCompanySpecificQuestion(phase, msgs);
     upsertStreamingPanel(phase === 'opening' ? 'Starting the interview…' : 'Analyzing response…', false);
+
+    let resolvedQuestion = '';
+    let success = false;
+
+    // 1. Primary: Attempt Streaming SSE Endpoint
     try {
       const response = await fetch(apiUrl('/api/interviewer/next/stream'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...context, modelProvider, transcript: toTranscript(msgs), phase })
       });
-      if (!response.body) throw new Error('stream unavailable');
+      if (!response.ok || !response.body) throw new Error(`Stream error: ${response.status}`);
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -589,7 +613,8 @@ public class Solution {
           }
           if (eventLine === 'delta' && dataLine) {
             const payload = JSON.parse(dataLine);
-            const text = payload.text || '';
+            let text = payload.text || '';
+            text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^Reasoning:[\s\S]*?\n\n/i, '');
             if (text) {
               const needsSpace = assembled.length > 0 && !/\s$/.test(assembled) && !/^\s/.test(text) && !/^[.,!?;:)\]}]/.test(text);
               assembled += (needsSpace ? ' ' : '') + text;
@@ -598,10 +623,53 @@ public class Solution {
           }
         }
       }
-      const finalQuestion = assembled.trim() || fallbackQuestion;
-      upsertStreamingPanel(finalQuestion, true);
-      playVoice(finalQuestion);
-    } catch {
+      const clean = assembled.trim();
+      if (clean.length > 15) {
+        resolvedQuestion = clean;
+        success = true;
+        setAiModelStatus('online');
+      }
+    } catch (streamErr) {
+      console.warn('[Interview] SSE streaming failed, trying resilient JSON backup:', streamErr);
+    }
+
+    // 2. Resilient Backup: Standard JSON endpoint
+    if (!success) {
+      try {
+        const jsonRes = await fetch(apiUrl('/api/interviewer/next'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...context, modelProvider, transcript: toTranscript(msgs), phase })
+        });
+        if (jsonRes.ok) {
+          const data = await jsonRes.json();
+          const cleanQ = (data.question || '').trim().replace(/<think>[\s\S]*?<\/think>/gi, '');
+          if (cleanQ.length > 15) {
+            resolvedQuestion = cleanQ;
+            success = true;
+            setAiModelStatus('online');
+            if (data.phase) {
+              setCurrentPhase({
+                key: data.phase,
+                number: data.phaseNumber || 1,
+                label: data.phaseLabel || 'Phase 1 • Warm Intro',
+                challenge: data.challenge
+              });
+              if (data.phaseNumber === 3 && data.challenge) {
+                setShowScratchpad(true);
+                setCode(prev => (prev && prev.length > 60) ? prev : `# ─── ${data.challenge.title.toUpperCase()} ───\n# ${data.challenge.problemScenario}\n# Task: ${data.challenge.starterCodePrompt}\n\ndef solution():\n    pass\n`);
+              }
+            }
+          }
+        }
+      } catch (jsonErr) {
+        console.warn('[Interview] JSON endpoint backup failed:', jsonErr);
+      }
+    }
+
+    // 3. Client Heuristic Fallback (Zero Repetition Guarantee)
+    if (!resolvedQuestion) {
+      setAiModelStatus('fallback');
       const candTurns = msgs.filter(m => m.speaker === 'YOU').length;
       let phaseNum = 1;
       let phaseLabel = 'Phase 1 • Warm Intro & Calibration';
@@ -616,12 +684,13 @@ public class Solution {
         phaseNum = 5; phaseKey = 'candidate-qa'; phaseLabel = 'Phase 5 • Candidate Q&A & Wrap-Up';
       }
       setCurrentPhase(prev => ({ ...prev, number: phaseNum, key: phaseKey, label: phaseLabel }));
-      upsertStreamingPanel(fallbackQuestion, true);
-      playVoice(fallbackQuestion);
-    } finally {
-      followUpLock.current = false;
-      setThinking(false);
+      resolvedQuestion = fallbackQuestion;
     }
+
+    upsertStreamingPanel(resolvedQuestion, true);
+    playVoice(resolvedQuestion);
+    followUpLock.current = false;
+    setThinking(false);
   };
 
   const commitAnswer = (text: string) => {
@@ -1197,6 +1266,10 @@ public class Solution {
             <div className="call-room-meta">
               <span><b>{context.company || activeCompany.name}</b> • {context.role || 'SDE-1'}</span>
               <span><ShieldCheck size={14} color="#4ade80" /> Voice &amp; Proctoring Active</span>
+              <span style={{ color: aiModelStatus === 'online' ? '#4ade80' : '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Sparkles size={13} color={aiModelStatus === 'online' ? '#4ade80' : '#f59e0b'} />
+                {aiModelStatus === 'online' ? 'AI: Online' : 'AI: Heuristic'}
+              </span>
             </div>
             <div className="call-header-actions">
               <button className={`header-pill-btn ${drawerOpen ? 'active' : ''}`} onClick={() => setDrawerOpen(o => !o)}>

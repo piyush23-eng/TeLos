@@ -93,7 +93,10 @@ function formatTranscript(transcript: TranscriptTurn[] = []) {
 
 function normalizeQuestion(raw: string) {
   return raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/```[\s\S]*?```/g, '')
     .replace(/^\s*(Interviewer|Assistant|Panel|Alex):\s*/i, '')
+    .replace(/^Reasoning:[\s\S]*?\n\n/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/^["“”]+/, '')
@@ -350,12 +353,14 @@ export function buildHeuristicQuestion(context: InterviewContext) {
 
   // Phase 4: Edge Cases & Trade-offs
   if (phaseInfo.phaseKey === 'edge-cases') {
-    let question = '';
-    if (phaseInfo.candidateTurnCount === 6) {
-      question = `Got it, that makes sense. Now let's stress test this: ${challenge.edgeCaseFocus}`;
-    } else {
-      question = `Fair point. What specific latency or throughput metric would indicate this design is starting to degrade, and what circuit breaker would you trip?`;
-    }
+    const phase4Pool = [
+      `Got it, that makes sense. Now let's stress test this: ${challenge.edgeCaseFocus}`,
+      `Fair point. What specific latency or throughput metric would indicate this design is starting to degrade, and what circuit breaker would you trip?`,
+      `What happens if the primary downstream datastore experiences a sudden network partition? How does your system isolate that failure?`,
+      `How does your design guarantee at-least-once or exactly-once message delivery without generating duplicate side-effects?`,
+      `If a cascading retry storm hit the cluster during peak load, what backoff strategy or jitter mechanism would prevent total saturation?`
+    ];
+    const question = phase4Pool.find(q => !isRepeatedQuestion(q, previousQuestions)) || phase4Pool[phaseInfo.candidateTurnCount % phase4Pool.length];
     return {
       question,
       category: 'technical' as const,
@@ -367,27 +372,17 @@ export function buildHeuristicQuestion(context: InterviewContext) {
 
   // Phase 3: Core Technical Challenge & Coding
   if (phaseInfo.phaseKey === 'technical-challenge') {
-    if (phaseInfo.candidateTurnCount === 3) {
-      return {
-        question: `Cool, that's really helpful context on your background. Let's switch gears into a technical challenge that's very relevant to what we build here at ${companyName}. ${challenge.problemScenario} How would you approach this from a high level? Feel free to open the scratchpad if you'd like to sketch components or write code.`,
-        category: 'coding' as const,
-        phase: phaseInfo.phaseKey,
-        phaseNumber: phaseInfo.phaseNumber,
-        phaseLabel: phaseInfo.phaseLabel
-      };
-    }
-    if (phaseInfo.candidateTurnCount === 4) {
-      return {
-        question: `Right, that's a good direction. How would you structure the core data model and API contract for that? Talk me through the primary data structures you'd use in memory.`,
-        category: 'coding' as const,
-        phase: phaseInfo.phaseKey,
-        phaseNumber: phaseInfo.phaseNumber,
-        phaseLabel: phaseInfo.phaseLabel
-      };
-    }
+    const phase3Pool = [
+      `Cool, that's really helpful context on your background. Let's switch gears into a technical challenge that's very relevant to what we build here at ${companyName}. ${challenge.problemScenario} How would you approach this from a high level? Feel free to open the scratchpad if you'd like to sketch components or write code.`,
+      `Right, that's a good direction. How would you structure the core data model and API contract for that? Talk me through the primary data structures you'd use in memory.`,
+      `Interesting, okay. How does that implementation handle concurrent writes and race conditions when multiple worker threads execute at the same time?`,
+      `Fair point. How would you handle cache eviction or memory pressure when the active working set exceeds available RAM?`,
+      `Good breakdown. Let's trace an end-to-end request: when a client sends a payload, what are the exact steps and state transitions that take place?`
+    ];
+    const question = phase3Pool.find(q => !isRepeatedQuestion(q, previousQuestions)) || phase3Pool[phaseInfo.candidateTurnCount % phase3Pool.length];
     return {
-      question: `Interesting, okay. How does that implementation handle concurrent writes and race conditions when multiple worker threads execute at the same time?`,
-      category: 'technical' as const,
+      question,
+      category: 'coding' as const,
       phase: phaseInfo.phaseKey,
       phaseNumber: phaseInfo.phaseNumber,
       phaseLabel: phaseInfo.phaseLabel
@@ -396,22 +391,17 @@ export function buildHeuristicQuestion(context: InterviewContext) {
 
   // Phase 2: Resume & CV Deep Dive
   const signals = extractAnswerSignals(latestAnswer);
-  let question = '';
+  const phase2Pool = [
+    signals.technologies.length ? `Interesting, okay. You mentioned ${signals.technologies[0]}. What was the most critical architectural decision or trade-off you made around ${signals.technologies[0]}?` : '',
+    signals.isVague ? 'Got it. Could you give me one concrete example from that project? What technical hurdles did you run into, and how did you resolve them?' : '',
+    signals.hasFailure || signals.hasTradeoff ? 'Understood. When that path encountered peak load in production, what was the first bottleneck that appeared?' : '',
+    'Makes sense. Looking back at that implementation, what architectural decision would you do differently today with the benefit of hindsight?',
+    'Got it. How did you structure testing, telemetry, and observability to verify that system stayed reliable in production?',
+    'Right, fair enough. If traffic scaled 5x tomorrow, which layer would saturate first — the datastore, memory, or network I/O?',
+    'Understood. How did you validate data consistency across asynchronous workers or distributed replicas in that project?'
+  ].filter(Boolean);
 
-  if (signals.isVague) {
-    question = 'Got it. Could you give me one concrete example from that project? What technical hurdles did you run into, and how did you resolve them?';
-  } else if (signals.technologies.length) {
-    const tech = signals.technologies[0];
-    question = `Interesting, okay. You mentioned ${tech}. What was the most critical architectural decision or trade-off you made around ${tech}?`;
-  } else if (signals.hasFailure || signals.hasTradeoff) {
-    question = 'Understood. When that path encountered peak load in production, what was the first bottleneck that appeared?';
-  } else {
-    question = 'Makes sense. Looking back at that implementation, what architectural decision would you do differently today with the benefit of hindsight?';
-  }
-
-  if (isRepeatedQuestion(question, previousQuestions)) {
-    question = `Got it. What was the most critical trade-off you optimized for in that system?`;
-  }
+  const question = phase2Pool.find(q => !isRepeatedQuestion(q, previousQuestions)) || phase2Pool[phaseInfo.candidateTurnCount % phase2Pool.length];
 
   return {
     question,
@@ -476,15 +466,17 @@ export class IntelligenceProvider {
 
     // 1. OpenRouter (Primary Ultra-Reliable API with Multi-Model Fallback)
     const openRouterKey = customApiKey || process.env.OPENROUTER_API_KEY;
-    if (openRouterKey && (modelProvider === 'openrouter' || modelProvider === 'auto' || modelProvider === 'gemini')) {
+    if (openRouterKey && (modelProvider === 'openrouter' || modelProvider === 'auto' || modelProvider === 'gemini' || !this.gemini)) {
       const preferredModels = [
-        modelName || process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct',
-        'meta-llama/llama-3.3-70b-instruct',
-        'deepseek/deepseek-chat',
-        'mistralai/mistral-small-24b-instruct-2501',
-        'google/gemini-2.0-flash-exp:free',
-        'qwen/qwen-2.5-72b-instruct'
-      ];
+        modelName,
+        process.env.OPENROUTER_MODEL,
+        'nex-agi/nex-n2.5-mini:free',
+        'openrouter/free',
+        'inclusionai/ling-3.0-flash-vl:free',
+        'liquid/lfm-2.5-2.6b:free',
+        'nvidia/nemotron-3.5-lightning:free',
+        'meta-llama/llama-3.3-70b-instruct'
+      ].filter(Boolean) as string[];
 
       for (const candidateModel of preferredModels) {
         try {
@@ -506,7 +498,12 @@ export class IntelligenceProvider {
           });
           if (orRes.ok) {
             const data = await orRes.json() as any;
-            const text = data.choices?.[0]?.message?.content?.trim();
+            let text = data.choices?.[0]?.message?.content?.trim() || '';
+            text = text
+              .replace(/<think>[\s\S]*?<\/think>/gi, '')
+              .replace(/```[\s\S]*?```/g, '')
+              .replace(/^Reasoning:[\s\S]*?\n\n/i, '')
+              .trim();
             if (text && text.length > 10) {
               console.log(`[Intelligence] Successfully generated question with OpenRouter model: ${candidateModel}`);
               return text;
@@ -782,18 +779,22 @@ RULES:
         }
       }
 
-      // Tell the next attempt exactly what went wrong
-      previousQuestions.push(candidateQuestion);
+      if (candidateQuestion) {
+        previousQuestions.push(candidateQuestion);
+      }
     }
 
-    // Safe fallback
+    // Safe fallback: multi-tier pool with deduplication against previousQuestions
     if (!finalQuestion) {
-      if (!isRepeatedQuestion(heuristic.question, previousQuestions)) {
-        finalQuestion = heuristic.question;
-      } else {
-        finalQuestion =
-          "What specific decision or technical trade-off had the biggest impact on that implementation?";
-      }
+      const fallbackOptions = [
+        heuristic.question,
+        "What specific decision or technical trade-off had the biggest impact on that implementation?",
+        "When you ran this under peak production load, what unexpected bottleneck or latency spike surfaced first?",
+        "How did you ensure data consistency and idempotency across asynchronous boundaries in this system?",
+        "If you were designing this system from scratch with today's constraints, what architectural choice would you change?",
+        "What observability metrics or telemetry did you rely on to alert you before users noticed service degradation?"
+      ];
+      finalQuestion = fallbackOptions.find(q => !isRepeatedQuestion(q, previousQuestions)) || fallbackOptions[0];
     }
 
     return {
