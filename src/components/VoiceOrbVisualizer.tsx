@@ -1,7 +1,8 @@
 import React from 'react';
+import type { InterviewerVisualState } from './HumanInterviewerAvatar';
 
 interface VoiceOrbVisualizerProps {
-  state: 'speaking' | 'thinking' | 'listening';
+  state: InterviewerVisualState;
   subtitles?: string;
   interviewerName?: string;
   companyName?: string;
@@ -54,7 +55,19 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
           {state === 'thinking' && (
             <>
               <span className="thinking-pulse-dot" />
-              <b>ALEX IS TAKING NOTES &amp; ANALYZING...</b>
+              <b>ALEX IS THINKING &amp; ANALYZING...</b>
+            </>
+          )}
+          {state === 'taking-notes' && (
+            <>
+              <span className="thinking-pulse-dot" />
+              <b>ALEX IS TAKING NOTES...</b>
+            </>
+          )}
+          {state === 'reviewing-code' && (
+            <>
+              <span className="thinking-pulse-dot" />
+              <b>ALEX IS REVIEWING YOUR CODE...</b>
             </>
           )}
           {state === 'listening' && (

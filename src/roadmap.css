@@ -4908,3 +4908,497 @@ body.dark-theme .oauth-account-item:hover {
 :root[data-theme='dark'] .lobby-summary-row span {
   color: #aaa7b5 !important;
 }
+
+/* ========================================================
+   AUTHENTIC 1-ON-1 INTERVIEWER PERSONA & AVATAR STYLES
+   ======================================================== */
+.human-avatar-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #090810;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-feed-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatar-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  filter: contrast(1.05) brightness(0.95);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+
+.human-avatar-container.state-speaking .avatar-portrait-img {
+  transform: scale(1.018);
+  filter: contrast(1.08) brightness(1.02);
+}
+
+.avatar-lens-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, transparent 40%, rgba(5, 4, 10, 0.55) 100%),
+              linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 20%, transparent 70%, rgba(0,0,0,0.85) 100%);
+  pointer-events: none;
+}
+
+.avatar-ambient-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.human-avatar-container.state-speaking .avatar-ambient-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.18) 0%, transparent 75%);
+}
+
+.avatar-speech-ring-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.avatar-speech-ring-glow .speech-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  animation: speechRipple 2.2s infinite cubic-bezier(0, 0.2, 0.8, 1);
+}
+
+.speech-ring.r1 { width: 220px; height: 220px; animation-delay: 0s; }
+.speech-ring.r2 { width: 340px; height: 340px; animation-delay: 0.7s; }
+.speech-ring.r3 { width: 460px; height: 460px; animation-delay: 1.4s; }
+
+@keyframes speechRipple {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
+.avatar-top-meta-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba(15, 13, 25, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.avatar-live-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: liveBlink 1.6s infinite ease-in-out;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.avatar-feed-label {
+  font: 10px 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.05em;
+}
+
+.avatar-behavior-state-hud {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+}
+
+.avatar-state-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(15, 13, 25, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  font: 10px 'IBM Plex Mono', monospace;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.avatar-state-pill.speaking {
+  border-color: rgba(74, 222, 128, 0.4);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.2);
+}
+
+.avatar-state-pill.listening {
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+.avatar-state-pill.thinking {
+  border-color: rgba(250, 204, 21, 0.4);
+}
+
+.avatar-state-pill.taking-notes {
+  border-color: rgba(168, 85, 247, 0.45);
+  background: rgba(88, 28, 135, 0.4);
+}
+
+.avatar-state-pill.reviewing-code {
+  border-color: rgba(236, 72, 153, 0.45);
+}
+
+.voice-equalizer-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.voice-equalizer-bars span {
+  width: 2.5px;
+  background: #4ade80;
+  border-radius: 2px;
+  animation: eqBounce 1s infinite ease-in-out;
+}
+
+.voice-equalizer-bars span:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+.voice-equalizer-bars span:nth-child(2) { height: 90%; animation-delay: 0.3s; }
+.voice-equalizer-bars span:nth-child(3) { height: 60%; animation-delay: 0.2s; }
+.voice-equalizer-bars span:nth-child(4) { height: 100%; animation-delay: 0.4s; }
+.voice-equalizer-bars span:nth-child(5) { height: 50%; animation-delay: 0.15s; }
+
+@keyframes eqBounce {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+.state-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.state-pulse-dot.green { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+.state-pulse-dot.yellow { background: #eab308; box-shadow: 0 0 8px #eab308; }
+
+.note-icon-anim {
+  color: #c084fc;
+  animation: noteWiggle 1.4s infinite ease-in-out;
+}
+
+@keyframes noteWiggle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* Barge-In Button */
+.avatar-bargein-btn {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  font: 11px 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.45);
+  animation: bargeInBounce 1.8s infinite ease-in-out;
+  transition: all 0.2s ease;
+}
+
+.avatar-bargein-btn:hover {
+  background: #ef4444;
+  transform: translateX(-50%) scale(1.05);
+}
+
+.bargein-hand-icon {
+  animation: waveHand 1s infinite alternate ease-in-out;
+}
+
+@keyframes waveHand {
+  0% { transform: rotate(-10deg); }
+  100% { transform: rotate(15deg); }
+}
+
+@keyframes bargeInBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
+}
+
+/* Subtitle Tray */
+.avatar-subtitle-tray {
+  position: absolute;
+  bottom: 60px;
+  left: 14px;
+  right: 14px;
+  padding: 10px 14px;
+  background: rgba(10, 8, 20, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.subtitle-speaker-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 10px 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.subtitle-dialogue-text {
+  font: 13px 'Space Grotesk', sans-serif;
+  color: #f1f5f9;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Bottom Identity Bar */
+.avatar-bottom-id-bar {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.interviewer-identity-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 13, 25, 0.82);
+  backdrop-filter: blur(8px);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.interviewer-name {
+  font: 12px 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: #ffffff;
+  margin-right: 6px;
+}
+
+.interviewer-credentials {
+  font: 11px 'Space Grotesk', sans-serif;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.interviewer-connection-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: 10px 'IBM Plex Mono', monospace;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(15, 13, 25, 0.7);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.ping-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+/* ========================================================
+   45-MINUTE REALISTIC INTERVIEW HUD & STEPPER
+   ======================================================== */
+.meeting-top-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #0f0d1b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.meeting-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meeting-company-pill {
+  font: 11px 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  padding: 4px 10px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  color: #a5b4fc;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.meeting-hud-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.countdown-clock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 13px 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #f8fafc;
+}
+
+.countdown-clock.warning {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.countdown-clock.danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.5);
+  animation: timerPulse 1s infinite alternate;
+}
+
+@keyframes timerPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.04); }
+}
+
+.phase-stepper-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phase-step-node {
+  font: 10px 'IBM Plex Mono', monospace;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid transparent;
+}
+
+.phase-step-node.active {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
+  font-weight: 700;
+}
+
+.phase-step-node.completed {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ========================================================
+   INTERACTIVE SYSTEM ARCHITECTURE CANVAS
+   ======================================================== */
+.architecture-visual-canvas {
+  margin-top: 10px;
+  padding: 12px;
+  background: #090812;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+}
+
+.arch-canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 11px 'IBM Plex Mono', monospace;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.arch-nodes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.arch-system-node {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  background: #18152c;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 6px;
+  color: #fff;
+  min-width: 140px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.arch-node-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font: 11px 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: #e0e7ff;
+}
+
+.arch-node-remove {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.arch-node-remove:hover { color: #f87171; }
+
+.arch-node-metric {
+  font: 10px 'IBM Plex Mono', monospace;
+  color: #34d399;
+  margin-top: 4px;
+}
+

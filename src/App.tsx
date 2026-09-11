@@ -3,7 +3,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bookmark, Bot, Briefcase, Check, CheckCheck, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, Copy, Download, ExternalLink, FileText, Github, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldCheck, Sparkles, Square, Sun, Terminal, ThumbsUp, TrendingUp, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bookmark, Bot, Briefcase, Check, CheckCheck, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, Code2, Copy, Download, ExternalLink, FileText, Github, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldCheck, Sparkles, Square, Sun, Terminal, ThumbsUp, TrendingUp, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import { companyPrepCatalog, type CompanyPrepItem } from './companyPrepData';
 import { problemCatalog, type DrillProblem } from './problemCatalog';
 import { Assessment } from './Assessment';
@@ -53,6 +53,7 @@ type CommunityPost = {
 declare global { interface Window { webkitSpeechRecognition?: new () => Recognition; SpeechRecognition?: new () => Recognition } }
 
 import { VoiceOrbVisualizer } from './components/VoiceOrbVisualizer';
+import { HumanInterviewerAvatar, type InterviewerVisualState } from './components/HumanInterviewerAvatar';
 
 const defaultInterviewContext = {
   persona: 'Alex (AI Interviewer)',
@@ -223,6 +224,27 @@ function Studio() {
   const [showEndCallConfirm, setShowEndCallConfirm] = useState(false);
   const isSpeakingTtsRef = useRef(false);
 
+  // Real Interview Experience State (Pillars 1-4)
+  const [visualMode, setVisualMode] = useState<'avatar' | 'orb'>('avatar');
+  const [secondsRemaining, setSecondsRemaining] = useState(45 * 60);
+  const [interviewerBehavior, setInterviewerBehavior] = useState<'idle' | 'taking-notes' | 'reviewing-code'>('idle');
+  const [archNodes, setArchNodes] = useState<Array<{ id: string; type: string; name: string; latency: string; throughput: string }>>([
+    { id: 'node-gw', type: 'gateway', name: 'API Gateway (Envoy)', latency: '1.2ms', throughput: '45k RPS' },
+    { id: 'node-cache', type: 'cache', name: 'Redis Cache Cluster', latency: '0.8ms', throughput: '120k QPS' }
+  ]);
+
+  useEffect(() => {
+    if (!started || report) return;
+    const timer = setInterval(() => setSecondsRemaining(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [started, report]);
+
+  const formatTimer = (totalSeconds: number) => {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
   useEffect(() => {
     isSpeakingTtsRef.current = isSpeakingTts;
   }, [isSpeakingTts]);
@@ -377,6 +399,7 @@ public class Solution {
 
   const runLiveCode = async () => {
     setRunningCode(true);
+    setInterviewerBehavior('reviewing-code');
     setCodeOutput('Compiling & running test cases against local runtime sandbox...');
     try {
       const response = await fetch(apiUrl('/api/run'), {
@@ -390,6 +413,9 @@ public class Solution {
       setCodeOutput('Execution runner unavailable.');
     } finally {
       setRunningCode(false);
+      setTimeout(() => {
+        setInterviewerBehavior('idle');
+      }, 3500);
     }
   };
 
@@ -823,13 +849,24 @@ Ask the next authentic follow-up question.`;
     const fillerStats = countFillerWords(allYouText);
     setSpeechStats({ words: wordCount, pace, fillers: fillerStats.count, lastUpdated: Date.now() });
 
+    setInterviewerBehavior('taking-notes');
+    setTimeout(() => {
+      setInterviewerBehavior('idle');
+    }, 3200);
+
     void fetchPanelQuestion(next, 'followup');
   };
 
   const interruptAlex = () => {
     window.speechSynthesis?.cancel();
+    if (activeHumanVoice) {
+      try { activeHumanVoice.pause(); } catch (_) {}
+      activeHumanVoice = null;
+    }
     setIsSpeakingTts(false);
     isSpeakingTtsRef.current = false;
+    setThinking(false);
+    setInterviewerBehavior('idle');
     if (!mic) {
       void startMic();
     }
@@ -838,27 +875,59 @@ Ask the next authentic follow-up question.`;
   const insertArchitectureBlock = (type: 'gateway' | 'queue' | 'cache' | 'database' | 'microservice' | 'loadbalancer') => {
     setShowScratchpad(true);
     let template = '';
+    let nodeName = '';
+    let latency = '1.0ms';
+    let throughput = '50k RPS';
+
     switch (type) {
       case 'gateway':
+        nodeName = 'API Gateway (Envoy)';
+        latency = '1.2ms';
+        throughput = '45k RPS';
         template = `\n// ─── ARCHITECTURE: API GATEWAY & RATE LIMITING ───\n// [Clients / Mobile / Web] \n//           │\n//           ▼\n// ┌───────────────────────────────────────┐\n// │   API Gateway (Kong / Envoy)          │\n// │   - Token Bucket Rate Limiter (Redis) │\n// │   - JWT Auth & SSL Termination        │\n// │   - Dynamic Route Dispatching         │\n// └───────────────────────────────────────┘\n`;
         break;
       case 'queue':
+        nodeName = 'Kafka Event Stream';
+        latency = '3.5ms';
+        throughput = '150k msg/s';
         template = `\n// ─── ARCHITECTURE: ASYNC EVENT STREAM (KAFKA) ───\n// [Publisher Service] ──▶ [Kafka Topic: user-events] (Partition Key: user_id)\n//                                │\n//                    ┌───────────┴───────────┐\n//                    ▼                       ▼\n//          [Consumer Group 1]      [Consumer Group 2]\n//          (Analytics Pipeline)    (Notification Worker)\n`;
         break;
       case 'cache':
+        nodeName = 'Redis Cache Cluster';
+        latency = '0.6ms';
+        throughput = '200k QPS';
         template = `\n// ─── ARCHITECTURE: MULTI-TIER CACHING (REDIS) ───\n// Read Path:  Client ──▶ App Server ──▶ Redis (Cache Hit ~2ms)\n//                                │ (Cache Miss)\n//                                └──▶ Primary DB ──▶ Write-Back to Redis (TTL: 300s)\n`;
         break;
       case 'database':
+        nodeName = 'PostgreSQL Sharded DB';
+        latency = '12ms';
+        throughput = '15k QPS';
         template = `\n// ─── ARCHITECTURE: DISTRIBUTED STORAGE / SHARDING ───\n// [App Layer] ──▶ Consistent Hashing Router\n//                      ├──▶ Shard 0 (PostgreSQL Master + Read Replicas)\n//                      ├──▶ Shard 1 (PostgreSQL Master + Read Replicas)\n//                      └──▶ Shard 2 (PostgreSQL Master + Read Replicas)\n`;
         break;
       case 'microservice':
+        nodeName = 'Worker Pool Service';
+        latency = '25ms';
+        throughput = '8k RPS';
         template = `\n// ─── ARCHITECTURE: CORE MICROSERVICE WORKER ───\nclass TransactionWorker {\n  async processOrder(orderId: string, payload: any) {\n    // 1. Idempotency Check using Redis SETNX\n    // 2. Distributed Lock / Saga Coordinator\n    // 3. Database ACID Transaction\n    // 4. Emit Audit Event to Message Bus\n  }\n}\n`;
         break;
       case 'loadbalancer':
+        nodeName = 'L4/L7 Load Balancer';
+        latency = '0.4ms';
+        throughput = '80k RPS';
         template = `\n// ─── ARCHITECTURE: LOAD BALANCER & FAILOVER ───\n// [Internet Traffic]\n//         │\n//         ▼\n// ┌───────────────────────────────────┐\n// │ L4/L7 Load Balancer (Round Robin) │\n// └───────────────────────────────────┘\n//        ├──▶ Instance A (Healthy - 15% CPU)\n//        ├──▶ Instance B (Healthy - 18% CPU)\n//        └──▶ Instance C (Healthy - 12% CPU)\n`;
         break;
     }
     setCode(c => (c ? c + '\n' + template : template));
+    setArchNodes(nodes => [
+      ...nodes,
+      {
+        id: 'node-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        type,
+        name: nodeName,
+        latency,
+        throughput
+      }
+    ]);
   };
 
   const stopMic = () => {
@@ -1013,7 +1082,15 @@ Ask the next authentic follow-up question.`;
     commitAnswer(t);
   };
 
-  const interviewerState = thinking ? 'thinking' : isSpeakingTts ? 'speaking' : 'listening';
+  const interviewerState: InterviewerVisualState = isSpeakingTts
+    ? 'speaking'
+    : interviewerBehavior === 'reviewing-code'
+    ? 'reviewing-code'
+    : interviewerBehavior === 'taking-notes'
+    ? 'taking-notes'
+    : thinking
+    ? 'thinking'
+    : 'listening';
   const permissionsReady = camera && mic;
   const currentCompany = context.company.trim() || 'Target Company';
   const currentRole = context.role.trim() || 'Target Role';
@@ -1493,17 +1570,64 @@ Ask the next authentic follow-up question.`;
             </div>
           )}
 
+          {/* Top HUD: 45-Minute Bar-Raiser Timer & 5-Phase Interview Stepper */}
+          <div className="meeting-top-hud">
+            <div className="meeting-hud-left">
+              <span className="meeting-company-pill">
+                TARGET: {context.company || activeCompany.name || 'TIER-1 TECH'}
+              </span>
+              <span className="meeting-company-pill" style={{ background: 'rgba(56, 189, 248, 0.15)', borderColor: 'rgba(56, 189, 248, 0.4)', color: '#38bdf8' }}>
+                CALIBRATION: {context.role || 'STAFF / SENIOR SDE'}
+              </span>
+            </div>
+
+            <div className="meeting-hud-center">
+              <div className={`countdown-clock ${secondsRemaining < 300 ? 'danger' : secondsRemaining < 600 ? 'warning' : ''}`}>
+                <Clock size={13} />
+                <span>{formatTimer(secondsRemaining)} REMAINING</span>
+              </div>
+
+              <div className="phase-stepper-strip">
+                {[
+                  { num: 1, name: 'Intro' },
+                  { num: 2, name: 'Deep Dive' },
+                  { num: 3, name: 'Architecture' },
+                  { num: 4, name: 'System Stress' },
+                  { num: 5, name: 'Debrief' }
+                ].map(phase => (
+                  <span
+                    key={phase.num}
+                    className={`phase-step-node ${currentPhase.number === phase.num ? 'active' : currentPhase.number > phase.num ? 'completed' : ''}`}
+                  >
+                    P{phase.num}: {phase.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Voice Split-Screen Grid */}
           <div className="meet-split-grid">
-            {/* Tile 1 (Left 50%): Calm Audio-Reactive Voice Orb Visualizer */}
+            {/* Tile 1 (Left 50%): Photorealistic Video Avatar or Audio-Reactive Voice Orb Visualizer */}
             <div className="meet-video-tile avatar-tile-meet">
-              <VoiceOrbVisualizer
-                state={interviewerState}
-                subtitles={subtitles ? latestPanel : undefined}
-                interviewerName="Alex Rivera"
-                companyName={context.company || activeCompany.name}
-                roleTitle="Staff Software Engineer"
-              />
+              {visualMode === 'avatar' ? (
+                <HumanInterviewerAvatar
+                  state={interviewerState}
+                  subtitles={subtitles ? latestPanel : undefined}
+                  interviewerName="Alex Rivera"
+                  companyName={context.company || activeCompany.name}
+                  roleTitle="Staff Software Engineer"
+                  onInterrupt={interruptAlex}
+                />
+              ) : (
+                <VoiceOrbVisualizer
+                  state={interviewerState}
+                  subtitles={subtitles ? latestPanel : undefined}
+                  interviewerName="Alex Rivera"
+                  companyName={context.company || activeCompany.name}
+                  roleTitle="Staff Software Engineer"
+                />
+              )}
 
               <div className="meet-phase-indicator">
                 {currentPhase.label.toUpperCase()}
@@ -1611,6 +1735,36 @@ Ask the next authentic follow-up question.`;
                 <button type="button" onClick={() => insertArchitectureBlock('loadbalancer')}>+ Load Balancer</button>
               </div>
 
+              {/* Interactive System Architecture Canvas */}
+              {archNodes.length > 0 && (
+                <div className="architecture-visual-canvas">
+                  <div className="arch-canvas-header">
+                    <span>LIVE SYSTEM TOPOLOGY MAP ({archNodes.length} NODES)</span>
+                    <span>AGGREGATE SYSTEM LATENCY: ~{Math.max(...archNodes.map(n => parseFloat(n.latency) || 1)).toFixed(1)}ms</span>
+                  </div>
+                  <div className="arch-nodes-grid">
+                    {archNodes.map(node => (
+                      <div key={node.id} className="arch-system-node">
+                        <div className="arch-node-top">
+                          <span>{node.name}</span>
+                          <button
+                            type="button"
+                            className="arch-node-remove"
+                            title="Remove node"
+                            onClick={() => setArchNodes(nodes => nodes.filter(n => n.id !== node.id))}
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="arch-node-metric">
+                          ⚡ {node.latency} • 📊 {node.throughput}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="scratchpad-editor-wrapper">
                 <textarea
                   className="scratchpad-code-textarea"
@@ -1646,6 +1800,14 @@ Ask the next authentic follow-up question.`;
             </div>
 
             <div className="control-group-center">
+              <button
+                className={`call-action-btn ${visualMode === 'avatar' ? 'active' : ''}`}
+                onClick={() => setVisualMode(m => m === 'avatar' ? 'orb' : 'avatar')}
+                title="Switch between Photorealistic Video Feed and Voice Orb"
+              >
+                {visualMode === 'avatar' ? <Video size={18} /> : <Sparkles size={18} />}
+                <span>{visualMode === 'avatar' ? 'Avatar HD' : 'Voice Orb'}</span>
+              </button>
               <button className={`call-action-btn ${voice ? 'active' : ''}`} onClick={() => { setVoice(v => !v); if (voice) window.speechSynthesis?.cancel(); }} title="Interviewer Voice">
                 {voice ? <Volume2 size={18} /> : <VolumeX size={18} />}
                 <span>Voice {voice ? 'ON' : 'OFF'}</span>
