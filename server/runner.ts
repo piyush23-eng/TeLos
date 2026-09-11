@@ -29,7 +29,7 @@ export function checkCodeSecurity(code: string, language: string): { safe: boole
       if (pattern.test(code)) {
         return {
           safe: false,
-          reason: 'Security Sandbox Notice: System-level OS/network calls and process manipulation are blocked in the candidate sandbox. Please focus strictly on algorithmic & data structure implementation.'
+          reason: 'Constrained Environment Notice: System-level OS/network calls and process manipulation are restricted in this execution environment. Please focus strictly on algorithmic & data structure implementation.'
         };
       }
     }
@@ -226,103 +226,104 @@ async function runViaWandbox(code: string, language: 'java' | 'cpp' | 'c' | 'pyt
 
 async function runCpp(code: string): Promise<RunnerResult> {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'telos-cpp-'));
-  const sourcePath = path.join(tempDir, 'main.cpp');
-  const binaryPath = path.join(tempDir, 'main');
-  await fs.writeFile(sourcePath, code, 'utf8');
+  try {
+    const sourcePath = path.join(tempDir, 'main.cpp');
+    const binaryPath = path.join(tempDir, 'main');
+    await fs.writeFile(sourcePath, code, 'utf8');
 
-  const candidates = ['g++', 'clang++', 'c++', '/usr/bin/g++', '/usr/bin/clang++', '/usr/bin/c++'];
-  let compile: any = null;
-  for (const cmd of candidates) {
-    compile = safeSpawn(cmd, ['-std=c++17', sourcePath, '-O2', '-o', binaryPath], tempDir);
-    if (!compile.error || (compile.error as any).code !== 'ENOENT') {
-      break;
+    const candidates = ['g++', 'clang++', 'c++', '/usr/bin/g++', '/usr/bin/clang++', '/usr/bin/c++'];
+    let compile: any = null;
+    for (const cmd of candidates) {
+      compile = safeSpawn(cmd, ['-std=c++17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+      if (!compile.error || (compile.error as any).code !== 'ENOENT') {
+        break;
+      }
     }
-  }
 
-  if (compile?.error) {
-    await fs.rm(tempDir, { recursive: true, force: true });
-    // Host has no native C++ compiler -> Run via cloud compiler
-    return runViaPaiza(code, 'cpp');
-  }
-  if (compile.status !== 0) {
-    await fs.rm(tempDir, { recursive: true, force: true });
-    return { status: 'error', output: (compile.stderr || compile.stdout || 'C++ compilation error').trim() };
-  }
+    if (compile?.error) {
+      // Host has no native C++ compiler -> Run via cloud compiler
+      return runViaPaiza(code, 'cpp');
+    }
+    if (compile.status !== 0) {
+      return { status: 'error', output: (compile.stderr || compile.stdout || 'C++ compilation error').trim() };
+    }
 
-  const runResult = safeSpawn(binaryPath, [], tempDir);
-  await fs.rm(tempDir, { recursive: true, force: true });
-  if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
-  if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `Execution exited with code ${runResult.status}`).trim() };
-  return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
+    const runResult = safeSpawn(binaryPath, [], tempDir);
+    if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
+    if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `Execution exited with code ${runResult.status}`).trim() };
+    return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
 }
 
 async function runC(code: string): Promise<RunnerResult> {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'telos-c-'));
-  const sourcePath = path.join(tempDir, 'main.c');
-  const binaryPath = path.join(tempDir, 'main');
-  await fs.writeFile(sourcePath, code, 'utf8');
+  try {
+    const sourcePath = path.join(tempDir, 'main.c');
+    const binaryPath = path.join(tempDir, 'main');
+    await fs.writeFile(sourcePath, code, 'utf8');
 
-  const candidates = ['gcc', 'clang', 'cc', '/usr/bin/gcc', '/usr/bin/clang', '/usr/bin/cc'];
-  let compile: any = null;
-  for (const cmd of candidates) {
-    compile = safeSpawn(cmd, ['-std=c17', sourcePath, '-O2', '-o', binaryPath], tempDir);
-    if (!compile.error || (compile.error as any).code !== 'ENOENT') {
-      break;
+    const candidates = ['gcc', 'clang', 'cc', '/usr/bin/gcc', '/usr/bin/clang', '/usr/bin/cc'];
+    let compile: any = null;
+    for (const cmd of candidates) {
+      compile = safeSpawn(cmd, ['-std=c17', sourcePath, '-O2', '-o', binaryPath], tempDir);
+      if (!compile.error || (compile.error as any).code !== 'ENOENT') {
+        break;
+      }
     }
-  }
 
-  if (compile?.error) {
-    await fs.rm(tempDir, { recursive: true, force: true });
-    return runViaPaiza(code, 'c');
-  }
-  if (compile.status !== 0) {
-    await fs.rm(tempDir, { recursive: true, force: true });
-    return { status: 'error', output: (compile.stderr || compile.stdout || 'C compilation error').trim() };
-  }
+    if (compile?.error) {
+      return runViaPaiza(code, 'c');
+    }
+    if (compile.status !== 0) {
+      return { status: 'error', output: (compile.stderr || compile.stdout || 'C compilation error').trim() };
+    }
 
-  const runResult = safeSpawn(binaryPath, [], tempDir);
-  await fs.rm(tempDir, { recursive: true, force: true });
-  if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
-  if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `Execution exited with code ${runResult.status}`).trim() };
-  return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
+    const runResult = safeSpawn(binaryPath, [], tempDir);
+    if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
+    if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `Execution exited with code ${runResult.status}`).trim() };
+    return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
 }
 
 async function runJava(code: string): Promise<RunnerResult> {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'telos-java-'));
-  
-  // Extract class name or default to Solution
-  const match = code.match(/public\s+class\s+([A-Za-z0-9_]+)/) || code.match(/class\s+([A-Za-z0-9_]+)/);
-  const className = match ? match[1] : 'Solution';
-  const sourcePath = path.join(tempDir, `${className}.java`);
-  await fs.writeFile(sourcePath, code, 'utf8');
+  try {
+    // Extract class name or default to Solution
+    const match = code.match(/public\s+class\s+([A-Za-z0-9_]+)/) || code.match(/class\s+([A-Za-z0-9_]+)/);
+    const className = match ? match[1] : 'Solution';
+    const sourcePath = path.join(tempDir, `${className}.java`);
+    await fs.writeFile(sourcePath, code, 'utf8');
 
-  // Try direct single-file launch (available in Java 11+)
-  const directRun = safeSpawn('java', [sourcePath], tempDir);
-  if (!directRun.error) {
-    await fs.rm(tempDir, { recursive: true, force: true });
-    if (directRun.status !== 0) {
-      return { status: 'error', output: (directRun.stderr || directRun.stdout || `Java exited with code ${directRun.status}`).trim() };
+    // Try direct single-file launch (available in Java 11+)
+    const directRun = safeSpawn('java', [sourcePath], tempDir);
+    if (!directRun.error) {
+      if (directRun.status !== 0) {
+        return { status: 'error', output: (directRun.stderr || directRun.stdout || `Java exited with code ${directRun.status}`).trim() };
+      }
+      return { status: 'ok', output: (directRun.stdout || 'Program executed with no output.').trim() };
     }
-    return { status: 'ok', output: (directRun.stdout || 'Program executed with no output.').trim() };
-  }
 
-  // Fallback to javac compilation
-  const compile = safeSpawn('javac', [sourcePath], tempDir);
-  if (compile.error) {
-    await fs.rm(tempDir, { recursive: true, force: true });
-    // Host has no native OpenJDK -> Run via cloud compiler
-    return runViaPaiza(code, 'java');
-  }
-  if (compile.status !== 0) {
-    await fs.rm(tempDir, { recursive: true, force: true });
-    return { status: 'error', output: (compile.stderr || compile.stdout || 'Java compilation error').trim() };
-  }
+    // Fallback to javac compilation
+    const compile = safeSpawn('javac', [sourcePath], tempDir);
+    if (compile.error) {
+      // Host has no native OpenJDK -> Run via cloud compiler
+      return runViaPaiza(code, 'java');
+    }
+    if (compile.status !== 0) {
+      return { status: 'error', output: (compile.stderr || compile.stdout || 'Java compilation error').trim() };
+    }
 
-  const runResult = safeSpawn('java', ['-cp', tempDir, className], tempDir);
-  await fs.rm(tempDir, { recursive: true, force: true });
-  if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
-  if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `Java execution exited with code ${runResult.status}`).trim() };
-  return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
+    const runResult = safeSpawn('java', ['-cp', tempDir, className], tempDir);
+    if (runResult.error) return { status: 'error', output: String(runResult.error.message) };
+    if (runResult.status !== 0) return { status: 'error', output: (runResult.stderr || runResult.stdout || `Java execution exited with code ${runResult.status}`).trim() };
+    return { status: 'ok', output: (runResult.stdout || 'Program executed with no output.').trim() };
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
 }
 
 export async function runCodeSnippet(code: string, language: string, _problemId: string): Promise<RunnerResult> {

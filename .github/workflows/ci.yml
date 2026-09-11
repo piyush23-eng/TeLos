@@ -29,8 +29,11 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Run Typecheck / Lint
+        run: npm run lint
+
       - name: Run Vitest Unit & Integration Tests
         run: npm test
 
-      - name: Run TypeCheck & Production Build
+      - name: Run Production Build
         run: npm run build

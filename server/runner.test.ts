@@ -37,14 +37,14 @@ describe("runner", () => {
     const maliciousCode = "import os\nprint(os.environ)";
     const result = await runCodeSnippet(maliciousCode, "python", "test-sec-1");
     expect(result.status).toBe("error");
-    expect(result.output).toContain("Security Sandbox Notice");
+    expect(result.output).toContain("Constrained Environment Notice");
   });
 
   it("blocks subprocess execution attempts", async () => {
     const maliciousCode = "import subprocess\nsubprocess.run(['ls'])";
     const result = await runCodeSnippet(maliciousCode, "python", "test-sec-2");
     expect(result.status).toBe("error");
-    expect(result.output).toContain("Security Sandbox Notice");
+    expect(result.output).toContain("Constrained Environment Notice");
   });
 
   it("executes valid Java code snippet", async () => {
