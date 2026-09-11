@@ -23,15 +23,23 @@ TeLos is an open-source technical interview calibration studio built to bridge t
 
 ---
 
-## Screenshots & Demo
+## Screenshots & Product Walkthrough
 
-| Candidate Dashboard | Live AI Interview Session |
+| 01 // Live AI Interview Studio | 02 // Post-Interview Debrief Scorecard |
 | :---: | :---: |
-| ![Candidate Dashboard](docs/images/dashboard.png) | ![Live AI Interview](docs/images/interview.png) |
+| ![Live AI Interview Studio](docs/images/01-interview-studio.png)<br/><sub>**Live Studio:** Adaptive AI video interview (Alex Rivera), target context HUD, acoustic visualizer & code scratchpad</sub> | ![Post-Interview Debrief Scorecard](docs/images/02-debrief-scorecard.png)<br/><sub>**Debrief Scorecard:** Calibrated 88/100 score, 6 radial metrics, and "What You Said" vs "Ideal High-Bar Response"</sub> |
 
-| Post-Interview Debrief Scorecard | Proctored Coding Assessment |
+| 03 // Company Prep Playbooks (47 Companies) | 04 // Proctored Coding Assessment |
 | :---: | :---: |
-| ![Debrief Scorecard](docs/images/scorecard.png) | ![Proctored Assessment](docs/images/assessment.png) |
+| ![Company Prep Playbooks](docs/images/03-company-prep.png)<br/><sub>**Company Blueprints:** 47 curated company roadmaps, 6-week prep schedules, Bar Raiser rubrics & past patterns</sub> | ![Proctored Coding Assessment](docs/images/04-proctored-assessment.png)<br/><sub>**Proctored Screen:** Timed 75-min DSA screen with browser-side attention tracking & multi-language editor</sub> |
+
+| 05 // Algorithmic Drills & Coding Workbench | 06 // Performance Telemetry & Analytics |
+| :---: | :---: |
+| ![Algorithmic Drills Workbench](docs/images/05-drills-workbench.png)<br/><sub>**Practice Workbench:** 24 system implementation problems with Python/JS/C++/Java sandbox test runner</sub> | ![Performance Analytics](docs/images/06-performance-analytics.png)<br/><sub>**Cadence Telemetry:** Longitudinal tracking for speaking pace (WPM), verbal filler decay, and answer quality</sub> |
+
+| 07 // Private Candidate Dashboard | 08 // Community & Discussion Hub |
+| :---: | :---: |
+| ![Candidate Dashboard](docs/images/07-candidate-dashboard.png)<br/><sub>**Candidate Space:** 84 Readiness Index, 7-day practice streak, skill coverage map, and 10-week practice rhythm</sub> | ![Community Discussion Hub](docs/images/08-community-discuss.png)<br/><sub>**Community Hub:** Peer discussions, interview debriefs, system design trade-offs, and verified compensation offers</sub> |
 
 ---
 
