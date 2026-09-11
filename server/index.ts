@@ -21,7 +21,7 @@ app.use(express.json());
 void bootstrapDatabase();
 
 // System Health & Diagnostics
-app.get('/health', async (_req, res) => {
+app.get(['/health', '/api/health'], async (_req, res) => {
   let dbStatus = 'disconnected';
   try {
     await prisma.$queryRaw`SELECT 1`;

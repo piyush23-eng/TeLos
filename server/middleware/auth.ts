@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import type { Request, Response, NextFunction } from 'express';
-import { prisma } from '../lib/prisma';
+import { prisma, isDbConnected } from '../lib/prisma';
 import { config } from '../lib/config';
 
 const scrypt = promisify(scryptCallback);
@@ -10,33 +10,37 @@ export interface StoredUser {
   id: string;
   name: string;
   email: string;
-  passwordHash?: string | null;
+  passwordHash: string | null;
   provider: string;
-  bio: string;
-  linkedin: string;
-  github: string;
-  experience: string;
-  projects: string;
+  bio?: string;
+  linkedin?: string;
+  github?: string;
+  experience?: string;
+  projects?: string;
 }
 
 export const memoryUsers = new Map<string, StoredUser>();
 
 export const userStore = {
   findByEmail: async (email: string): Promise<StoredUser | null> => {
-    try {
-      const dbUser = await prisma.user.findUnique({ where: { email } });
-      if (dbUser) return dbUser as StoredUser;
-    } catch {
-      // Prisma offline/schema fallback
+    if (isDbConnected) {
+      try {
+        const dbUser = await prisma.user.findUnique({ where: { email } });
+        if (dbUser) return dbUser as StoredUser;
+      } catch {
+        // Prisma offline/schema fallback
+      }
     }
     return memoryUsers.get(email.toLowerCase()) || null;
   },
   findById: async (id: string): Promise<StoredUser | null> => {
-    try {
-      const dbUser = await prisma.user.findUnique({ where: { id } });
-      if (dbUser) return dbUser as StoredUser;
-    } catch {
-      // Prisma offline/schema fallback
+    if (isDbConnected) {
+      try {
+        const dbUser = await prisma.user.findUnique({ where: { id } });
+        if (dbUser) return dbUser as StoredUser;
+      } catch {
+        // Prisma offline/schema fallback
+      }
     }
     for (const u of memoryUsers.values()) {
       if (u.id === id) return u;
@@ -56,28 +60,32 @@ export const userStore = {
       experience: '',
       projects: ''
     };
-    try {
-      const dbUser = await prisma.user.create({
-        data: {
-          name: data.name,
-          email: data.email.toLowerCase(),
-          passwordHash: data.passwordHash,
-          provider: data.provider || 'email'
-        }
-      });
-      if (dbUser) return dbUser as StoredUser;
-    } catch {
-      // Prisma schema push / lock fallback
+    if (isDbConnected) {
+      try {
+        const dbUser = await prisma.user.create({
+          data: {
+            name: data.name,
+            email: data.email.toLowerCase(),
+            passwordHash: data.passwordHash,
+            provider: data.provider || 'email'
+          }
+        });
+        if (dbUser) return dbUser as StoredUser;
+      } catch {
+        // Prisma schema push / lock fallback
+      }
     }
     memoryUsers.set(newUser.email, newUser);
     return newUser;
   },
   update: async (id: string, data: Partial<StoredUser>): Promise<StoredUser | null> => {
-    try {
-      const updated = await prisma.user.update({ where: { id }, data });
-      if (updated) return updated as StoredUser;
-    } catch {
-      // Prisma fallback
+    if (isDbConnected) {
+      try {
+        const updated = await prisma.user.update({ where: { id }, data });
+        if (updated) return updated as StoredUser;
+      } catch {
+        // Prisma fallback
+      }
     }
     for (const [em, u] of memoryUsers.entries()) {
       if (u.id === id) {

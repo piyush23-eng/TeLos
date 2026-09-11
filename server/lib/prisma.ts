@@ -5,12 +5,18 @@ process.env.DATABASE_URL = config.databaseUrl;
 
 export const prisma = new PrismaClient();
 
-export async function bootstrapDatabase(): Promise<void> {
+export let isDbConnected = false;
+
+export async function bootstrapDatabase(): Promise<boolean> {
   try {
     await prisma.$connect();
     await prisma.$queryRaw`SELECT 1`;
+    isDbConnected = true;
+    return true;
   } catch (err: any) {
+    isDbConnected = false;
     console.warn('Prisma bootstrap notice:', err?.message);
+    return false;
   }
 }
 
