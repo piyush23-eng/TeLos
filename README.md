@@ -223,12 +223,16 @@ TeLos/
 │   ├── voiceMetrics.test.ts  # Tests for WPM math and filler word parsing
 │   ├── roadmap.css           # UI styling, layouts, and dark mode theme
 │   └── styles.css            # Base styles and reset
+├── scripts/
+│   ├── keepalive.ts          # Automated database & healthcheck keep-alive probe
+│   └── setup-jdk.mjs         # OpenJDK runtime bootstrapper
 ├── prisma/
 │   ├── schema.prisma         # PostgreSQL data models (User, Session, Question, Score)
 │   └── seed.ts               # Telemetry and problem dataset seeder
 ├── .github/
 │   └── workflows/
-│       └── ci.yml            # CI workflow for automated testing and typechecks
+│       ├── ci.yml            # Automated CI testing and build verification
+│       └── keepalive.yml     # Scheduled cron job to keep cloud database active
 ├── Dockerfile                # Multi-stage production container definition
 ├── render.yaml               # Render cloud deployment blueprint
 └── package.json              # Dependencies, build, and test scripts
