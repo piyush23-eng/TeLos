@@ -3,7 +3,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bookmark, Bot, Briefcase, Check, CheckCheck, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, Code2, Copy, Download, ExternalLink, FileText, Github, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldCheck, Sparkles, Square, Sun, Terminal, ThumbsUp, TrendingUp, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, Bookmark, Bot, Briefcase, Check, CheckCheck, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, Code2, Copy, Download, ExternalLink, Eye, EyeOff, FileText, Github, Hand, HelpCircle, Layers, LayoutDashboard, Lightbulb, LockKeyhole, LogOut, MessageCircle, Mic, MicOff, Moon, Pause, Play, Printer, Radio, RotateCcw, Search, Send, ShieldAlert, ShieldCheck, Sparkles, Square, Sun, Terminal, ThumbsUp, TrendingUp, Upload, Users, Video, VideoOff, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import { companyPrepCatalog, type CompanyPrepItem } from './companyPrepData';
 import { problemCatalog, type DrillProblem } from './problemCatalog';
 import { Assessment } from './Assessment';
@@ -237,6 +237,28 @@ function Studio() {
     if (!started || report) return;
     const timer = setInterval(() => setSecondsRemaining(s => Math.max(0, s - 1)), 1000);
     return () => clearInterval(timer);
+  }, [started, report]);
+
+  // Conversational Bridge & Proctoring Telemetry State
+  const [conversationalFiller, setConversationalFiller] = useState('');
+  const [tabSwitches, setTabSwitches] = useState(0);
+  const [pasteEvents, setPasteEvents] = useState(0);
+  const [proctorToast, setProctorToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!started || report) return;
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitches(prev => {
+          const next = prev + 1;
+          setProctorToast(`⚠️ Focus Alert: Tab switch detected (${next} alert${next > 1 ? 's' : ''}). Please remain on the active assessment window.`);
+          setTimeout(() => setProctorToast(null), 5000);
+          return next;
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [started, report]);
 
   const formatTimer = (totalSeconds: number) => {
@@ -826,6 +848,7 @@ Ask the next authentic follow-up question.`;
       resolvedQuestion = fallbackQuestion;
     }
 
+    setConversationalFiller('');
     upsertStreamingPanel(resolvedQuestion, true);
     playVoice(resolvedQuestion);
     followUpLock.current = false;
@@ -848,6 +871,17 @@ Ask the next authentic follow-up question.`;
     const pace = calculateSpeakingPace(wordCount, elapsedMinutes);
     const fillerStats = countFillerWords(allYouText);
     setSpeechStats({ words: wordCount, pace, fillers: fillerStats.count, lastUpdated: Date.now() });
+
+    // Instant Zero-Latency Conversational Bridge
+    const CONVERSATIONAL_FILLERS = [
+      "Got it. Analyzing your approach...",
+      "Understood. Looking into your system architecture...",
+      "Right, interesting trade-off. Let me review that...",
+      "Makes sense. Evaluating your edge-case handling...",
+      "Understood, let's explore that design decision..."
+    ];
+    const filler = CONVERSATIONAL_FILLERS[Math.floor(Math.random() * CONVERSATIONAL_FILLERS.length)];
+    setConversationalFiller(filler);
 
     setInterviewerBehavior('taking-notes');
     setTimeout(() => {
@@ -1604,7 +1638,30 @@ Ask the next authentic follow-up question.`;
                 ))}
               </div>
             </div>
+
+            <div className="meeting-hud-right" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {tabSwitches > 0 ? (
+                <span className="proctor-hud-pill danger" title={`${tabSwitches} window blur/tab switches recorded`}>
+                  <EyeOff size={12} /> {tabSwitches} FOCUS ALERT{tabSwitches > 1 ? 'S' : ''}
+                </span>
+              ) : (
+                <span className="proctor-hud-pill safe" title="Active window tracking: Verified">
+                  <ShieldCheck size={12} /> FOCUS VERIFIED
+                </span>
+              )}
+            </div>
           </div>
+
+          {/* Proctoring Integrity Alert Toast */}
+          {proctorToast && (
+            <div className="proctor-alert-toast">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ShieldAlert size={15} />
+                <span>{proctorToast}</span>
+              </div>
+              <button type="button" onClick={() => setProctorToast(null)}>Dismiss</button>
+            </div>
+          )}
 
           {/* Voice Split-Screen Grid */}
           <div className="meet-split-grid">
@@ -1613,7 +1670,7 @@ Ask the next authentic follow-up question.`;
               {visualMode === 'avatar' ? (
                 <HumanInterviewerAvatar
                   state={interviewerState}
-                  subtitles={subtitles ? latestPanel : undefined}
+                  subtitles={subtitles ? (conversationalFiller || latestPanel) : undefined}
                   interviewerName="Alex Rivera"
                   companyName={context.company || activeCompany.name}
                   roleTitle="Staff Software Engineer"
@@ -1622,7 +1679,7 @@ Ask the next authentic follow-up question.`;
               ) : (
                 <VoiceOrbVisualizer
                   state={interviewerState}
-                  subtitles={subtitles ? latestPanel : undefined}
+                  subtitles={subtitles ? (conversationalFiller || latestPanel) : undefined}
                   interviewerName="Alex Rivera"
                   companyName={context.company || activeCompany.name}
                   roleTitle="Staff Software Engineer"
@@ -1770,6 +1827,12 @@ Ask the next authentic follow-up question.`;
                   className="scratchpad-code-textarea"
                   value={code}
                   onChange={e => setCode(e.target.value)}
+                  onPaste={e => {
+                    const pasted = e.clipboardData?.getData('text') || '';
+                    if (pasted.length > 100) {
+                      setPasteEvents(p => p + 1);
+                    }
+                  }}
                   spellCheck={false}
                   placeholder="// Optional scratchpad. Talk through your system design or algorithm aloud with Alex..."
                 />
@@ -2036,6 +2099,7 @@ Ask the next authentic follow-up question.`;
           messages={messages}
           context={context}
           speechStats={speechStats}
+          proctorData={{ tabSwitches, pasteEvents }}
           close={() => {
             setReport(false);
             setStarted(false);
@@ -2091,11 +2155,13 @@ function Report({
   messages,
   context,
   speechStats,
+  proctorData,
   close,
 }: {
   messages: Message[];
   context: typeof defaultInterviewContext;
   speechStats: { words?: number; pace?: number; lastUpdated?: number; fillers?: number };
+  proctorData?: { tabSwitches: number; pasteEvents: number };
   close: () => void;
 }) {
   const [loading, setLoading] = useState(true);
@@ -2111,6 +2177,14 @@ function Report({
 
     const apiKey = getStoredOpenRouterKey();
     const model = getStoredOpenRouterModel();
+    const switches = proctorData?.tabSwitches ?? 0;
+    const pastes = proctorData?.pasteEvents ?? 0;
+    const focusIntegrityScore = Math.max(0, 100 - (switches * 10) - (pastes * 5));
+    const finalProctorStats = {
+      tabSwitches: switches,
+      pasteEvents: pastes,
+      focusIntegrityScore
+    };
 
     fetch(apiUrl('/api/interview/debrief'), {
       method: 'POST',
@@ -2122,6 +2196,7 @@ function Report({
         resume: context.resume,
         focus: context.focus,
         speechStats,
+        proctorStats: finalProctorStats,
         customApiKey: apiKey,
         modelName: model,
       }),
@@ -2129,7 +2204,7 @@ function Report({
       .then(res => res.json())
       .then(data => {
         if (data && data.scores) {
-          setDebrief(data);
+          setDebrief({ ...data, proctorStats: finalProctorStats });
           setLoading(false);
         } else {
           throw new Error('Invalid backend debrief response');
@@ -2148,14 +2223,14 @@ function Report({
             apiKey,
             model,
           });
-          setDebrief(directData);
+          setDebrief({ ...directData, proctorStats: finalProctorStats });
         } catch (directErr) {
           console.error('Direct OpenRouter debrief error:', directErr);
         } finally {
           setLoading(false);
         }
       });
-  }, [messages, context, speechStats]);
+  }, [messages, context, speechStats, proctorData]);
 
   const copySummary = () => {
     if (!debrief) return;
@@ -2349,6 +2424,17 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
                   {debrief.cadenceMetrics?.succinctness || 'Direct'}
                 </span>
                 <span className="telemetry-sub">STAR structural alignment</span>
+              </div>
+              <div className="telemetry-stat-item">
+                <span className="telemetry-label">
+                  <ShieldCheck size={11} /> PROCTOR INTEGRITY
+                </span>
+                <span className="telemetry-val" style={{ color: (debrief.proctorStats?.focusIntegrityScore ?? 100) >= 80 ? '#4ade80' : '#f87171' }}>
+                  {debrief.proctorStats?.focusIntegrityScore ?? 100}%
+                </span>
+                <span className="telemetry-sub">
+                  {(debrief.proctorStats?.tabSwitches ?? 0) === 0 ? 'Zero focus loss detected' : `${debrief.proctorStats.tabSwitches} window blur events`}
+                </span>
               </div>
             </div>
 

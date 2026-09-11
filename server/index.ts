@@ -18,6 +18,62 @@ const intelligence = new IntelligenceProvider();
 const prisma = new PrismaClient();
 const scrypt = promisify(scryptCallback);
 const sessionSecret = process.env.AUTH_SESSION_SECRET || 'telos-development-secret-change-me';
+if (sessionSecret === 'telos-development-secret-change-me' && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ [SECURITY] Using default AUTH_SESSION_SECRET in production. Set AUTH_SESSION_SECRET in your environment variables.');
+}
+
+// Sliding-window In-Memory Rate Limiter for DoS and Quota Protection
+function createRateLimiter(options: { windowMs: number; max: number; message?: string }) {
+  const requests = new Map<string, number[]>();
+
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.socket.remoteAddress) || '127.0.0.1';
+    const now = Date.now();
+    const windowStart = now - options.windowMs;
+
+    const timestamps = (requests.get(ip) || []).filter(t => t > windowStart);
+    if (timestamps.length >= options.max) {
+      const retryAfter = Math.ceil((timestamps[0] + options.windowMs - now) / 1000);
+      res.setHeader('Retry-After', Math.max(1, retryAfter));
+      return res.status(429).json({
+        error: options.message || 'Too many requests. Please slow down.',
+        retryAfterSeconds: Math.max(1, retryAfter)
+      });
+    }
+
+    timestamps.push(now);
+    requests.set(ip, timestamps);
+
+    if (requests.size > 5000) {
+      for (const [key, list] of requests.entries()) {
+        if (list.length === 0 || list[list.length - 1] < windowStart) {
+          requests.delete(key);
+        }
+      }
+    }
+
+    next();
+  };
+}
+
+const runRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: 'Code execution rate limit exceeded (max 20 executions/minute).'
+});
+
+const interviewRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: 'Interviewer query rate limit exceeded (max 60 queries/minute).'
+});
+
+const authRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 15,
+  message: 'Too many authentication attempts. Please wait 1 minute before retrying.'
+});
 
 // Resilient in-memory user cache to guarantee zero downtime even if DB is initializing
 interface StoredUser {
@@ -235,7 +291,7 @@ app.get('/api/analytics', (_req, res) => res.json({ sessions: demoSessions }));
 app.get('/api/problems', (_req, res) => res.json({ problems }));
 app.get('/api/personas', (_req, res) => res.json({ personas }));
 app.get('/api/community', (_req, res) => res.json({ posts: communityPosts }));
-app.post('/api/auth/signup', async (req, res, next) => {
+app.post('/api/auth/signup', authRateLimiter, async (req, res, next) => {
   try {
     const name = String(req.body.name || '').trim(); const email = String(req.body.email || '').trim().toLowerCase(); const password = String(req.body.password || '');
     if (name.length < 2 || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) return res.status(400).json({ error: 'Use a name, a valid email, and a password with at least 8 characters.' });
@@ -245,7 +301,7 @@ app.post('/api/auth/signup', async (req, res, next) => {
     res.status(201).json({ user: publicUser(user), token: makeToken(user) });
   } catch (error) { next(error); }
 });
-app.post('/api/auth/login', async (req, res, next) => {
+app.post('/api/auth/login', authRateLimiter, async (req, res, next) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase(); const password = String(req.body.password || '');
     const user = await userStore.findByEmail(email);
@@ -559,10 +615,10 @@ app.get('/api/interviewer/test', async (_req, res, next) => {
     res.status(500).json({ realApiCallMade: true, error: error?.message || String(error) });
   }
 });
-app.post('/api/interviewer/next', async (req, res, next) => {
+app.post('/api/interviewer/next', interviewRateLimiter, async (req, res, next) => {
   try { res.json(await intelligence.nextQuestion(req.body)); } catch (error) { next(error); }
 });
-app.post('/api/interviewer/next/stream', async (req, res, next) => {
+app.post('/api/interviewer/next/stream', interviewRateLimiter, async (req, res, next) => {
   try {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -581,7 +637,7 @@ app.post('/api/interviewer/next/stream', async (req, res, next) => {
     res.end();
   } catch (error) { next(error); }
 });
-app.post('/api/run', async (req, res, next) => {
+app.post('/api/run', runRateLimiter, async (req, res, next) => {
   try {
     const result = await runCodeSnippet(String(req.body.code || ''), String(req.body.language || 'js'), String(req.body.problemId || ''));
     res.json(result);
@@ -699,7 +755,7 @@ app.post('/api/tts', async (req, res, next) => {
   }
 });
 
-app.post('/api/interview/debrief', async (req, res, next) => {
+app.post('/api/interview/debrief', interviewRateLimiter, async (req, res, next) => {
   try {
     const { transcript = [], company, role, resume, focus, speechStats, customApiKey, modelName } = req.body;
     const report = await intelligence.generateDebriefReport({

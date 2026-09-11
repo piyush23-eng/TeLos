@@ -17,13 +17,45 @@ export type RunnerResult = {
   output: string;
 };
 
+const DANGEROUS_PATTERNS = [
+  /\b(os|subprocess|shutil|socket|pty|ctypes)\b/i,
+  /\b(rmdir|unlink|remove|system|popen|spawn|fork)\s*\(/i,
+  /__import__\s*\(\s*['"](os|subprocess|sys|shutil|socket|pty|ctypes)['"]\s*\)/i
+];
+
+export function checkCodeSecurity(code: string, language: string): { safe: boolean; reason?: string } {
+  if (language === 'python' || language === 'cpp' || language === 'c') {
+    for (const pattern of DANGEROUS_PATTERNS) {
+      if (pattern.test(code)) {
+        return {
+          safe: false,
+          reason: 'Security Sandbox Notice: System-level OS/network calls and process manipulation are blocked in the candidate sandbox. Please focus strictly on algorithmic & data structure implementation.'
+        };
+      }
+    }
+  }
+  return { safe: true };
+}
+
 function safeSpawn(command: string, args: string[], cwd?: string) {
   try {
+    // SECURITY: Completely isolate child process environment.
+    // Explicitly purge process.env to prevent leakage of DATABASE_URL, OPENROUTER_API_KEY, AUTH_SESSION_SECRET.
+    const minimalEnv = {
+      PATH: process.env.PATH || '',
+      LANG: 'en_US.UTF-8',
+      LC_ALL: 'en_US.UTF-8',
+      TMPDIR: os.tmpdir(),
+      HOME: os.tmpdir(),
+      PYTHONDONTWRITEBYTECODE: '1'
+    };
+
     return spawnSync(command, args, {
-      cwd,
+      cwd: cwd || os.tmpdir(),
+      env: minimalEnv,
       encoding: 'utf8',
-      timeout: 6000,
-      maxBuffer: 10 * 1024 * 1024,
+      timeout: 4000,
+      maxBuffer: 5 * 1024 * 1024,
     });
   } catch (err: any) {
     return {
@@ -227,6 +259,10 @@ async function runJava(code: string): Promise<RunnerResult> {
 }
 
 export async function runCodeSnippet(code: string, language: string, _problemId: string): Promise<RunnerResult> {
+  const sec = checkCodeSecurity(code, language);
+  if (!sec.safe) {
+    return { status: 'error', output: sec.reason || 'Restricted operation blocked by security sandbox.' };
+  }
   if (language === 'c') {
     return runC(code);
   }

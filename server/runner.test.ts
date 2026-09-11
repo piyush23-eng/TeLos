@@ -32,4 +32,18 @@ describe("runner", () => {
       expect(result.output).toBeDefined();
     }
   });
+
+  it("blocks dangerous OS and subprocess calls in Python sandbox", async () => {
+    const maliciousCode = "import os\nprint(os.environ)";
+    const result = await runCodeSnippet(maliciousCode, "python", "test-sec-1");
+    expect(result.status).toBe("error");
+    expect(result.output).toContain("Security Sandbox Notice");
+  });
+
+  it("blocks subprocess execution attempts", async () => {
+    const maliciousCode = "import subprocess\nsubprocess.run(['ls'])";
+    const result = await runCodeSnippet(maliciousCode, "python", "test-sec-2");
+    expect(result.status).toBe("error");
+    expect(result.output).toContain("Security Sandbox Notice");
+  });
 });
