@@ -34,15 +34,25 @@ interface StoredUser {
 }
 const memoryUsers = new Map<string, StoredUser>();
 
-// Database bootstrap helper
+// Database bootstrap & automated keep-alive helper
 async function bootstrapDatabase() {
   try {
     await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
   } catch (err: any) {
     console.warn('Prisma bootstrap notice:', err?.message);
   }
 }
 void bootstrapDatabase();
+
+// Periodic keep-alive ping every 6 hours while server is active
+setInterval(async () => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    // silent catch to maintain uptime
+  }
+}, 1000 * 60 * 60 * 6);
 
 const userStore = {
   findByEmail: async (email: string): Promise<StoredUser | null> => {
@@ -205,9 +215,22 @@ const communityPosts: any[] = [
   }
 ];
 
-app.get('/health', (_req, res) =>
-  res.json({ status: 'ok', mode: intelligence.mode, llm: intelligence.llm, deepgram: Boolean(process.env.DEEPGRAM_API_KEY) })
-);
+app.get('/health', async (_req, res) => {
+  let dbStatus = 'disconnected';
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = 'connected';
+  } catch {
+    dbStatus = 'fallback';
+  }
+  res.json({
+    status: 'ok',
+    database: dbStatus,
+    mode: intelligence.mode,
+    llm: intelligence.llm,
+    deepgram: Boolean(process.env.DEEPGRAM_API_KEY)
+  });
+});
 app.get('/api/analytics', (_req, res) => res.json({ sessions: demoSessions }));
 app.get('/api/problems', (_req, res) => res.json({ problems }));
 app.get('/api/personas', (_req, res) => res.json({ personas }));
