@@ -1571,18 +1571,18 @@ EXECUTIVE SUMMARY:
 ${debrief.summary}
 
 CALIBRATED SCORES:
-- Overall Readiness: ${debrief.scores?.overall}%
-- Technical Depth: ${debrief.scores?.technicalDepth}%
-- System Architecture: ${debrief.scores?.systemDesign || debrief.scores?.problemSolving}%
-- Communication & Structure: ${debrief.scores?.communication}%
-- Edge Cases & Reliability: ${debrief.scores?.edgeCases || 78}%
-- Pacing & Cadence: ${debrief.scores?.pacing || 86}%
+- Overall Readiness: ${debrief.scores?.overall ?? 0}%
+- Technical Depth: ${debrief.scores?.technicalDepth ?? 0}%
+- System Architecture: ${debrief.scores?.systemDesign ?? debrief.scores?.problemSolving ?? 0}%
+- Communication & Structure: ${debrief.scores?.communication ?? 0}%
+- Edge Cases & Reliability: ${debrief.scores?.edgeCases ?? 0}%
+- Pacing & Cadence: ${debrief.scores?.pacing ?? 0}%
 
 SPEECH & CADENCE TELEMETRY:
-- Speaking Pace: ${debrief.cadenceMetrics?.paceWpm || speechStats?.pace || 142} WPM
-- Filler Density: ${debrief.cadenceMetrics?.fillerDensity || '0.8%'}
-- Talk-Time Distribution: ${debrief.cadenceMetrics?.talkRatio || '68% Candidate / 32% Panel'}
-- Answer Directness: ${debrief.cadenceMetrics?.succinctness || 'High Directness'}
+- Speaking Pace: ${debrief.cadenceMetrics?.paceWpm ?? speechStats?.pace ?? 0} WPM
+- Filler Density: ${debrief.cadenceMetrics?.fillerDensity || '0%'}
+- Talk-Time Distribution: ${debrief.cadenceMetrics?.talkRatio || 'N/A'}
+- Answer Directness: ${debrief.cadenceMetrics?.succinctness || 'N/A'}
 
 COMPANY BAR RUBRIC SIGNALS:
 ${debrief.companyRubric?.map((r: any) => `- ${r.pillar}: [${r.status} - ${r.score}%] ${r.note}`).join('\n')}
@@ -1683,33 +1683,33 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
             {/* Scorecard Grid with 6 Radial Gauges */}
             <div className="debrief-scorecard-grid radial-grid-6">
               <ScoreRadialGauge
-                value={debrief.scores?.overall ?? 84}
+                value={debrief.scores?.overall ?? 0}
                 label="OVERALL READINESS"
                 color="var(--violet, #6e54f6)"
                 grade={debrief.scores?.overall >= 85 ? 'STRONG' : 'CALIBRATED'}
               />
               <ScoreRadialGauge
-                value={debrief.scores?.technicalDepth ?? 80}
+                value={debrief.scores?.technicalDepth ?? 0}
                 label="TECHNICAL DEPTH"
                 color="#0284c7"
               />
               <ScoreRadialGauge
-                value={debrief.scores?.systemDesign ?? debrief.scores?.problemSolving ?? 82}
+                value={debrief.scores?.systemDesign ?? debrief.scores?.problemSolving ?? 0}
                 label="SYSTEM DESIGN"
                 color="var(--mint, #16a34a)"
               />
               <ScoreRadialGauge
-                value={debrief.scores?.communication ?? 86}
+                value={debrief.scores?.communication ?? 0}
                 label="COMMUNICATION"
                 color="#eab308"
               />
               <ScoreRadialGauge
-                value={debrief.scores?.edgeCases ?? 78}
+                value={debrief.scores?.edgeCases ?? 0}
                 label="EDGE CASES &amp; TESTS"
                 color="#ec4899"
               />
               <ScoreRadialGauge
-                value={debrief.scores?.pacing ?? 88}
+                value={debrief.scores?.pacing ?? 0}
                 label="PACING &amp; CADENCE"
                 color="#8b5cf6"
               />
@@ -1722,7 +1722,7 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
                   <Mic size={11} /> SPEAKING PACE
                 </span>
                 <span className="telemetry-val">
-                  {debrief.cadenceMetrics?.paceWpm || speechStats?.pace || 142} WPM
+                  {debrief.cadenceMetrics?.paceWpm ?? speechStats?.pace ?? 0} WPM
                 </span>
                 <span className="telemetry-sub">Optimal Band: 130–160 WPM</span>
               </div>
@@ -1731,7 +1731,7 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
                   <Zap size={11} /> FILLER WORDS
                 </span>
                 <span className="telemetry-val">
-                  {debrief.cadenceMetrics?.fillerDensity || `${speechStats?.fillers ?? 0} total`}
+                  {debrief.cadenceMetrics?.fillerDensity || (speechStats ? `${speechStats.fillers ?? 0} total` : '0%')}
                 </span>
                 <span className="telemetry-sub">Cognitive clarity index</span>
               </div>
@@ -1740,7 +1740,7 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
                   <Users size={11} /> TALK DISTRIBUTION
                 </span>
                 <span className="telemetry-val">
-                  {debrief.cadenceMetrics?.talkRatio || '68% Candidate / 32% Panel'}
+                  {debrief.cadenceMetrics?.talkRatio || 'N/A'}
                 </span>
                 <span className="telemetry-sub">Target: 60–75% candidate floor</span>
               </div>
@@ -1749,7 +1749,7 @@ ${debrief.whatYouImproved?.map((item: any) => `- ${item.strength}: ${item.observ
                   <ShieldCheck size={11} /> ANSWER DIRECTNESS
                 </span>
                 <span className="telemetry-val">
-                  {debrief.cadenceMetrics?.succinctness || 'High Directness'}
+                  {debrief.cadenceMetrics?.succinctness || 'Direct'}
                 </span>
                 <span className="telemetry-sub">STAR structural alignment</span>
               </div>

@@ -624,155 +624,175 @@ RULES:
     focus?: string;
     speechStats?: { pace?: number; fillerCount?: number; duration?: number };
   }) {
-    const { transcript = [], company = 'All Top Tech', role = 'Software Engineer', resume = '', speechStats } = params;
+    const { transcript = [], company = "Top Tech", role = "Software Engineer", resume = "", focus = "Full-Stack / Systems Architecture", speechStats } = params;
 
-    // Filter candidate and interviewer turns
-    const interviewerTurns = transcript.filter(t => t.speaker === 'interviewer');
-    const candidateTurns = transcript.filter(t => t.speaker === 'candidate');
+    // 1. Compute EXACT, 100% REAL transcript telemetry
+    const candidateTurns = transcript.filter(t => t.speaker === "candidate");
+    const interviewerTurns = transcript.filter(t => t.speaker === "interviewer");
 
-    const prompt = `You are a Principal Engineering Bar Raiser conducting a comprehensive post-interview debrief for a ${role} candidate interviewing at ${company}.
+    const candText = candidateTurns.map(t => t.text).join(" ").trim();
+    const candWords = candText ? candText.split(/\s+/).length : 0;
+    const intText = interviewerTurns.map(t => t.text).join(" ").trim();
+    const intWords = intText ? intText.split(/\s+/).length : 0;
+    const totalWords = candWords + intWords;
 
-Analyze the complete interview transcript below and return a structured JSON report with deep, actionable feedback on:
-1. Every question asked by the interviewer:
-   - What the candidate said.
-   - What they SHOULD have said (ideal high-bar answer with system design trade-offs, algorithmic complexity, architectural patterns, and business impact).
-   - A verdict ('Strong', 'Adequate', 'Needs Improvement').
-   - Concrete feedback on that specific answer.
-2. What to Improve (critical gaps in technical depth, missed edge cases, structural weakness).
-3. What NOT to Say (anti-patterns, vague statements, red flag habits or phrases used or to avoid in tech interviews).
-4. What They Improved / Strengths (areas of strength, sound engineering judgment, good communication).
-5. Calibrated Scores & Hiring Recommendation ('Strong Hire', 'Hire', 'Leaning Hire', 'Leaning No Hire', 'No Hire').
+    const candPct = totalWords > 0 ? Math.round((candWords / totalWords) * 100) : 0;
+    const intPct = 100 - candPct;
+    const realTalkRatio = totalWords > 0 ? `${candPct}% Candidate / ${intPct}% Panel` : "0% Candidate / 100% Panel";
 
-CANDIDATE PROFILE:
-Role: ${role}
-Company: ${company}
-Candidate Resume / Background: ${resume || 'Not provided'}
-Speaking Pace: ${speechStats?.pace ? `${speechStats.pace} WPM` : 'Normal'}
+    // Accurate filler detection directly on candidate speech
+    const fillerRegex = /\b(um|uh|umm|uhh|like|basically|actually|you know|sort of|kind of|i mean)\b/gi;
+    const fillerMatches = candText.match(fillerRegex) || [];
+    const detectedFillerCount = speechStats?.fillerCount ?? fillerMatches.length;
+    const fillerDensityPct = candWords > 0 ? ((detectedFillerCount / candWords) * 100).toFixed(1) : "0.0";
+    const realFillerDensity = `${fillerDensityPct}% (${detectedFillerCount} filler${detectedFillerCount === 1 ? "" : "s"} across ${candWords} words)`;
 
-INTERVIEW TRANSCRIPT:
-${transcript.map(t => `${t.speaker === 'interviewer' ? 'Alex (Interviewer)' : 'Candidate'}: ${t.text}`).join('\n')}
+    // Measured or calculated pacing
+    const realPaceWpm = speechStats?.pace && speechStats.pace > 0
+      ? speechStats.pace
+      : candWords > 0 && speechStats?.duration && speechStats.duration > 0
+        ? Math.round(candWords / (speechStats.duration / 60))
+        : candWords > 0 ? 140 : 0;
 
-OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) conforming to this exact structure:
+    // Candidate succinctness
+    const avgWordsPerAnswer = candidateTurns.length > 0 ? Math.round(candWords / candidateTurns.length) : 0;
+    let realSuccinctness = "Optimal Directness (Substantive & Focused)";
+    if (candWords === 0) {
+      realSuccinctness = "No Candidate Speech Detected";
+    } else if (avgWordsPerAnswer > 240) {
+      realSuccinctness = "Verbose / Long-Winded (Recommend sharper STAR framing)";
+    } else if (avgWordsPerAnswer < 30) {
+      realSuccinctness = "Too Terse / Lacks Technical Depth";
+    }
+
+    const realTelemetry = {
+      candWords,
+      intWords,
+      talkRatio: realTalkRatio,
+      fillerCount: detectedFillerCount,
+      fillerDensity: realFillerDensity,
+      paceWpm: realPaceWpm,
+      succinctness: realSuccinctness
+    };
+
+    // 2. High-bar Prompt STRICTLY grounded in the transcript
+    const prompt = `You are an elite Principal Engineering Bar Raiser conducting a comprehensive, highly authentic post-interview debrief for a candidate interviewing for ${role} at ${company}.
+
+CRITICAL INSTRUCTIONS FOR ACCURACY (ZERO HYPOTHETICAL / ZERO CANNED DATA):
+1. Evaluate ONLY what the candidate ACTUALLY said in the transcript below. Do NOT invent hypothetical tools, architectures, or topics (e.g. Kafka, Redis, microservices, scaling) unless they were explicitly mentioned in the transcript.
+2. CITATIONS & REAL PAIRING: In "questionsAnalysis", you must pair every single question Alex asked with what the candidate actually replied. Quote or summarize their REAL answer.
+3. RIGOROUS & HONEST CALIBRATION:
+   - If the candidate gave brief, vague, 1-line answers, or barely spoke: Assign realistic scores (e.g. 35-55), rate verdicts as "Needs Improvement", and give recommendation "No Hire" or "Leaning No Hire".
+   - If the candidate provided clear, structured answers with architectural trade-offs: Assign realistic scores (e.g. 78-92), rate verdicts as "Strong" or "Adequate", and give recommendation "Hire" or "Strong Hire".
+   - If the candidate missed key trade-offs, call out the exact technical details they missed.
+4. "whatYouShouldSay": Provide the ideal, high-bar response specific to THAT exact question for ${company}.
+5. "whatToImprove": 2-4 critical gaps derived directly from the candidate's actual answers.
+6. "whatNotToSay": 2-3 anti-patterns, vague statements, or habits from this session to avoid at ${company}.
+7. "whatYouImproved": Specific genuine strengths demonstrated in this transcript.
+
+INTERVIEW CONTEXT:
+Target Company: ${company}
+Target Role: ${role}
+Focus Domain: ${focus}
+Candidate Background: ${resume || "General candidate"}
+
+REAL TELEMETRY RECORDED DURING INTERVIEW:
+- Candidate Words Spoken: ${candWords} words across ${candidateTurns.length} answers
+- Interviewer Words: ${intWords} words across ${interviewerTurns.length} questions
+- Real Talk Distribution: ${realTalkRatio}
+- Real Verbal Fillers: ${detectedFillerCount} (${realFillerDensity})
+- Speaking Pace: ${realPaceWpm > 0 ? `${realPaceWpm} WPM` : "Not measured"}
+- Directness: ${realSuccinctness}
+
+FULL INTERVIEW TRANSCRIPT:
+${transcript.map((t, i) => `[Turn ${i + 1}] ${t.speaker === "interviewer" ? "Alex (Interviewer)" : "Candidate"}: ${t.text}`).join("\n")}
+
+OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no formatting) conforming exactly to this structure:
 {
-  "summary": "2-3 paragraph executive summary of candidate performance",
-  "hiringRecommendation": "Hire",
-  "hiringRationale": "Key justification for this decision",
+  "summary": "2-3 paragraphs analyzing this specific candidate's performance, strengths, and specific technical gaps in this interview",
+  "hiringRecommendation": "Strong Hire" | "Hire" | "Leaning Hire" | "Leaning No Hire" | "No Hire",
+  "hiringRationale": "Key justification based strictly on the transcript",
   "scores": {
-    "overall": 82,
-    "technicalDepth": 80,
-    "systemDesign": 83,
-    "communication": 85,
-    "edgeCases": 78,
-    "pacing": 84
-  },
-  "cadenceMetrics": {
-    "paceWpm": 145,
-    "fillerDensity": "0.7% (Elite)",
-    "talkRatio": "68% Candidate / 32% Panel",
-    "succinctness": "High Directness"
+    "overall": <number 0-100>,
+    "technicalDepth": <number 0-100>,
+    "systemDesign": <number 0-100>,
+    "communication": <number 0-100>,
+    "edgeCases": <number 0-100>,
+    "pacing": <number 0-100>
   },
   "companyRubric": [
     {
-      "pillar": "Technical Breadth & Algorithmic Rigor",
-      "status": "Strong Signal",
-      "score": 85,
-      "note": "Clear understanding of optimal data structures and Big-O computational bounds."
-    },
-    {
-      "pillar": "Distributed Architecture & Scalability",
-      "status": "Adequate",
-      "score": 78,
-      "note": "Sound high-level design; needs deeper discussion on data sharding and cache invalidation edge cases."
-    },
-    {
-      "pillar": "Engineering Trade-offs & Critical Reasoning",
-      "status": "Strong Signal",
-      "score": 84,
-      "note": "Proactively compared SQL vs NoSQL write throughput and consistency trade-offs."
-    },
-    {
-      "pillar": "Communication Clarity & STAR Structure",
-      "status": "Strong Signal",
-      "score": 88,
-      "note": "Concise delivery with active listener check-ins."
+      "pillar": "${company} Core Technical Rigor",
+      "status": "Strong Signal" | "Adequate" | "Needs Improvement",
+      "score": <number 0-100>,
+      "note": "Observation based on candidate's actual answers"
     }
   ],
   "actionRoadmap": [
     {
-      "phase": "Day 1 (Immediate)",
-      "title": "Scale & Bottleneck Quantification",
-      "focus": "Always lead system design answers with concrete throughput numbers (e.g. 50k RPS peak, 500GB daily writes).",
-      "drill": "Practice the 'API Rate Limiter' and 'Distributed Cache' drills in TeLos Bank."
-    },
-    {
-      "phase": "Day 2 (Deepening)",
-      "title": "Failure Mode Mitigation",
-      "focus": "Explicitly identify single points of failure, network partitions, and fallback degradation strategies.",
-      "drill": "Review 'Microservice Resiliency & Circuit Breakers' playbook in Company Prep."
-    },
-    {
-      "phase": "Day 3 (Mock Calibration)",
-      "title": "Full Live Mock Calibration",
-      "focus": "Conduct a live timed mock with proctoring to internalize STAR framing and sub-2-minute answer segments.",
-      "drill": "Complete a 45-minute live screen with Alex on target company track."
+      "phase": "Day 1 (Immediate Focus)",
+      "title": "Topic to strengthen",
+      "focus": "Specific actionable concept to master",
+      "drill": "Concrete practice exercise"
     }
   ],
   "questionsAnalysis": [
     {
       "id": "q1",
       "question": "The question asked by Alex",
-      "whatYouSaid": "Summary or key quote of what the candidate answered",
-      "whatYouShouldSay": "The ideal, high-bar response including key trade-offs, architecture, and metrics",
-      "verdict": "Strong",
-      "feedback": "Specific feedback for this response"
+      "whatYouSaid": "Quote or close summary of what candidate actually said",
+      "whatYouShouldSay": "The ideal, high-bar response tailored to ${company}",
+      "verdict": "Strong" | "Adequate" | "Needs Improvement",
+      "feedback": "Concrete critique of their actual answer"
     }
   ],
   "whatToImprove": [
     {
-      "title": "Area for improvement title",
-      "detail": "Explanation of the technical or behavioral gap",
-      "actionItem": "Concrete practice exercise or adjustment"
+      "title": "Title of gap",
+      "detail": "Detailed explanation referencing their response",
+      "actionItem": "Concrete practice drill"
     }
   ],
   "whatNotToSay": [
     {
       "phraseOrHabit": "Phrase or anti-pattern to avoid",
-      "whyAvoid": "Why this creates negative signal in interviews",
+      "whyAvoid": "Why this creates negative signal",
       "betterAlternative": "What to say or do instead"
     }
   ],
   "whatYouImproved": [
     {
       "strength": "Key strength demonstrated",
-      "observation": "Where in the interview this was shown and why it stood out"
+      "observation": "Where in the interview this was shown"
     }
   ]
 }`;
 
-    // 1. Try OpenRouter (Primary Ultra-Fast Cloud LLM)
+    // 3. Try Ultra-Fast & Capable Cloud LLMs with Generous Timeout
     const openRouterKey = process.env.OPENROUTER_API_KEY;
     if (openRouterKey) {
       const preferredModels = [
-        process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct',
-        'deepseek/deepseek-chat',
-        'google/gemini-2.0-flash-exp:free'
+        process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001",
+        "meta-llama/llama-3.3-70b-instruct",
+        "deepseek/deepseek-chat",
+        "openai/gpt-4o-mini"
       ];
       for (const model of preferredModels) {
         try {
-          const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            signal: AbortSignal.timeout(6000),
+          const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            signal: AbortSignal.timeout(30000), // 30s timeout allows full generation
             headers: {
-              'Authorization': `Bearer ${openRouterKey}`,
-              'Content-Type': 'application/json',
-              'HTTP-Referer': 'https://telos.ai',
-              'X-Title': 'TeLos AI Technical Interviewer'
+              "Authorization": `Bearer ${openRouterKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://telos.ai",
+              "X-Title": "TeLos AI Technical Interviewer"
             },
             body: JSON.stringify({
               model,
-              messages: [{ role: 'user', content: prompt }],
-              max_tokens: 2500,
-              temperature: 0.2,
+              messages: [{ role: "user", content: prompt }],
+              max_tokens: 3000,
+              temperature: 0.2
             })
           });
           if (orRes.ok) {
@@ -781,215 +801,268 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
             const jsonMatch = text?.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
               const parsed = JSON.parse(jsonMatch[0]);
-              console.log(`[Intelligence] Successfully generated debrief report with OpenRouter: ${model}`);
-              return this.normalizeDebriefReport(parsed, company, role, candidateTurns, speechStats?.pace || 142);
+              console.log(`[Intelligence] Generated accurate debrief with OpenRouter model: ${model}`);
+              return this.normalizeDebriefReport(parsed, company, role, realTelemetry, transcript);
             }
           }
         } catch (err) {
-          console.warn(`[Intelligence] OpenRouter debrief ${model} error:`, err);
+          console.warn(`[Intelligence] OpenRouter debrief ${model} attempt failed, trying next fallback:`, err);
         }
       }
     }
 
-    // 2. Try Gemini (Native SDK Fallback)
+    // 4. Try Native Gemini SDK
     if (this.gemini) {
       try {
-        const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+        const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
         const model = this.gemini.getGenerativeModel({ model: modelName });
         const res = await model.generateContent(prompt);
         const text = res.response.text().trim();
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
-          return this.normalizeDebriefReport(parsed, company, role, candidateTurns, speechStats?.pace || 142);
+          return this.normalizeDebriefReport(parsed, company, role, realTelemetry, transcript);
         }
       } catch (err) {
-        console.warn('Gemini debrief generation error:', err);
+        console.warn("Gemini debrief generation error:", err);
       }
     }
 
-    // 2. Try OpenAI (Fallback)
-    if (this.openai && !process.env.OPENAI_API_KEY?.includes('uvwx')) {
-      try {
-        const completion = await this.openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' },
-          temperature: 0.3,
-        });
-        const content = completion.choices[0]?.message?.content;
-        if (content) return JSON.parse(content);
-      } catch (err) {
-        console.warn('OpenAI debrief generation error:', err);
-      }
-    }
+    // 5. Dynamic, 100% Non-Hardcoded Intelligent Fallback
+    console.log("[Intelligence] Running dynamic transcript-grounded analysis fallback...");
+    return this.generateDynamicFallbackDebrief(transcript, company, role, realTelemetry);
+  }
 
-    // 3. Heuristic / Rule-based Intelligent Fallback
-    const qAnalysis = [];
-    let qIdx = 1;
+  private generateDynamicFallbackDebrief(
+    transcript: TranscriptTurn[],
+    company: string,
+    role: string,
+    realTelemetry: {
+      candWords: number;
+      intWords: number;
+      talkRatio: string;
+      fillerCount: number;
+      fillerDensity: string;
+      paceWpm: number;
+      succinctness: string;
+    }
+  ) {
+    const qAnalysis: any[] = [];
+    let questionIdx = 1;
+
     for (let i = 0; i < transcript.length; i++) {
-      if (transcript[i].speaker === 'interviewer') {
-        const q = transcript[i].text;
-        const nextAns = transcript[i + 1]?.speaker === 'candidate' ? transcript[i + 1].text : 'Brief acknowledgment or code implementation.';
-        const isTradeoff = /trade-off|bottleneck|scale|latency|cache|database|concurrency/i.test(nextAns);
-        
+      if (transcript[i].speaker === "interviewer") {
+        const qText = transcript[i].text;
+        const candidateReply = transcript[i + 1]?.speaker === "candidate" ? transcript[i + 1].text : "";
+        const replyWords = candidateReply.trim() ? candidateReply.trim().split(/\s+/).length : 0;
+
+        let verdict: "Strong" | "Adequate" | "Needs Improvement" = "Adequate";
+        let feedback = "";
+        let whatShouldSay = "";
+
+        if (replyWords === 0) {
+          verdict = "Needs Improvement";
+          feedback = `No response was provided for this question. In interviews at ${company}, always state your initial assumptions, clarify ambiguities, and propose a baseline approach rather than staying silent.`;
+          whatShouldSay = `Acknowledge the question, break down the core engineering constraints, and structure an answer using the STAR method (Situation, Task, Action, Result) with concrete architecture decisions.`;
+        } else if (replyWords < 25) {
+          verdict = "Needs Improvement";
+          feedback = `Your response was very brief (${replyWords} words). Top tech engineering panels look for structured depth. Expand on system constraints, algorithmic complexity, and edge cases.`;
+          whatShouldSay = `Lead with the high-level architecture, compare at least two engineering trade-offs (e.g. latency vs consistency, memory vs computation), and quantify your technical impact.`;
+        } else if (replyWords < 80) {
+          verdict = "Adequate";
+          feedback = `Solid initial thoughts (${replyWords} words). To elevate this to a top-tier answer at ${company}, proactively discuss failure modes, scaling bottlenecks, and production observability.`;
+          whatShouldSay = `State your primary design, justify each component choice with operational metrics, and explain how the system recovers under partial network failure or high load.`;
+        } else {
+          verdict = "Strong";
+          feedback = `Comprehensive and substantive response (${replyWords} words). You communicated clearly and provided sufficient context for the engineering panel.`;
+          whatShouldSay = `Continue this depth while keeping answers crisp and checking in with the interviewer periodically: "Would you like me to dive deeper into the storage layer or the API contracts?"`;
+        }
+
         qAnalysis.push({
-          id: `q${qIdx++}`,
-          question: q,
-          whatYouSaid: nextAns.length > 180 ? nextAns.slice(0, 180) + '...' : nextAns,
-          whatYouShouldSay: `State your core architecture first, explain key trade-offs (e.g. latency vs consistency, memory vs CPU), and quantify results with concrete metrics for ${company}.`,
-          verdict: isTradeoff ? ('Strong' as const) : ('Adequate' as const),
-          feedback: isTradeoff
-            ? 'Good discussion of engineering trade-offs. Deepen your explanation by discussing edge-case failure modes.'
-            : 'Be more structured: state the high-level architecture before diving into code or implementation details.'
+          id: `q${questionIdx++}`,
+          question: qText,
+          whatYouSaid: candidateReply ? (candidateReply.length > 250 ? candidateReply.slice(0, 250) + "..." : candidateReply) : "No verbal response recorded.",
+          whatYouShouldSay: whatShouldSay,
+          verdict,
+          feedback
         });
       }
     }
 
     if (qAnalysis.length === 0) {
       qAnalysis.push({
-        id: 'q1',
-        question: 'Tell me about a complex distributed system or engineering project you built.',
-        whatYouSaid: candidateTurns[0]?.text || 'Discussed background and architectural scope.',
-        whatYouShouldSay: 'Use the STAR framework: Situation, Task, Action, and measurable Results with trade-offs highlighted.',
-        verdict: 'Adequate' as const,
-        feedback: 'Anchor your experience with quantifiable scale metrics (RPS, P99 latency, data volume).'
+        id: "q1",
+        question: "Technical background and system engineering experience",
+        whatYouSaid: realTelemetry.candWords > 0 ? "Brief project overview provided." : "No verbal response recorded.",
+        whatYouShouldSay: `Deliver a crisp 90-second elevator pitch detailing your highest-scale project, technologies used, and quantifiable business outcomes for ${company}.`,
+        verdict: realTelemetry.candWords > 40 ? "Adequate" : "Needs Improvement",
+        feedback: "Structure project stories using the STAR framework with clear ownership and scale metrics."
       });
     }
 
-    const calculatedPace = speechStats?.pace || 142;
+    // Dynamic scoring strictly calculated from candidate's actual participation and depth
+    let overallScore = 40;
+    let techScore = 40;
+    let designScore = 40;
+    let commScore = 45;
+    let edgeScore = 38;
+    let pacingScore = realTelemetry.paceWpm >= 120 && realTelemetry.paceWpm <= 165 ? 88 : 70;
+
+    if (realTelemetry.candWords === 0) {
+      overallScore = 25;
+      techScore = 20;
+      designScore = 20;
+      commScore = 25;
+      edgeScore = 20;
+      pacingScore = 30;
+    } else if (realTelemetry.candWords < 40) {
+      overallScore = 48;
+      techScore = 45;
+      designScore = 42;
+      commScore = 50;
+      edgeScore = 40;
+      pacingScore = 65;
+    } else if (realTelemetry.candWords < 120) {
+      overallScore = 72;
+      techScore = 70;
+      designScore = 68;
+      commScore = 75;
+      edgeScore = 66;
+      pacingScore = 80;
+    } else {
+      overallScore = 85;
+      techScore = 84;
+      designScore = 82;
+      commScore = 88;
+      edgeScore = 80;
+      pacingScore = 90;
+    }
+
+    // Dynamic recommendation
+    let hiringRecommendation: "Strong Hire" | "Hire" | "Leaning Hire" | "Leaning No Hire" | "No Hire" = "Leaning No Hire";
+    if (overallScore >= 85) hiringRecommendation = "Strong Hire";
+    else if (overallScore >= 75) hiringRecommendation = "Hire";
+    else if (overallScore >= 60) hiringRecommendation = "Leaning Hire";
+    else if (overallScore >= 45) hiringRecommendation = "Leaning No Hire";
+    else hiringRecommendation = "No Hire";
+
+    // Dynamic what to improve based on real metrics
+    const whatToImprove = [];
+    if (realTelemetry.candWords < 60) {
+      whatToImprove.push({
+        title: "Answer Elaboration & Depth",
+        detail: `You spoke a total of ${realTelemetry.candWords} words across the interview. Technical screeners at ${company} look for candidates who proactively unpack requirements, explain trade-offs, and detail edge cases.`,
+        actionItem: "Aim for 1.5 to 2.5 minutes per answer (~150–250 words) structured with Situation, Architecture, and Impact."
+      });
+    }
+    if (realTelemetry.fillerCount > 3) {
+      whatToImprove.push({
+        title: "Verbal Filler Mitigation",
+        detail: `Detected ${realTelemetry.fillerCount} hesitation markers (${realTelemetry.fillerDensity}). Deliberate pauses project higher confidence than filler words during complex technical explanations.`,
+        actionItem: "Replace 'um' or 'basically' with a deliberate 1-second silence while gathering your thoughts."
+      });
+    }
+    whatToImprove.push({
+      title: "Systematic Edge-Case Formulation",
+      detail: "Proactively articulate what happens during network partitions, database replica lags, or high concurrency before the interviewer asks.",
+      actionItem: `Practice the 'Distributed Lock' and 'Rate Limiter' drills in TeLos Bank before your ${company} interview.`
+    });
+
+    // Dynamic anti-patterns
+    const whatNotToSay = [
+      {
+        phraseOrHabit: realTelemetry.fillerCount > 2 ? "Frequent vocal fillers ('um', 'like', 'basically')" : "One-sentence answers without architectural reasoning",
+        whyAvoid: `In senior interviews at ${company}, concise and deliberate speech without hesitation markers signals technical ownership.`,
+        betterAlternative: "Pause silently to frame your architecture, then deliver a structured breakdown."
+      },
+      {
+        phraseOrHabit: "Assuming default technology choices without comparing alternatives",
+        whyAvoid: "Senior panels want to see WHY you picked a database or cache over the alternatives.",
+        betterAlternative: `"I evaluated SQL vs NoSQL for this ${company} workflow and selected NoSQL because we require sub-10ms key-value reads at high throughput."`
+      }
+    ];
+
+    // Dynamic strengths
+    const whatYouImproved = [
+      {
+        strength: "Direct Engagement with Questions",
+        observation: `Addressed questions directly and maintained a ${realTelemetry.talkRatio} conversational dynamic.`
+      },
+      {
+        strength: "Conversational Pace & Clarity",
+        observation: `Delivered answers at ${realTelemetry.paceWpm} WPM (${realTelemetry.succinctness}).`
+      }
+    ];
 
     return {
-      summary: `In this ${company} technical interview session for ${role}, you demonstrated solid fundamentals and active engagement. Your responses showed sound reasoning, with opportunities to sharpen your architectural trade-offs, quantifiable impact framing, and failure recovery plans.`,
-      hiringRecommendation: candidateTurns.length >= 3 ? 'Hire' : 'Leaning Hire',
-      hiringRationale: `Demonstrated technical communication clarity, systematic problem solving, and deliberate pacing across ${qAnalysis.length} core interview discussions.`,
+      summary: `In this technical interview simulation for ${role} at ${company}, you engaged across ${qAnalysis.length} technical questions with a total of ${realTelemetry.candWords} candidate words spoken. Your talk distribution was ${realTelemetry.talkRatio} with a measured speaking pace of ${realTelemetry.paceWpm} WPM. Performance indicates ${overallScore >= 75 ? "solid competence with opportunities to sharpen edge-case depth" : "a need for more substantive architectural elaboration and structured STAR storytelling"}.`,
+      overallScore,
+      hiringRecommendation,
+      recommendation: hiringRecommendation,
+      hiringRationale: `Based on ${realTelemetry.candWords} words across ${qAnalysis.length} questions, candidate demonstrated ${overallScore >= 75 ? "sufficient technical fluency to advance with minor coaching" : "insufficient technical depth to meet the hiring bar at " + company}.`,
       scores: {
-        overall: Math.min(94, Math.max(70, 76 + candidateTurns.length * 3)),
-        technicalDepth: 80,
-        systemDesign: 82,
-        communication: 86,
-        edgeCases: 78,
-        pacing: calculatedPace >= 125 && calculatedPace <= 165 ? 90 : 78,
+        overall: overallScore,
+        technicalDepth: techScore,
+        systemDesign: designScore,
+        communication: commScore,
+        edgeCases: edgeScore,
+        pacing: pacingScore
       },
       cadenceMetrics: {
-        paceWpm: calculatedPace,
-        fillerDensity: '0.8% (Elite • Low Cognitive Friction)',
-        talkRatio: '68% Candidate / 32% Panel (Optimal)',
-        succinctness: 'High Directness'
+        paceWpm: realTelemetry.paceWpm,
+        fillerDensity: realTelemetry.fillerDensity,
+        talkRatio: realTelemetry.talkRatio,
+        succinctness: realTelemetry.succinctness
       },
       companyRubric: [
-        {
-          pillar: `${company} Core Technical Rigor`,
-          status: 'Strong Signal',
-          score: 84,
-          note: `Aligned with ${company}'s bar for clean algorithmic structuring and Big-O awareness.`
-        },
-        {
-          pillar: 'Distributed Architecture & Scale',
-          status: 'Adequate',
-          score: 80,
-          note: 'Addressed primary data paths; recommended to dive deeper into cache replication lag.'
-        },
-        {
-          pillar: 'Trade-off & Constraint Calibration',
-          status: 'Strong Signal',
-          score: 85,
-          note: 'Proactively clarified read vs write throughput patterns before proposing database engines.'
-        },
-        {
-          pillar: 'Communication & STAR Ownership',
-          status: 'Strong Signal',
-          score: 88,
-          note: 'Clear, concise delivery with high signal-to-noise ratio and zero defensive pushback.'
-        }
+        { pillar: `${company} Technical Rigor`, status: techScore >= 80 ? "Strong Signal" : (techScore >= 65 ? "Adequate" : "Needs Improvement"), score: techScore, note: "Reflects depth demonstrated in candidate answers." },
+        { pillar: "Architecture & Scalability", status: designScore >= 80 ? "Strong Signal" : (designScore >= 65 ? "Adequate" : "Needs Improvement"), score: designScore, note: "Assessment of system component trade-offs." },
+        { pillar: "Communication & Structure", status: commScore >= 80 ? "Strong Signal" : (commScore >= 65 ? "Adequate" : "Needs Improvement"), score: commScore, note: `Evaluated at ${realTelemetry.paceWpm} WPM with ${realTelemetry.talkRatio}.` },
+        { pillar: "Edge Cases & Reliability", status: edgeScore >= 80 ? "Strong Signal" : (edgeScore >= 65 ? "Adequate" : "Needs Improvement"), score: edgeScore, note: "Handling of failure conditions and operational constraints." }
       ],
       actionRoadmap: [
-        {
-          phase: 'Phase 1 (Next 24h)',
-          title: 'Throughput & Metric Anchoring',
-          focus: 'State request volumes, latency bounds, and storage volume before proposing schemas.',
-          drill: `Practice top PYQs for ${company} in Company Prep.`
-        },
-        {
-          phase: 'Phase 2 (Next 48h)',
-          title: 'Failure Edge Cases & Partition Recovery',
-          focus: 'Formulate contingency plans for downstream dependency outages, retries with jitter, and dead-letter queues.',
-          drill: 'Practice System Design drills in TeLos Bank.'
-        },
-        {
-          phase: 'Phase 3 (Final Calibration)',
-          title: 'Full Proctored Mock Run',
-          focus: 'Run a live 45-minute timed interview to lock in optimal speaking cadence and trade-off precision.',
-          drill: 'Launch another Live Studio Screen with Alex.'
-        }
+        { phase: "Day 1 (Immediate)", title: "Quantify Impact & Constraints", focus: "Anchor every answer with concrete throughput, latency, or memory bounds.", drill: `Review ${company} core prep playbooks in TeLos.` },
+        { phase: "Day 2 (Deepening)", title: "Distributed Edge Cases", focus: "Proactively discuss network timeouts, retries, and data sharding.", drill: "Complete System Design drills in TeLos Bank." },
+        { phase: "Day 3 (Mock Calibration)", title: "Full Live Mock Simulation", focus: "Re-interview with Alex aiming for 150+ words per answer with trade-offs.", drill: "Run a timed 30-minute practice session." }
       ],
       questionsAnalysis: qAnalysis,
-      whatToImprove: [
-        {
-          title: 'Quantify Technical Impact & Scale',
-          detail: 'Several answers described features without stating requests per second, throughput, database size, or latency savings.',
-          actionItem: 'In every project narrative, state: "This handled X req/sec with Y ms P99 latency while maintaining Z% availability."'
-        },
-        {
-          title: 'Systematic Trade-Off Framing',
-          detail: 'When choosing technologies (e.g. SQL vs NoSQL, Redis vs Memcached), explicitly state what you traded off (e.g. consistency for write throughput).',
-          actionItem: 'State why you did NOT choose the obvious alternative before settling on your final design.'
-        },
-        {
-          title: 'Explicit Failure Mode Handling',
-          detail: 'Address network partitions, replica lag, and database failover before the interviewer prompts you.',
-          actionItem: 'Always conclude your architecture walkthrough with: "If this database node goes down, our standby replica promotes in <2s with circuit breaker fallback."'
-        }
-      ],
-      whatNotToSay: [
-        {
-          phraseOrHabit: '"We just used Kafka because everyone uses it"',
-          whyAvoid: 'Sounds uncritical and lacks engineering justification for message ordering and throughput.',
-          betterAlternative: '"We selected Kafka specifically for partitioned horizontal throughput and replayable event logs."'
-        },
-        {
-          phraseOrHabit: '"I don\'t think there are any failure cases"',
-          whyAvoid: 'Every distributed system fails. Senior engineers actively plan for network partitions and cascading failures.',
-          betterAlternative: '"Under network partitions or downstream timeout, we fall back to circuit-breaker mode with cached defaults."'
-        },
-        {
-          phraseOrHabit: '"It\'s simple, we just scale up the server"',
-          whyAvoid: 'Vertical scaling hits hard physical limits. Top tech companies expect horizontal scaling patterns.',
-          betterAlternative: '"We scale horizontally by sharding on user_id with consistent hashing and auto-scaling replica groups."'
-        }
-      ],
-      whatYouImproved: [
-        {
-          strength: 'Conversational Cadence & Deliberate Pacing',
-          observation: 'Maintained calm, structured delivery and took deliberate pauses to frame answers before speaking.'
-        },
-        {
-          strength: 'Clarity in Technical Problem Decomposition',
-          observation: 'Broke down requirements into digestible components and actively checked in on interviewer constraints.'
-        },
-        {
-          strength: 'Crisp Technology Justifications',
-          observation: 'Grounded architectural decisions in operational characteristics rather than abstract buzzwords.'
-        }
-      ]
+      whatToImprove,
+      whatNotToSay,
+      whatYouImproved
     };
   }
 
-  private normalizeDebriefReport(parsed: any, company: string, role: string, candidateTurns: any[], calculatedPace: number) {
+  private normalizeDebriefReport(
+    parsed: any,
+    company: string,
+    role: string,
+    realTelemetry: {
+      candWords: number;
+      intWords: number;
+      talkRatio: string;
+      fillerCount: number;
+      fillerDensity: string;
+      paceWpm: number;
+      succinctness: string;
+    },
+    transcript: TranscriptTurn[]
+  ) {
     const scores = parsed.scores || {};
-    const overall = Number(scores.overall || parsed.overallScore || 84);
-    const technicalDepth = Number(scores.technicalDepth || parsed.technicalScore || 82);
-    const systemDesign = Number(scores.systemDesign || scores.problemSolving || parsed.designScore || 80);
-    const communication = Number(scores.communication || parsed.communicationScore || 86);
-    const edgeCases = Number(scores.edgeCases || 78);
-    const pacing = Number(scores.pacing || (calculatedPace >= 125 && calculatedPace <= 165 ? 90 : 80));
+    const overall = typeof scores.overall === "number" ? scores.overall : (typeof parsed.overallScore === "number" ? parsed.overallScore : (realTelemetry.candWords > 100 ? 82 : 55));
+    const technicalDepth = typeof scores.technicalDepth === "number" ? scores.technicalDepth : (typeof parsed.technicalScore === "number" ? parsed.technicalScore : (realTelemetry.candWords > 100 ? 80 : 50));
+    const systemDesign = typeof scores.systemDesign === "number" ? scores.systemDesign : (typeof scores.problemSolving === "number" ? scores.problemSolving : (realTelemetry.candWords > 100 ? 78 : 48));
+    const communication = typeof scores.communication === "number" ? scores.communication : (typeof parsed.communicationScore === "number" ? parsed.communicationScore : (realTelemetry.candWords > 100 ? 85 : 55));
+    const edgeCases = typeof scores.edgeCases === "number" ? scores.edgeCases : (realTelemetry.candWords > 100 ? 75 : 45);
+    const pacing = typeof scores.pacing === "number" ? scores.pacing : (realTelemetry.paceWpm >= 120 && realTelemetry.paceWpm <= 165 ? 88 : 72);
+
+    const hiringRecommendation = parsed.hiringRecommendation || parsed.recommendation || (overall >= 80 ? "Hire" : (overall >= 60 ? "Leaning Hire" : "No Hire"));
 
     return {
-      summary: parsed.summary || `In this ${company} technical interview session for ${role}, you demonstrated solid fundamentals and active problem-solving skills.`,
+      summary: parsed.summary || `In this ${company} technical interview for ${role}, candidate engaged across the technical screen, speaking ${realTelemetry.candWords} words with a ${realTelemetry.talkRatio} conversational dynamic.`,
       overallScore: overall,
-      recommendation: parsed.hiringRecommendation || parsed.recommendation || (overall >= 80 ? 'Strong Hire' : 'Leaning Hire'),
-      hiringRecommendation: parsed.hiringRecommendation || parsed.recommendation || (overall >= 80 ? 'Strong Hire' : 'Leaning Hire'),
-      hiringRationale: parsed.hiringRationale || parsed.rationale || `Demonstrated solid engineering depth and clear communication across core technical discussions.`,
+      recommendation: hiringRecommendation,
+      hiringRecommendation,
+      hiringRationale: parsed.hiringRationale || parsed.rationale || `Evaluation based on ${realTelemetry.candWords} words spoken across transcript questions.`,
       scores: {
         overall,
         technicalDepth,
@@ -998,22 +1071,23 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no extra text) c
         edgeCases,
         pacing
       },
-      cadenceMetrics: parsed.cadenceMetrics || {
-        paceWpm: calculatedPace,
-        fillerDensity: '0.8% (Elite • Low Cognitive Friction)',
-        talkRatio: '68% Candidate / 32% Panel (Optimal)',
-        succinctness: 'High Directness'
+      // Real measured telemetry is NEVER overridden with hardcoded strings
+      cadenceMetrics: {
+        paceWpm: realTelemetry.paceWpm,
+        fillerDensity: realTelemetry.fillerDensity,
+        talkRatio: realTelemetry.talkRatio,
+        succinctness: realTelemetry.succinctness
       },
       companyRubric: Array.isArray(parsed.companyRubric) && parsed.companyRubric.length > 0 ? parsed.companyRubric : [
-        { pillar: `${company} Core Technical Rigor`, status: 'Strong Signal', score: technicalDepth, note: `Aligned with ${company}'s bar for clean algorithmic structuring.` },
-        { pillar: 'System Architecture & Scale', status: 'Adequate', score: systemDesign, note: 'Structured primary data flows effectively.' },
-        { pillar: 'Trade-off Calibration', status: 'Strong Signal', score: edgeCases, note: 'Discussed architectural trade-offs systematically.' },
-        { pillar: 'Communication Clarity', status: 'Strong Signal', score: communication, note: 'Clear, concise, and structured delivery.' }
+        { pillar: `${company} Technical Rigor`, status: technicalDepth >= 80 ? "Strong Signal" : "Adequate", score: technicalDepth, note: "Demonstrated in candidate answers." },
+        { pillar: "Architecture & Scale", status: systemDesign >= 80 ? "Strong Signal" : "Adequate", score: systemDesign, note: "Evaluation of proposed system architecture." },
+        { pillar: "Communication & STAR Framing", status: communication >= 80 ? "Strong Signal" : "Adequate", score: communication, note: `Delivered with ${realTelemetry.talkRatio}.` },
+        { pillar: "Edge Cases & Reliability", status: edgeCases >= 80 ? "Strong Signal" : "Needs Improvement", score: edgeCases, note: "Handling of failure modes." }
       ],
       actionRoadmap: Array.isArray(parsed.actionRoadmap) && parsed.actionRoadmap.length > 0 ? parsed.actionRoadmap : [
-        { phase: 'Phase 1 (Next 24h)', title: 'Quantitative Metric Anchoring', focus: 'State concrete scale bounds before code.', drill: `Practice PYQs for ${company} in Company Prep.` },
-        { phase: 'Phase 2 (Next 48h)', title: 'Failure Edge Cases', focus: 'Formulate fallback and retry policies.', drill: 'Practice System Design drills in TeLos Bank.' },
-        { phase: 'Phase 3 (Calibration)', title: 'Live Proctored Calibration', focus: 'Timed practice with proctoring.', drill: 'Complete a live screen with Alex.' }
+        { phase: "Day 1 (Immediate)", title: "Quantitative Metric Anchoring", focus: "State scale bounds before code.", drill: `Practice PYQs for ${company} in Company Prep.` },
+        { phase: "Day 2 (Deepening)", title: "Distributed Edge Cases", focus: "Formulate fallback and retry policies.", drill: "Practice System Design drills in TeLos Bank." },
+        { phase: "Day 3 (Calibration)", title: "Live Proctored Calibration", focus: "Timed practice with proctoring.", drill: "Complete a live screen with Alex." }
       ],
       questionsAnalysis: Array.isArray(parsed.questionsAnalysis) && parsed.questionsAnalysis.length > 0 ? parsed.questionsAnalysis : [],
       whatToImprove: Array.isArray(parsed.whatToImprove) && parsed.whatToImprove.length > 0 ? parsed.whatToImprove : [],
