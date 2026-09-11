@@ -8,7 +8,7 @@
     "dev": "concurrently -k \"vite\" \"tsx watch server/index.ts\" \"wait-on http://localhost:5173 http://localhost:8787 && electron .\"",
     "web": "vite",
     "server": "tsx watch server/index.ts",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/setup-jdk.mjs && tsc -b && vite build",
     "build:prod": "prisma generate && node scripts/setup-jdk.mjs && tsc -b && vite build",
     "start:prod": "tsx server/index.ts",
     "start": "electron .",

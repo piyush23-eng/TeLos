@@ -46,4 +46,16 @@ describe("runner", () => {
     expect(result.status).toBe("error");
     expect(result.output).toContain("Security Sandbox Notice");
   });
+
+  it("executes valid Java code snippet", async () => {
+    const code = `
+public class Solution {
+    public static void main(String[] args) {
+        System.out.println("Java output: " + (20 + 22));
+    }
+}`;
+    const result = await runCodeSnippet(code, "java", "test-java-1");
+    expect(result.status).toBe("ok");
+    expect(result.output).toContain("42");
+  });
 });

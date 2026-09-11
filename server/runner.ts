@@ -40,9 +40,10 @@ export function checkCodeSecurity(code: string, language: string): { safe: boole
 function safeSpawn(command: string, args: string[], cwd?: string) {
   try {
     // SECURITY: Completely isolate child process environment.
-    // Explicitly purge process.env to prevent leakage of DATABASE_URL, OPENROUTER_API_KEY, AUTH_SESSION_SECRET.
+    const localJdk = path.resolve(process.cwd(), '.jdk', 'bin');
+    const pathParts = [localJdk, process.env.PATH, '/usr/local/bin', '/usr/bin', '/bin', '/opt/homebrew/bin'].filter(Boolean);
     const minimalEnv = {
-      PATH: process.env.PATH || '',
+      PATH: pathParts.join(':'),
       LANG: 'en_US.UTF-8',
       LC_ALL: 'en_US.UTF-8',
       TMPDIR: os.tmpdir(),
@@ -86,21 +87,87 @@ function runJs(code: string): RunnerResult {
   }
 }
 
-function runPython(code: string): RunnerResult {
+async function runPython(code: string): Promise<RunnerResult> {
   let result = safeSpawn('python3', ['-c', code]);
   if (result.error && (result.error as any).code === 'ENOENT') {
     result = safeSpawn('python', ['-c', code]);
   }
   if (result.error) {
-    return {
-      status: 'error',
-      output: 'Python runtime (python3) is not installed on this host environment.'
-    };
+    return runViaPaiza(code, 'python');
   }
   if (result.status !== 0) {
     return { status: 'error', output: (result.stderr || result.stdout || `Python exited with code ${result.status}`).trim() };
   }
   return { status: 'ok', output: (result.stdout || 'Program executed with no output.').trim() };
+}
+
+function prepareJavaForCloudRunner(code: string): string {
+  if (!/\bclass\s+Main\b/.test(code)) {
+    return code
+      .replace(/public\s+class\s+([A-Za-z0-9_]+)/g, 'class $1')
+      .replace(/class\s+([A-Za-z0-9_]+)([\s\S]*?public\s+static\s+void\s+main)/, 'class Main$2');
+  }
+  return code.replace(/public\s+class\s+([A-Za-z0-9_]+)/g, 'class $1');
+}
+
+async function runViaPaiza(code: string, language: 'java' | 'cpp' | 'c' | 'python'): Promise<RunnerResult> {
+  try {
+    const formattedCode = language === 'java' ? prepareJavaForCloudRunner(code) : code;
+    const params = new URLSearchParams();
+    params.append('source_code', formattedCode);
+    params.append('language', language);
+    params.append('api_key', 'guest');
+
+    const createRes = await fetch('https://api.paiza.io/runners/create', {
+      method: 'POST',
+      signal: AbortSignal.timeout(7000),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+
+    if (!createRes.ok) {
+      throw new Error(`Runner service returned status ${createRes.status}`);
+    }
+
+    const createData = (await createRes.json()) as { id?: string; error?: string };
+    if (!createData.id) {
+      throw new Error(createData.error || 'Failed to initialize cloud runner');
+    }
+
+    const runnerId = createData.id;
+    for (let i = 0; i < 8; i++) {
+      await new Promise(r => setTimeout(r, 600));
+      const pollRes = await fetch(`https://api.paiza.io/runners/get_details?id=${runnerId}&api_key=guest`, {
+        signal: AbortSignal.timeout(5000)
+      });
+      if (!pollRes.ok) continue;
+
+      const data = (await pollRes.json()) as any;
+      if (data.status === 'completed') {
+        if (data.build_result === 'failure') {
+          return {
+            status: 'error',
+            output: (data.build_stderr || data.build_stdout || 'Compilation error').trim()
+          };
+        }
+        if (data.result === 'failure' || (data.exit_code && data.exit_code !== '0')) {
+          return {
+            status: 'error',
+            output: (data.stderr || data.stdout || `Execution exited with code ${data.exit_code}`).trim()
+          };
+        }
+        return {
+          status: 'ok',
+          output: (data.stdout || 'Program executed with no console output.').trim()
+        };
+      }
+    }
+
+    throw new Error('Code execution runner timed out.');
+  } catch {
+    // If Paiza fails, fallback to secondary cloud runner
+    return runViaWandbox(code, language);
+  }
 }
 
 async function runViaWandbox(code: string, language: 'java' | 'cpp' | 'c' | 'python'): Promise<RunnerResult> {
@@ -174,8 +241,8 @@ async function runCpp(code: string): Promise<RunnerResult> {
 
   if (compile?.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    // Host has no native C++ compiler -> Run via high-speed cloud compiler
-    return runViaWandbox(code, 'cpp');
+    // Host has no native C++ compiler -> Run via cloud compiler
+    return runViaPaiza(code, 'cpp');
   }
   if (compile.status !== 0) {
     await fs.rm(tempDir, { recursive: true, force: true });
@@ -206,7 +273,7 @@ async function runC(code: string): Promise<RunnerResult> {
 
   if (compile?.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    return runViaWandbox(code, 'c');
+    return runViaPaiza(code, 'c');
   }
   if (compile.status !== 0) {
     await fs.rm(tempDir, { recursive: true, force: true });
@@ -243,8 +310,8 @@ async function runJava(code: string): Promise<RunnerResult> {
   const compile = safeSpawn('javac', [sourcePath], tempDir);
   if (compile.error) {
     await fs.rm(tempDir, { recursive: true, force: true });
-    // Host has no native OpenJDK -> Run via high-speed cloud compiler
-    return runViaWandbox(code, 'java');
+    // Host has no native OpenJDK -> Run via cloud compiler
+    return runViaPaiza(code, 'java');
   }
   if (compile.status !== 0) {
     await fs.rm(tempDir, { recursive: true, force: true });
