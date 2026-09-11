@@ -701,14 +701,16 @@ app.post('/api/tts', async (req, res, next) => {
 
 app.post('/api/interview/debrief', async (req, res, next) => {
   try {
-    const { transcript = [], company, role, resume, focus, speechStats } = req.body;
+    const { transcript = [], company, role, resume, focus, speechStats, customApiKey, modelName } = req.body;
     const report = await intelligence.generateDebriefReport({
       transcript,
       company,
       role,
       resume,
       focus,
-      speechStats
+      speechStats,
+      customApiKey,
+      modelName
     });
     return res.json(report);
   } catch (error) {
@@ -718,14 +720,16 @@ app.post('/api/interview/debrief', async (req, res, next) => {
 
 app.post('/api/report', async (req, res, next) => {
   try {
-    const { transcript = [], company, role, resume, focus, speechStats } = req.body;
+    const { transcript = [], company, role, resume, focus, speechStats, customApiKey, modelName } = req.body;
     const report = await intelligence.generateDebriefReport({
       transcript,
       company,
       role,
       resume,
       focus,
-      speechStats
+      speechStats,
+      customApiKey,
+      modelName
     });
     return res.json(report);
   } catch (error) {

@@ -933,8 +933,10 @@ RULES:
     resume?: string;
     focus?: string;
     speechStats?: { pace?: number; fillerCount?: number; duration?: number };
+    customApiKey?: string;
+    modelName?: string;
   }) {
-    const { transcript = [], company = "Top Tech", role = "Software Engineer", resume = "", focus = "Full-Stack / Systems Architecture", speechStats } = params;
+    const { transcript = [], company = "Top Tech", role = "Software Engineer", resume = "", focus = "Full-Stack / Systems Architecture", speechStats, customApiKey, modelName } = params;
 
     // 1. Compute EXACT, 100% REAL transcript telemetry
     const candidateTurns = transcript.filter(t => t.speaker === "candidate");
@@ -1079,16 +1081,22 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no formatting) c
 }`;
 
     // 3. Try Ultra-Fast & Capable Cloud LLMs with Generous Timeout
-    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    const openRouterKey = customApiKey || process.env.OPENROUTER_API_KEY;
     if (openRouterKey) {
       const preferredModels = [
-        process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001",
+        modelName,
+        process.env.OPENROUTER_MODEL,
+        "nex-agi/nex-n2.5-mini:free",
+        "openrouter/free",
+        "inclusionai/ling-3.0-flash-vl:free",
+        "liquid/lfm-2.5-2.6b:free",
         "meta-llama/llama-3.3-70b-instruct",
-        "deepseek/deepseek-chat",
         "openai/gpt-4o-mini"
-      ];
-      for (const model of preferredModels) {
+      ].filter(Boolean) as string[];
+
+      for (const candidateModel of preferredModels) {
         try {
+          console.log(`[Intelligence] Dispatching debrief analysis to OpenRouter with model: ${candidateModel}`);
           const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             signal: AbortSignal.timeout(30000), // 30s timeout allows full generation
@@ -1096,10 +1104,10 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no formatting) c
               "Authorization": `Bearer ${openRouterKey}`,
               "Content-Type": "application/json",
               "HTTP-Referer": "https://telos.ai",
-              "X-Title": "TeLos AI Technical Interviewer"
+              "X-Title": "TeLos AI Technical Interview Debrief"
             },
             body: JSON.stringify({
-              model,
+              model: candidateModel,
               messages: [{ role: "user", content: prompt }],
               max_tokens: 3000,
               temperature: 0.2
@@ -1107,16 +1115,20 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no formatting) c
           });
           if (orRes.ok) {
             const data = await orRes.json() as any;
-            const text = data.choices?.[0]?.message?.content?.trim();
-            const jsonMatch = text?.match(/\{[\s\S]*\}/);
+            let text = (data.choices?.[0]?.message?.content || "").trim();
+            text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^Reasoning:[\s\S]*?\n\n/i, '').trim();
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
               const parsed = JSON.parse(jsonMatch[0]);
-              console.log(`[Intelligence] Generated accurate debrief with OpenRouter model: ${model}`);
+              console.log(`[Intelligence] Generated authentic debrief with OpenRouter model: ${candidateModel}`);
               return this.normalizeDebriefReport(parsed, company, role, realTelemetry, transcript);
             }
+          } else {
+            const errText = await orRes.text();
+            console.warn(`[Intelligence] OpenRouter debrief ${candidateModel} status ${orRes.status}:`, errText);
           }
         } catch (err) {
-          console.warn(`[Intelligence] OpenRouter debrief ${model} attempt failed, trying next fallback:`, err);
+          console.warn(`[Intelligence] OpenRouter debrief ${candidateModel} attempt failed, trying next fallback:`, err);
         }
       }
     }

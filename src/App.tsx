@@ -21,6 +21,7 @@ import {
   setStoredOpenRouterModel,
   testDirectOpenRouterCall,
   generateQuestionDirectly,
+  generateDebriefDirectly,
   type OpenRouterTelemetry
 } from './openrouter';
 
@@ -2113,6 +2114,9 @@ function Report({
       text: m.text,
     }));
 
+    const apiKey = getStoredOpenRouterKey();
+    const model = getStoredOpenRouterModel();
+
     fetch(apiUrl('/api/interview/debrief'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2123,16 +2127,38 @@ function Report({
         resume: context.resume,
         focus: context.focus,
         speechStats,
+        customApiKey: apiKey,
+        modelName: model,
       }),
     })
       .then(res => res.json())
       .then(data => {
-        setDebrief(data);
-        setLoading(false);
+        if (data && data.scores) {
+          setDebrief(data);
+          setLoading(false);
+        } else {
+          throw new Error('Invalid backend debrief response');
+        }
       })
-      .catch(err => {
-        console.warn('Debrief API error:', err);
-        setLoading(false);
+      .catch(async (err) => {
+        console.warn('Backend debrief failed, using direct OpenRouter debrief engine:', err);
+        try {
+          const directData = await generateDebriefDirectly({
+            transcript,
+            company: context.company,
+            role: context.role,
+            resume: context.resume,
+            focus: context.focus,
+            speechStats,
+            apiKey,
+            model,
+          });
+          setDebrief(directData);
+        } catch (directErr) {
+          console.error('Direct OpenRouter debrief error:', directErr);
+        } finally {
+          setLoading(false);
+        }
       });
   }, [messages, context, speechStats]);
 
