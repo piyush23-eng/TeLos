@@ -469,9 +469,16 @@ export class IntelligenceProvider {
   private async generateText(system: string, user: string, opts: { maxTokens?: number; temperature?: number; modelProvider?: string; customApiKey?: string; customEndpoint?: string; modelName?: string } = {}) {
     const { maxTokens = 500, temperature = 0.3, modelProvider = 'auto', customApiKey, customEndpoint, modelName } = opts;
 
-    // 1. OpenRouter (Primary Ultra-Reliable API with Multi-Model Fallback)
-    const openRouterKey = customApiKey || process.env.OPENROUTER_API_KEY;
-    if (openRouterKey && (modelProvider === 'openrouter' || modelProvider === 'auto' || modelProvider === 'gemini' || !this.gemini)) {
+    // 1. OpenRouter (Multi-Key & Multi-Model Automatic Failover)
+    const rawOrKeys = [
+      customApiKey && !customApiKey.startsWith('gsk_') && !customApiKey.startsWith('AIza') ? customApiKey : '',
+      process.env.OPENROUTER_API_KEY,
+      process.env.OPENROUTER_FALLBACK_KEYS,
+      process.env.VITE_OPENROUTER_API_KEY
+    ].filter(Boolean).join(',');
+
+    const openRouterKeys = Array.from(new Set(rawOrKeys.split(/[,\s]+/).map(k => k.trim()).filter(k => k.length > 10)));
+    if (openRouterKeys.length > 0 && (modelProvider === 'openrouter' || modelProvider === 'auto')) {
       const preferredModels = [
         modelName,
         process.env.OPENROUTER_MODEL,
@@ -480,78 +487,138 @@ export class IntelligenceProvider {
         'inclusionai/ling-3.0-flash-vl:free',
         'liquid/lfm-2.5-2.6b:free',
         'nvidia/nemotron-3.5-lightning:free',
+        'google/gemma-4-26b-a4b-it:free',
         'meta-llama/llama-3.3-70b-instruct'
       ].filter(Boolean) as string[];
 
-      for (const candidateModel of preferredModels) {
+      for (let ki = 0; ki < openRouterKeys.length; ki++) {
+        const key = openRouterKeys[ki];
+        let keyRateLimited = false;
+
+        for (const candidateModel of preferredModels) {
+          if (keyRateLimited) break;
+          try {
+            const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              signal: AbortSignal.timeout(6000),
+              headers: {
+                'Authorization': `Bearer ${key}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://telos.ai',
+                'X-Title': 'TeLos AI Technical Interviewer'
+              },
+              body: JSON.stringify({
+                model: candidateModel,
+                messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+                max_tokens: maxTokens,
+                temperature,
+              })
+            });
+            if (orRes.ok) {
+              const data = await orRes.json() as any;
+              let text = data.choices?.[0]?.message?.content?.trim() || '';
+              text = text
+                .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                .replace(/```[\s\S]*?```/g, '')
+                .replace(/^Reasoning:[\s\S]*?\n\n/i, '')
+                .trim();
+              if (text && text.length > 10) {
+                console.log(`[Intelligence] Success with OpenRouter [key #${ki + 1}] model: ${candidateModel}`);
+                return text;
+              }
+            } else {
+              const status = orRes.status;
+              if (status === 429 || status === 402) {
+                console.warn(`[Intelligence Auto-Failover] OpenRouter key #${ki + 1} hit quota/rate-limit (${status}). Automatically rotating to next key/provider...`);
+                keyRateLimited = true;
+                break;
+              }
+            }
+          } catch (err: any) {
+            console.warn(`[Intelligence] OpenRouter ${candidateModel} error:`, err?.message || err);
+          }
+        }
+      }
+    }
+
+    // 2. Groq Free Tier Failover (Ultra-fast Llama 3.3 / Mixtral)
+    const rawGroqKeys = [
+      customApiKey?.startsWith('gsk_') ? customApiKey : '',
+      process.env.GROQ_API_KEY,
+      process.env.GROQ_FALLBACK_KEYS
+    ].filter(Boolean).join(',');
+    const groqKeys = Array.from(new Set(rawGroqKeys.split(/[,\s]+/).map(k => k.trim()).filter(Boolean)));
+
+    for (const gKey of groqKeys) {
+      for (const groqModel of ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768']) {
         try {
-          const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             signal: AbortSignal.timeout(6000),
-            headers: {
-              'Authorization': `Bearer ${openRouterKey}`,
-              'Content-Type': 'application/json',
-              'HTTP-Referer': 'https://telos.ai',
-              'X-Title': 'TeLos AI Technical Interviewer'
-            },
+            headers: { 'Authorization': `Bearer ${gKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              model: candidateModel,
+              model: groqModel,
               messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
               max_tokens: maxTokens,
               temperature,
             })
           });
-          if (orRes.ok) {
-            const data = await orRes.json() as any;
-            let text = data.choices?.[0]?.message?.content?.trim() || '';
-            text = text
-              .replace(/<think>[\s\S]*?<\/think>/gi, '')
-              .replace(/```[\s\S]*?```/g, '')
-              .replace(/^Reasoning:[\s\S]*?\n\n/i, '')
-              .trim();
+          if (groqRes.ok) {
+            const data = await groqRes.json() as any;
+            const text = data.choices?.[0]?.message?.content?.trim() || '';
             if (text && text.length > 10) {
-              console.log(`[Intelligence] Successfully generated question with OpenRouter model: ${candidateModel}`);
+              console.log(`[Intelligence Auto-Failover] Success via Groq model: ${groqModel}`);
               return text;
             }
-          } else {
-            const errBody = await orRes.text();
-            console.warn(`[Intelligence] OpenRouter ${candidateModel} status ${orRes.status}:`, errBody);
           }
-        } catch (err) {
-          console.warn(`[Intelligence] OpenRouter ${candidateModel} error:`, err);
+        } catch (err: any) {
+          console.warn(`[Intelligence] Groq failover error:`, err?.message || err);
         }
       }
     }
 
-    // 2. Groq (Free ultra-fast LLM API)
-    const groqKey = customApiKey || process.env.GROQ_API_KEY;
-    if (modelProvider === 'groq' || (modelProvider === 'auto' && groqKey)) {
-      try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: modelName || 'llama-3.3-70b-versatile',
-            messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-            max_tokens: maxTokens,
-            temperature,
-          })
-        });
-        if (groqRes.ok) {
-          const data = await groqRes.json() as any;
-          return data.choices?.[0]?.message?.content?.trim() || '';
+    // 3. Google Gemini Free Tier Failover
+    const rawGeminiKeys = [
+      customApiKey?.startsWith('AIza') ? customApiKey : '',
+      process.env.GEMINI_API_KEY,
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY
+    ].filter(Boolean).join(',');
+    const geminiKeys = Array.from(new Set(rawGeminiKeys.split(/[,\s]+/).map(k => k.trim()).filter(Boolean)));
+
+    for (const gemKey of geminiKeys) {
+      for (const gemModel of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
+        try {
+          const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${gemModel}:generateContent?key=${gemKey}`, {
+            method: 'POST',
+            signal: AbortSignal.timeout(6000),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: system }] },
+              contents: [{ parts: [{ text: user }] }],
+              generationConfig: { maxOutputTokens: maxTokens, temperature }
+            })
+          });
+          if (gemRes.ok) {
+            const data = await gemRes.json() as any;
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            if (text && text.length > 10) {
+              console.log(`[Intelligence Auto-Failover] Success via Gemini model: ${gemModel}`);
+              return text;
+            }
+          }
+        } catch (err: any) {
+          console.warn(`[Intelligence] Gemini failover error:`, err?.message || err);
         }
-      } catch (err) {
-        console.warn('Groq inference fallback:', err);
       }
     }
 
-    // 3. Ollama (100% Free & Offline Local AI)
+    // 4. Local / Self-Hosted Ollama Failover
     if (modelProvider === 'ollama' || customEndpoint?.includes('11434')) {
       try {
         const endpoint = customEndpoint || 'http://localhost:11434/v1/chat/completions';
         const ollamaRes = await fetch(endpoint, {
           method: 'POST',
+          signal: AbortSignal.timeout(3000),
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: modelName || 'llama3.1:latest',
@@ -565,23 +632,6 @@ export class IntelligenceProvider {
         }
       } catch (err) {
         console.warn('Ollama inference fallback:', err);
-      }
-    }
-
-    // 4. Google Gemini (Native SDK)
-    if (this.gemini || customApiKey) {
-      try {
-        const geminiClient = customApiKey ? new GoogleGenerativeAI(customApiKey) : this.gemini!;
-        const model = geminiClient.getGenerativeModel({
-          model: modelName || process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-          systemInstruction: system,
-          generationConfig: { maxOutputTokens: maxTokens, temperature }
-        });
-        const result = await model.generateContent(user);
-        const raw = result.response.text();
-        return raw.trim();
-      } catch (geminiErr) {
-        console.warn('Gemini inference fallback:', geminiErr);
       }
     }
 
@@ -1080,9 +1130,16 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no formatting) c
   ]
 }`;
 
-    // 3. Try Ultra-Fast & Capable Cloud LLMs with Generous Timeout
-    const openRouterKey = customApiKey || process.env.OPENROUTER_API_KEY;
-    if (openRouterKey) {
+    // 3. Multi-Key & Multi-Provider Cloud LLMs
+    const rawDebriefKeys = [
+      customApiKey && !customApiKey.startsWith('gsk_') && !customApiKey.startsWith('AIza') ? customApiKey : '',
+      process.env.OPENROUTER_API_KEY,
+      process.env.OPENROUTER_FALLBACK_KEYS,
+      process.env.VITE_OPENROUTER_API_KEY
+    ].filter(Boolean).join(',');
+
+    const debriefKeys = Array.from(new Set(rawDebriefKeys.split(/[,\s]+/).map(k => k.trim()).filter(k => k.length > 10)));
+    if (debriefKeys.length > 0) {
       const preferredModels = [
         modelName,
         process.env.OPENROUTER_MODEL,
@@ -1094,42 +1151,83 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no formatting) c
         "openai/gpt-4o-mini"
       ].filter(Boolean) as string[];
 
-      for (const candidateModel of preferredModels) {
-        try {
-          console.log(`[Intelligence] Dispatching debrief analysis to OpenRouter with model: ${candidateModel}`);
-          const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            signal: AbortSignal.timeout(30000), // 30s timeout allows full generation
-            headers: {
-              "Authorization": `Bearer ${openRouterKey}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://telos.ai",
-              "X-Title": "TeLos AI Technical Interview Debrief"
-            },
-            body: JSON.stringify({
-              model: candidateModel,
-              messages: [{ role: "user", content: prompt }],
-              max_tokens: 3000,
-              temperature: 0.2
-            })
-          });
-          if (orRes.ok) {
-            const data = await orRes.json() as any;
-            let text = (data.choices?.[0]?.message?.content || "").trim();
-            text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^Reasoning:[\s\S]*?\n\n/i, '').trim();
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              const parsed = JSON.parse(jsonMatch[0]);
-              console.log(`[Intelligence] Generated authentic debrief with OpenRouter model: ${candidateModel}`);
-              return this.normalizeDebriefReport(parsed, company, role, realTelemetry, transcript);
+      for (let ki = 0; ki < debriefKeys.length; ki++) {
+        const key = debriefKeys[ki];
+        let keyFailed = false;
+
+        for (const candidateModel of preferredModels) {
+          if (keyFailed) break;
+          try {
+            console.log(`[Intelligence] Dispatching debrief to OpenRouter [key #${ki + 1}] model: ${candidateModel}`);
+            const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              signal: AbortSignal.timeout(30000),
+              headers: {
+                "Authorization": `Bearer ${key}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://telos.ai",
+                "X-Title": "TeLos AI Technical Interview Debrief"
+              },
+              body: JSON.stringify({
+                model: candidateModel,
+                messages: [{ role: "user", content: prompt }],
+                max_tokens: 3000,
+                temperature: 0.2
+              })
+            });
+            if (orRes.ok) {
+              const data = await orRes.json() as any;
+              let text = (data.choices?.[0]?.message?.content || "").trim();
+              text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^Reasoning:[\s\S]*?\n\n/i, '').trim();
+              const jsonMatch = text.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                console.log(`[Intelligence] Generated debrief with OpenRouter model: ${candidateModel}`);
+                return this.normalizeDebriefReport(parsed, company, role, realTelemetry, transcript);
+              }
+            } else {
+              const status = orRes.status;
+              if (status === 429 || status === 402) {
+                console.warn(`[Intelligence Auto-Failover] Debrief key #${ki + 1} rate limited (${status}). Switching to next key/provider...`);
+                keyFailed = true;
+                break;
+              }
             }
-          } else {
-            const errText = await orRes.text();
-            console.warn(`[Intelligence] OpenRouter debrief ${candidateModel} status ${orRes.status}:`, errText);
+          } catch (err) {
+            console.warn(`[Intelligence] OpenRouter debrief ${candidateModel} error:`, err);
           }
-        } catch (err) {
-          console.warn(`[Intelligence] OpenRouter debrief ${candidateModel} attempt failed, trying next fallback:`, err);
         }
+      }
+    }
+
+    // 3.5 Groq Debrief Failover
+    const groqKey = process.env.GROQ_API_KEY || (customApiKey?.startsWith('gsk_') ? customApiKey : '');
+    if (groqKey) {
+      try {
+        console.log('[Intelligence Auto-Failover] Dispatching debrief to Groq (llama-3.3-70b-versatile)...');
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          signal: AbortSignal.timeout(30000),
+          headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 3000,
+            temperature: 0.2
+          })
+        });
+        if (groqRes.ok) {
+          const data = await groqRes.json() as any;
+          let text = (data.choices?.[0]?.message?.content || '').trim();
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            console.log('[Intelligence Auto-Failover] Successfully generated debrief with Groq');
+            return this.normalizeDebriefReport(parsed, company, role, realTelemetry, transcript);
+          }
+        }
+      } catch (err) {
+        console.warn('[Intelligence] Groq debrief error:', err);
       }
     }
 

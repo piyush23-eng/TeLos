@@ -33,6 +33,28 @@ export function setStoredOpenRouterModel(model: string): void {
   safeStorage.set('telos_openrouter_model', model.trim());
 }
 
+export function getStoredFallbackKeys(): string {
+  return (safeStorage.get('telos_fallback_keys') || '').trim();
+}
+
+export function setStoredFallbackKeys(keys: string): void {
+  safeStorage.set('telos_fallback_keys', keys.trim());
+}
+
+export function extractCandidateKeys(input?: string): string[] {
+  const custom = input || getStoredOpenRouterKey();
+  const fallback = getStoredFallbackKeys();
+  const combined = `${custom},${fallback}`;
+  return Array.from(
+    new Set(
+      combined
+        .split(/[,\s]+/)
+        .map(k => k.trim())
+        .filter(k => k.length > 10)
+    )
+  );
+}
+
 export async function testDirectOpenRouterCall(
   apiKey?: string,
   model?: string
@@ -125,75 +147,86 @@ export async function generateQuestionDirectly(opts: {
   apiKey?: string;
   model?: string;
 }): Promise<{ question: string; telemetry: OpenRouterTelemetry }> {
-  const key = opts.apiKey || getStoredOpenRouterKey();
+  const candidateKeys = extractCandidateKeys(opts.apiKey);
   const primaryModel = opts.model || getStoredOpenRouterModel();
   const candidateModels = [
     primaryModel,
     'nex-agi/nex-n2.5-mini:free',
     'openrouter/free',
     'inclusionai/ling-3.0-flash-vl:free',
-    'liquid/lfm-2.5-2.6b:free'
+    'liquid/lfm-2.5-2.6b:free',
+    'nvidia/nemotron-3.5-lightning:free'
   ];
 
-  // Try candidate models in order
-  for (const candidate of candidateModels) {
-    const t0 = Date.now();
-    try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${key}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://telos.ai',
-          'X-Title': 'TeLos Live Video Technical Interview'
-        },
-        body: JSON.stringify({
-          model: candidate,
-          messages: [
-            { role: 'system', content: opts.systemPrompt },
-            { role: 'user', content: opts.userPrompt }
-          ],
-          max_tokens: 300,
-          temperature: 0.3
-        })
-      });
+  for (let ki = 0; ki < (candidateKeys.length || 1); ki++) {
+    const key = candidateKeys[ki] || opts.apiKey || getStoredOpenRouterKey();
+    if (!key) continue;
+    let keyRateLimited = false;
 
-      const latencyMs = Date.now() - t0;
-      if (res.ok) {
-        const data = await res.json();
-        let text = (data.choices?.[0]?.message?.content || '').trim();
-        text = text
-          .replace(/<think>[\s\S]*?<\/think>/gi, '')
-          .replace(/```[\s\S]*?```/g, '')
-          .replace(/^\s*(Interviewer|Assistant|Alex):\s*/i, '')
-          .replace(/^Reasoning:[\s\S]*?\n\n/i, '')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .replace(/^["“”]+/, '')
-          .replace(/["“”]+$/, '')
-          .trim();
+    for (const candidate of candidateModels) {
+      if (keyRateLimited) break;
+      const t0 = Date.now();
+      try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://telos.ai',
+            'X-Title': 'TeLos Live Video Technical Interview'
+          },
+          body: JSON.stringify({
+            model: candidate,
+            messages: [
+              { role: 'system', content: opts.systemPrompt },
+              { role: 'user', content: opts.userPrompt }
+            ],
+            max_tokens: 300,
+            temperature: 0.3
+          })
+        });
 
-        if (text && text.length > 15) {
-          return {
-            question: text,
-            telemetry: {
-              calledAt: t0,
-              latencyMs,
-              model: candidate,
-              status: res.status,
-              ok: true,
-              endpoint: 'https://openrouter.ai/api/v1/chat/completions',
-              responsePreview: text
-            }
-          };
+        const latencyMs = Date.now() - t0;
+        if (res.ok) {
+          const data = await res.json();
+          let text = (data.choices?.[0]?.message?.content || '').trim();
+          text = text
+            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .replace(/```[\s\S]*?```/g, '')
+            .replace(/^\s*(Interviewer|Assistant|Alex):\s*/i, '')
+            .replace(/^Reasoning:[\s\S]*?\n\n/i, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .replace(/^["“”]+/, '')
+            .replace(/["“”]+$/, '')
+            .trim();
+
+          if (text && text.length > 15) {
+            return {
+              question: text,
+              telemetry: {
+                calledAt: t0,
+                latencyMs,
+                model: candidate,
+                status: res.status,
+                ok: true,
+                endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+                responsePreview: text
+              }
+            };
+          }
+        } else if (res.status === 429 || res.status === 402) {
+          console.warn(`[Auto-Failover] OpenRouter Key #${ki + 1} rate limited (${res.status}). Switching to next key...`);
+          keyRateLimited = true;
+          break;
         }
+      } catch {
+        // Continue to next candidate model
       }
-    } catch {
-      // Continue to next candidate model
     }
   }
 
-  throw new Error('All OpenRouter direct candidate models failed or returned empty response.');
+  throw new Error('All OpenRouter direct candidate models failed or returned rate limits.');
 }
 
 export async function generateDebriefDirectly(opts: {
@@ -206,7 +239,7 @@ export async function generateDebriefDirectly(opts: {
   apiKey?: string;
   model?: string;
 }): Promise<any> {
-  const key = opts.apiKey || getStoredOpenRouterKey();
+  const candidateKeys = extractCandidateKeys(opts.apiKey);
   const primaryModel = opts.model || getStoredOpenRouterModel();
   const company = opts.company || 'Top Tech';
   const role = opts.role || 'Software Engineer';
@@ -296,41 +329,53 @@ OUTPUT FORMAT: Return ONLY valid, raw JSON (no markdown fences, no formatting) c
     'nex-agi/nex-n2.5-mini:free',
     'openrouter/free',
     'inclusionai/ling-3.0-flash-vl:free',
-    'liquid/lfm-2.5-2.6b:free'
+    'liquid/lfm-2.5-2.6b:free',
+    'nvidia/nemotron-3.5-lightning:free'
   ];
 
-  for (const candidate of candidateModels) {
-    try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${key}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://telos.ai',
-          'X-Title': 'TeLos Post-Interview Debrief Analysis'
-        },
-        body: JSON.stringify({
-          model: candidate,
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 3000,
-          temperature: 0.2
-        })
-      });
+  for (let ki = 0; ki < (candidateKeys.length || 1); ki++) {
+    const key = candidateKeys[ki] || opts.apiKey || getStoredOpenRouterKey();
+    if (!key) continue;
+    let keyFailed = false;
 
-      if (res.ok) {
-        const data = await res.json();
-        let text = (data.choices?.[0]?.message?.content || '').trim();
-        text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^Reasoning:[\s\S]*?\n\n/i, '').trim();
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          return parsed;
+    for (const candidate of candidateModels) {
+      if (keyFailed) break;
+      try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://telos.ai',
+            'X-Title': 'TeLos Post-Interview Debrief Analysis'
+          },
+          body: JSON.stringify({
+            model: candidate,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 3000,
+            temperature: 0.2
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          let text = (data.choices?.[0]?.message?.content || '').trim();
+          text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^Reasoning:[\s\S]*?\n\n/i, '').trim();
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            return parsed;
+          }
+        } else if (res.status === 429 || res.status === 402) {
+          console.warn(`[Auto-Failover] Debrief Key #${ki + 1} rate limited (${res.status}). Switching to next key...`);
+          keyFailed = true;
+          break;
         }
+      } catch {
+        // Continue to next candidate model
       }
-    } catch {
-      // Continue to next candidate model
     }
   }
 
-  throw new Error('All OpenRouter direct debrief candidate models failed.');
+  throw new Error('All OpenRouter direct debrief candidate models failed or returned rate limits.');
 }
