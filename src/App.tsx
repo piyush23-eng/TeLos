@@ -621,7 +621,7 @@ public class Solution {
       const response = await fetch(apiUrl('/api/interviewer/next/stream'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...context, modelProvider, customApiKey: openRouterKeyInput, transcript: toTranscript(msgs), phase })
+        body: JSON.stringify({ ...context, modelProvider, modelName: openRouterModelInput, customApiKey: openRouterKeyInput, transcript: toTranscript(msgs), phase })
       });
       if (!response.ok || !response.body) throw new Error(`Stream error: ${response.status}`);
       const reader = response.body.getReader();
@@ -683,7 +683,7 @@ public class Solution {
         const jsonRes = await fetch(apiUrl('/api/interviewer/next'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...context, modelProvider, customApiKey: openRouterKeyInput, transcript: toTranscript(msgs), phase })
+          body: JSON.stringify({ ...context, modelProvider, modelName: openRouterModelInput, customApiKey: openRouterKeyInput, transcript: toTranscript(msgs), phase })
         });
         if (jsonRes.ok) {
           const data = await jsonRes.json();
@@ -721,17 +721,41 @@ public class Solution {
           const latestCandAnswer = candAnswers[candAnswers.length - 1] || 'Hello!';
           const candTurnCount = candAnswers.length;
 
-          const directSystem = `You are Alex Rivera, an authentic, senior software engineer conducting a live technical video interview at ${context.company || 'the company'}.
+          // Determine current phase
+          let currentPhaseLabel = 'Phase 1 • Warm Intro & Calibration';
+          let phaseGuidance = 'Welcome the candidate warmly. Break the ice and invite them to share a quick overview of what they\'ve been working on recently.';
+          if (candTurnCount >= 1 && candTurnCount <= 2) {
+            currentPhaseLabel = 'Phase 2 • Resume & Project Deep-Dive';
+            phaseGuidance = 'Acknowledge their answer naturally. Probe specific architecture decisions, tech stacks, or bottlenecks mentioned in their background or response.';
+          } else if (candTurnCount >= 3 && candTurnCount <= 5) {
+            currentPhaseLabel = 'Phase 3 • Core Technical Challenge';
+            phaseGuidance = `Present a concrete, realistic engineering challenge relevant to ${context.company || 'the company'} (e.g. distributed rate limiting, cache stampede mitigation, geo-spatial index).`;
+          } else if (candTurnCount >= 6 && candTurnCount <= 7) {
+            currentPhaseLabel = 'Phase 4 • Edge Cases & Stress Testing';
+            phaseGuidance = 'Stress test their proposed design. Ask about network partitions, failovers, memory pressure, or hot partition skew.';
+          } else if (candTurnCount >= 8) {
+            currentPhaseLabel = 'Phase 5 • Candidate Q&A & Wrap-Up';
+            phaseGuidance = 'Answer any candidate questions about engineering culture and tech stack, then sign off warmly.';
+          }
+
+          const directSystem = `You are Alex Rivera, a senior software engineer conducting a live technical video interview at ${context.company || 'the company'}.
 Say exactly ONE complete turn (2 to 3 natural conversational sentences).
 Start with a natural conversational acknowledgment ("Got it.", "Makes sense.", "Fair enough.", "Right, interesting.").
 Ask ONE focused, thoughtful technical question based on the candidate's latest answer.
 Never break character. Return ONLY the spoken dialogue.`;
 
+          const conversationHistory = msgs.map(m => `${m.speaker === 'YOU' ? 'Candidate' : 'Alex'}: ${m.text}`).join('\n');
+
           const directUser = `INTERVIEW CONTEXT:
 Role: ${context.role || 'Software Engineer'}
 Company: ${context.company || 'Tech Company'}
 Candidate CV: ${(context.resume || 'No resume provided').slice(0, 1000)}
-Turn #${candTurnCount + 1}.
+Current Phase: ${currentPhaseLabel}
+Phase Objective: ${phaseGuidance}
+
+CONVERSATION SO FAR:
+${conversationHistory || '(Interview just started)'}
+
 Candidate just said: "${latestCandAnswer}"
 Ask the next authentic follow-up question.`;
 

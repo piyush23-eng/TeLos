@@ -448,18 +448,23 @@ export class IntelligenceProvider {
   return chunks.length ? chunks : [text];
 }
 
-  readonly llm = process.env.OPENROUTER_API_KEY
-    ? 'openrouter'
-    : this.gemini
-    ? 'google'
-    : process.env.GROQ_API_KEY
-    ? 'groq'
-    : this.openai && !process.env.OPENAI_API_KEY?.includes('uvwx')
-    ? 'openai'
-    : this.anthropic
-    ? 'anthropic'
-    : 'demo';
-  readonly mode = this.llm !== 'demo' || process.env.DEEPGRAM_API_KEY ? 'cloud' : 'demo';
+  get llm(): 'openrouter' | 'google' | 'groq' | 'openai' | 'anthropic' | 'demo' {
+    return process.env.OPENROUTER_API_KEY
+      ? 'openrouter'
+      : this.gemini
+      ? 'google'
+      : process.env.GROQ_API_KEY
+      ? 'groq'
+      : this.openai && !process.env.OPENAI_API_KEY?.includes('uvwx')
+      ? 'openai'
+      : this.anthropic
+      ? 'anthropic'
+      : 'demo';
+  }
+
+  get mode(): 'cloud' | 'demo' {
+    return this.llm !== 'demo' || Boolean(process.env.DEEPGRAM_API_KEY) ? 'cloud' : 'demo';
+  }
 
   private async generateText(system: string, user: string, opts: { maxTokens?: number; temperature?: number; modelProvider?: string; customApiKey?: string; customEndpoint?: string; modelName?: string } = {}) {
     const { maxTokens = 500, temperature = 0.3, modelProvider = 'auto', customApiKey, customEndpoint, modelName } = opts;
@@ -637,8 +642,17 @@ export class IntelligenceProvider {
 
     const heuristic = buildHeuristicQuestion(context);
 
-    // Demo mode
-    if (this.llm === 'demo') {
+    // If no LLM key is configured either in environment or request context, fallback to heuristic
+    const hasLiveLLM = Boolean(
+      context.customApiKey ||
+      process.env.OPENROUTER_API_KEY ||
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GROQ_API_KEY ||
+      (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('uvwx')) ||
+      process.env.ANTHROPIC_API_KEY
+    );
+
+    if (!hasLiveLLM) {
       return heuristic;
     }
 
