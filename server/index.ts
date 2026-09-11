@@ -551,6 +551,14 @@ app.post('/api/community/vote', async (req, res, next) => {
 app.post('/api/classify', async (req, res, next) => {
   try { res.json(await intelligence.classify(String(req.body.text || ''))); } catch (error) { next(error); }
 });
+app.get('/api/interviewer/test', async (_req, res, next) => {
+  try {
+    const result = await intelligence.testRealApiCall();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ realApiCallMade: true, error: error?.message || String(error) });
+  }
+});
 app.post('/api/interviewer/next', async (req, res, next) => {
   try { res.json(await intelligence.nextQuestion(req.body)); } catch (error) { next(error); }
 });

@@ -830,6 +830,58 @@ RULES:
     }
   }
 
+  /**
+   * Diagnostic verification method: Makes an active HTTP POST request to OpenRouter API
+   * and returns full latency, response payload, and HTTP headers to prove real network connectivity.
+   */
+  async testRealApiCall() {
+    const t0 = Date.now();
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    const model = process.env.OPENROUTER_MODEL || 'nex-agi/nex-n2.5-mini:free';
+
+    console.log(`[REAL API CALL INITIATED] Dispatching HTTP POST to https://openrouter.ai/api/v1/chat/completions with model: ${model}`);
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        'Authorization': `Bearer ${openRouterKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://telos.ai',
+        'X-Title': 'TeLos Verification Probe'
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: 'You are Alex Rivera, an interviewer.' },
+          { role: 'user', content: 'Say "TeLos live API verification: Connected and operating" in 8 words.' }
+        ],
+        max_tokens: 50,
+        temperature: 0.1
+      })
+    });
+
+    const elapsed = Date.now() - t0;
+    const ok = response.ok;
+    const status = response.status;
+    const body = await response.json() as any;
+    const text = body.choices?.[0]?.message?.content?.trim() || '';
+
+    console.log(`[REAL API CALL COMPLETED] Status: ${status}, Latency: ${elapsed}ms, Response: "${text}"`);
+
+    return {
+      realApiCallMade: true,
+      provider: 'openrouter',
+      targetEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+      model,
+      httpStatus: status,
+      ok,
+      latencyMs: elapsed,
+      responseReceived: text,
+      timestamp: new Date().toISOString()
+    };
+  }
+
   /** Opens a <300ms Deepgram live stream. Caller forwards PCM/WebM audio frames and persists final turns. */
   openTranscriptStream(onTurn: (turn: TranscriptTurn) => void) {
     if (!process.env.DEEPGRAM_API_KEY) return null;
