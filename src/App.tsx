@@ -771,7 +771,7 @@ public class Solution {
                       <span className="field-title">ASSIGNED INTERVIEW PANEL</span>
                       <span className="field-badge-ok">✓ READY TO SCREEN</span>
                     </div>
-                    <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, background: '#ffffff' }}>
+                    <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, background: 'var(--paper)' }}>
                       <div className="interviewer-avatar-badge" style={{ margin: 0 }}>
                         <Bot size={22} />
                         <div className="verified-dot" title="Ready to interview" />
@@ -1430,7 +1430,7 @@ public class Solution {
               </aside>
 
               {/* Rolling Transcript Messages */}
-              <div className="transcript-panel" style={{ background: '#fff', border: '1px solid var(--ink)' }}>
+              <div className="transcript-panel" style={{ border: '1px solid var(--ink)' }}>
                 <div className="panel-label">
                   <span>/// FULL ROLLING TRANSCRIPT</span>
                   <span>{messages.length} TURNS</span>

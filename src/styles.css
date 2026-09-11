@@ -54,3 +54,118 @@
 @media(max-width:920px){.dashboard-command{align-items:flex-start;flex-direction:column}.dashboard-practice-grid,.dashboard-growth-grid{grid-template-columns:1fr}.daily-challenge{align-items:flex-start;flex-direction:column}.daily-challenge>.black-button{align-self:auto}.rhythm-grid{max-width:500px}.next-unlock{min-height:100px}}
 @media(max-width:560px){.command-tabs{width:100%}.command-tabs button{flex:1;justify-content:center;padding:8px 5px;font-size:8px}.streak-chip{width:100%;justify-content:space-between}.dashboard-command{padding:9px}.daily-challenge,.skill-map-card,.rhythm-card,.achievement-card,.next-unlock{padding:16px}.daily-challenge h2{font-size:27px}.dashboard-growth-grid{gap:12px}}
 @media(max-width:920px){.account-actions .nav-cta{display:flex;padding:10px 11px}.account-actions .account-cta{min-width:0}.account-popover{right:0;width:min(290px,calc(100vw - 36px))}}
+
+/* ── Additional Dark Theme Polish & Contrast Fixes ── */
+:root[data-theme='dark'] .auth-card {
+  background: #181726 !important;
+  color: #f4f2fa !important;
+  border: 1px solid rgba(244, 242, 250, 0.18) !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.8) !important;
+}
+
+:root[data-theme='dark'] .auth-card h2 {
+  color: #f4f2fa !important;
+}
+
+:root[data-theme='dark'] .auth-copy {
+  color: #aaa7b5 !important;
+}
+
+:root[data-theme='dark'] .auth-card label {
+  color: #d7d3e3 !important;
+}
+
+:root[data-theme='dark'] .auth-card input {
+  background: #242334 !important;
+  color: #f4f2fa !important;
+  border-color: rgba(244, 242, 250, 0.22) !important;
+}
+
+:root[data-theme='dark'] .auth-submit {
+  background: var(--mint) !important;
+  color: #101018 !important;
+}
+
+:root[data-theme='dark'] .auth-submit:hover {
+  background: var(--violet) !important;
+  color: #101018 !important;
+}
+
+:root[data-theme='dark'] .auth-switch,
+:root[data-theme='dark'] .auth-security {
+  color: #aaa7b5 !important;
+}
+
+:root[data-theme='dark'] .auth-close-btn {
+  color: #f4f2fa !important;
+}
+
+:root[data-theme='dark'] .question-pager button {
+  background: #242334 !important;
+  color: #f4f2fa !important;
+  border-color: rgba(244, 242, 250, 0.22) !important;
+}
+
+:root[data-theme='dark'] .question-pager button.active {
+  background: var(--violet) !important;
+  color: #101018 !important;
+  border-color: var(--violet) !important;
+}
+
+:root[data-theme='dark'] .assessment-editor-head select {
+  background: #242334 !important;
+  color: #f4f2fa !important;
+  border-color: rgba(244, 242, 250, 0.25) !important;
+}
+
+:root[data-theme='dark'] .exit-assessment {
+  background: #1e1d2c !important;
+  color: #ff9a7d !important;
+  border-color: rgba(244, 242, 250, 0.18) !important;
+}
+
+:root[data-theme='dark'] .exit-assessment:hover {
+  background: rgba(255, 154, 125, 0.18) !important;
+}
+
+:root[data-theme='dark'] .dashboard-insights {
+  background: #1a1926 !important;
+  border-color: rgba(244, 242, 250, 0.18) !important;
+}
+
+:root[data-theme='dark'] .dashboard-insights article {
+  background: #1e1d2e !important;
+  border-color: rgba(244, 242, 250, 0.18) !important;
+}
+
+:root[data-theme='dark'] .dashboard-insights article b {
+  color: #f4f2fa !important;
+}
+
+:root[data-theme='dark'] .dashboard-insights article span,
+:root[data-theme='dark'] .dashboard-insights article p {
+  color: #aaa7b5 !important;
+}
+
+:root[data-theme='dark'] .dashboard-hero h1 {
+  color: #f4f2fa !important;
+}
+
+:root[data-theme='dark'] .dashboard-hero > div > p:last-child {
+  color: #c5c1d0 !important;
+}
+
+:root[data-theme='dark'] .thread-reply textarea {
+  background: #242334 !important;
+  color: #f4f2fa !important;
+  border-color: rgba(244, 242, 250, 0.22) !important;
+}
+
+:root[data-theme='dark'] .recharts-cartesian-grid-horizontal line {
+  stroke: rgba(244, 242, 250, 0.12) !important;
+}
+
+:root[data-theme='dark'] .recharts-text {
+  fill: #aaa7b5 !important;
+}
+

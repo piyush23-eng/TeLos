@@ -47,3 +47,15 @@
 }
 
 .context-dock{border:4px solid #111;background:#f6f3e9;margin-bottom:20px}.context-dock summary{cursor:pointer;padding:12px 14px;font:12px "Archivo Black";list-style:none}.context-dock summary::-webkit-details-marker{display:none}.context-dock summary::after{content:"+";float:right;font-size:18px}.context-dock[open] summary{border-bottom:3px solid #111}.context-dock[open] summary::after{content:"−"}.context-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px}.context-fields label{font:10px "IBM Plex Mono";display:flex;flex-direction:column;gap:6px}.context-fields label:nth-last-child(-n+2){grid-column:span 1}.context-fields input,.context-fields textarea{width:100%;border:2px solid #111;border-radius:0;background:#fff;padding:9px;font:13px "Space Grotesk"}.context-fields textarea{min-height:106px;resize:vertical}@media(max-width:860px){.context-fields{grid-template-columns:1fr}.context-fields label:nth-last-child(-n+2){grid-column:auto}}
+
+:root[data-theme='dark'] .live-meter i {
+  background: #f4f2fa !important;
+  opacity: 0.85;
+}
+
+:root[data-theme='dark'] .voice-box select {
+  background: #242334 !important;
+  color: #f4f2fa !important;
+  border-color: rgba(244, 242, 250, 0.25) !important;
+}
+
