@@ -5,13 +5,15 @@ interface VoiceOrbVisualizerProps {
   subtitles?: string;
   interviewerName?: string;
   companyName?: string;
+  roleTitle?: string;
 }
 
 export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
   state,
   subtitles,
-  interviewerName = 'Alex',
-  companyName = 'Target Company'
+  interviewerName = 'Alex Rivera',
+  companyName = 'Target Company',
+  roleTitle = 'Staff Software Engineer'
 }) => {
   return (
     <div className={`voice-visualizer-container ${state}`}>
@@ -46,19 +48,19 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
               <div className="voice-wave-anim">
                 <span /><span /><span /><span />
               </div>
-              <b>{interviewerName.toUpperCase()} IS SPEAKING...</b>
+              <b>ALEX IS SPEAKING...</b>
             </>
           )}
           {state === 'thinking' && (
             <>
               <span className="thinking-pulse-dot" />
-              <b>{interviewerName.toUpperCase()} IS THINKING...</b>
+              <b>ALEX IS TAKING NOTES &amp; ANALYZING...</b>
             </>
           )}
           {state === 'listening' && (
             <>
               <span className="listening-pulse-dot" />
-              <b>{interviewerName.toUpperCase()} IS LISTENING TO YOU...</b>
+              <b>ALEX IS LISTENING TO YOU...</b>
             </>
           )}
         </div>
@@ -68,7 +70,7 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
       {subtitles && (
         <div className="voice-subtitle-hud">
           <div className="subtitle-header">
-            <span>🎙️ {interviewerName} • Question</span>
+            <span>🎙️ Alex Rivera • Live Call Audio</span>
           </div>
           <p>{subtitles}</p>
         </div>
@@ -76,7 +78,8 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
 
       {/* Bottom Name Tag */}
       <div className="voice-panel-nametag">
-        <span><b>{interviewerName}</b> • AI Interviewer ({companyName})</span>
+        <div className="verified-interviewer-indicator" />
+        <span><b>Alex Rivera</b> • {roleTitle} ({companyName})</span>
       </div>
     </div>
   );

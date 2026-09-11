@@ -195,6 +195,30 @@ function Studio() {
   const [resumeFileName, setResumeFileName] = useState('No resume loaded');
   const [showScratchpad, setShowScratchpad] = useState(false);
 
+  // Progressive 5-Phase Interview State
+  const [currentPhase, setCurrentPhase] = useState<{
+    key: string;
+    number: number;
+    label: string;
+    challenge?: {
+      title: string;
+      problemScenario: string;
+      starterCodePrompt: string;
+      edgeCaseFocus: string;
+    };
+  }>({
+    key: 'warm-intro',
+    number: 1,
+    label: 'Phase 1 • Warm Intro & Calibration'
+  });
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [showEndCallConfirm, setShowEndCallConfirm] = useState(false);
+  const isSpeakingTtsRef = useRef(false);
+
+  useEffect(() => {
+    isSpeakingTtsRef.current = isSpeakingTts;
+  }, [isSpeakingTts]);
+
   // Technical Scratchpad Workspace State
   const [language, setLanguage] = useState<CodeLanguage>('python');
   const [code, setCode] = useState<string>(`# Technical Scratchpad - Python 3
@@ -454,46 +478,65 @@ public class Solution {
   const buildCompanySpecificQuestion = (phase: 'opening' | 'followup', msgs: Message[]) => {
     const candidateAnswers = msgs.filter(m => m.speaker === 'YOU');
     const latestAnswer = [...msgs].reverse().find(m => m.speaker === 'YOU')?.text || '';
-    const companyName = context.company.trim() || 'Tech';
+    const companyName = context.company.trim() || 'Target Company';
     const roleName = context.role.trim() || 'Software Engineer';
     const resumeText = context.resume.trim();
+    const count = candidateAnswers.length;
 
-    if (phase === 'opening' || candidateAnswers.length === 0) {
+    // Phase 1: Warm Intro (Turn 1)
+    if (phase === 'opening' || count === 0) {
       if (resumeText) {
-        const projectMatch = resumeText.match(/(?:Project|Built|Led|Engineered|Developed|Designed|Architecture|Experience)[:\s-]*([^\n.]+)/i);
         const techMatch = resumeText.match(/(?:Java|Python|Go|Golang|C\+\+|Rust|Node|React|Kubernetes|Kafka|Redis|Postgres|AWS|GCP|Distributed|Microservices|Docker|Spring)/i);
-        const highlighted = projectMatch ? projectMatch[1].trim() : techMatch ? techMatch[0] : '';
+        const highlighted = techMatch ? techMatch[0] : '';
         if (highlighted) {
-          return `Hey, thanks for joining today! I've been reviewing your resume for the ${roleName} role at ${companyName}, and noticed your work on ${highlighted}. To start off, could you walk me through the architectural choices you made there and the biggest technical challenge you tackled?`;
+          return `Hey! Thanks for jumping on the call today! I'm Alex from engineering here at ${companyName}. I saw your experience with ${highlighted} and systems design. How's your day going so far? To kick things off, could you walk me through your journey and what you've been working on recently?`;
         }
-        return `Hey, thanks for jumping on the call! I had a look through your background and CV for ${companyName}. Walk me through the most technically challenging system or project you've owned and what trade-offs you had to balance.`;
       }
-      return `Hey, thanks for jumping on the call today! I'm calibrated to screen for the ${roleName} position at ${companyName}. To start off, walk me through your background and the core architecture of a system you recently owned.`;
+      return `Hey! Thanks for jumping on the call today! I'm Alex from engineering here at ${companyName}. How's your day going so far? Whenever you're ready, I'd love to just kick things off casually — could you tell me a little bit about yourself and what you've been working on recently?`;
     }
 
-    if (candidateAnswers.length >= 6) {
-      return `Alright, I think that's a good place to stop — thanks for walking me through all that! You did great explaining those details.`;
+    // Phase 2: Resume & Project Deep-Dive (Turns 2-3)
+    if (count <= 2) {
+      if (latestAnswer.toLowerCase().includes('concurren') || latestAnswer.toLowerCase().includes('lock') || latestAnswer.toLowerCase().includes('race')) {
+        return 'Got it, makes sense. How did you handle edge cases where multiple concurrent requests competed for the same record or key simultaneously?';
+      }
+      if (latestAnswer.toLowerCase().includes('latency') || latestAnswer.toLowerCase().includes('scale') || latestAnswer.toLowerCase().includes('cache') || latestAnswer.toLowerCase().includes('kafka')) {
+        return 'Makes sense. When the pipeline saturated or memory spiked under peak traffic, what was the first bottleneck that appeared, and how did you mitigate it?';
+      }
+      return `Got it. In that architecture, what was the most critical trade-off you personally owned, and what would you change if you had to redesign it from scratch today?`;
     }
 
-    if (latestAnswer.toLowerCase().includes('concurren') || latestAnswer.toLowerCase().includes('lock') || latestAnswer.toLowerCase().includes('race')) {
-      return 'Got it, nice. How did you handle edge cases where multiple operations competed for the same resource simultaneously?';
+    // Phase 3: Core Technical Challenge (Turns 4-6)
+    if (count === 3) {
+      return `Awesome, that gives me great context on your background. Let's switch gears into a technical challenge that's very relevant to what we build here at ${companyName}. Let's design a high-throughput, distributed rate limiter and task coordinator that operates across multi-region API gateways with Redis and token buckets. How would you approach designing this from a high level? Feel free to open the scratchpad if you want to write code or sketch components.`;
     }
-    if (latestAnswer.toLowerCase().includes('latency') || latestAnswer.toLowerCase().includes('scale') || latestAnswer.toLowerCase().includes('cache') || latestAnswer.toLowerCase().includes('kafka')) {
-      return 'Makes sense. Okay, but what if the event pipeline saturated or memory spiked during peak load? How did you recover?';
-    }
-    if (latestAnswer.toLowerCase().includes('fail') || latestAnswer.toLowerCase().includes('incident') || latestAnswer.toLowerCase().includes('error')) {
-      return 'Interesting, okay. When that failure occurred, what broke first, and what steps did you take to prevent it from repeating?';
+    if (count <= 5) {
+      return `Right, that's a good direction. How would you structure the core in-memory state and data structures for that? Walk me through your API contract and eviction policy.`;
     }
 
-    return `Understood. In the context of your work at ${companyName} for ${roleName}, what was the most critical trade-off behind that decision, and what would you change if the constraints shifted?`;
+    // Phase 4: Edge Cases & Stress Testing (Turns 7-8)
+    if (count <= 7) {
+      return `Got it, that makes sense. Now let's stress test this: what happens if traffic spikes 10x suddenly and one of the Redis nodes drops off the network? How does your system prevent a cascading failure to the primary database?`;
+    }
+
+    // Phase 5: Candidate Q&A & Wrap-Up (Turn 9+)
+    const isQuestion = /\?|what|how|could you|team|culture|deploy|stack|oncall|on-call/i.test(latestAnswer);
+    if (isQuestion) {
+      return `Great question! At ${companyName}, we emphasize high autonomy, blameless post-mortems, and continuous canary deployments to 1% of live traffic before promoting. Each team owns their services end-to-end. We're about at time today — thank you so much for walking through all of that with me! The recruiting team will follow up on next steps shortly. Have a wonderful day!`;
+    }
+    return `We've covered a lot of ground today! We have about 5 minutes left, and I want to make sure you have time for questions. What questions do you have for me about engineering at ${companyName}, our team culture, or our tech stack?`;
   };
 
   const playVoice = (text: string) => {
     if (!voice || !text) return;
     setIsSpeakingTts(true);
+    isSpeakingTtsRef.current = true;
     void speak(text, true, voiceName, voiceProfile);
     const estDuration = Math.max(2500, text.split(/\s+/).length * 360);
-    setTimeout(() => setIsSpeakingTts(false), estDuration);
+    setTimeout(() => {
+      setIsSpeakingTts(false);
+      isSpeakingTtsRef.current = false;
+    }, estDuration);
   };
 
   const fetchPanelQuestion = async (msgs: Message[], phase: 'opening' | 'followup') => {
@@ -527,6 +570,23 @@ public class Solution {
           const lines = part.split('\n');
           const eventLine = lines.find(line => line.startsWith('event:'))?.replace('event:', '').trim();
           const dataLine = lines.find(line => line.startsWith('data:'))?.replace('data:', '').trim();
+          if (eventLine === 'meta' && dataLine) {
+            try {
+              const meta = JSON.parse(dataLine);
+              if (meta.phase) {
+                setCurrentPhase({
+                  key: meta.phase,
+                  number: meta.phaseNumber || 1,
+                  label: meta.phaseLabel || 'Phase 1 • Warm Intro',
+                  challenge: meta.challenge
+                });
+                if (meta.phaseNumber === 3 && meta.challenge) {
+                  setShowScratchpad(true);
+                  setCode(prev => (prev && prev.length > 60) ? prev : `# ─── ${meta.challenge.title.toUpperCase()} ───\n# ${meta.challenge.problemScenario}\n# Task: ${meta.challenge.starterCodePrompt}\n\ndef solution():\n    pass\n`);
+                }
+              }
+            } catch { /* ignore meta parse */ }
+          }
           if (eventLine === 'delta' && dataLine) {
             const payload = JSON.parse(dataLine);
             const text = payload.text || '';
@@ -542,6 +602,20 @@ public class Solution {
       upsertStreamingPanel(finalQuestion, true);
       playVoice(finalQuestion);
     } catch {
+      const candTurns = msgs.filter(m => m.speaker === 'YOU').length;
+      let phaseNum = 1;
+      let phaseLabel = 'Phase 1 • Warm Intro & Calibration';
+      let phaseKey = 'warm-intro';
+      if (candTurns === 1 || candTurns === 2) {
+        phaseNum = 2; phaseKey = 'cv-deep-dive'; phaseLabel = 'Phase 2 • Resume & Project Deep-Dive';
+      } else if (candTurns >= 3 && candTurns <= 5) {
+        phaseNum = 3; phaseKey = 'technical-challenge'; phaseLabel = 'Phase 3 • Core Technical Challenge';
+      } else if (candTurns === 6 || candTurns === 7) {
+        phaseNum = 4; phaseKey = 'edge-cases'; phaseLabel = 'Phase 4 • Edge Cases & Trade-offs';
+      } else if (candTurns >= 8) {
+        phaseNum = 5; phaseKey = 'candidate-qa'; phaseLabel = 'Phase 5 • Candidate Q&A & Wrap-Up';
+      }
+      setCurrentPhase(prev => ({ ...prev, number: phaseNum, key: phaseKey, label: phaseLabel }));
       upsertStreamingPanel(fallbackQuestion, true);
       playVoice(fallbackQuestion);
     } finally {
@@ -553,6 +627,8 @@ public class Solution {
   const commitAnswer = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || followUpLock.current) return;
+    setInterimTranscript('');
+    speechBufferRef.current = '';
     const youMsg = { id: Date.now(), speaker: 'YOU' as const, text: trimmed, time: stamp(startRef.current) };
     const next = [...messagesRef.current, youMsg];
     setMessages(next);
@@ -571,6 +647,7 @@ public class Solution {
   const interruptAlex = () => {
     window.speechSynthesis?.cancel();
     setIsSpeakingTts(false);
+    isSpeakingTtsRef.current = false;
     if (!mic) {
       void startMic();
     }
@@ -659,15 +736,27 @@ public class Solution {
       recognition.interimResults = true;
       recognition.lang = 'en-US';
       recognition.onresult = (event: any) => {
+        // Acoustic Echo Cancellation: If Alex is currently speaking aloud, do not transcribe sound from speakers
+        if (isSpeakingTtsRef.current) return;
+
+        let interimText = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) speechBufferRef.current += `${event.results[i][0].transcript} `;
+          if (event.results[i].isFinal) {
+            speechBufferRef.current += `${event.results[i][0].transcript} `;
+          } else {
+            interimText += event.results[i][0].transcript;
+          }
         }
+        const liveText = (speechBufferRef.current + ' ' + interimText).trim();
+        setInterimTranscript(liveText);
+
         if (speechDebounceRef.current) clearTimeout(speechDebounceRef.current);
         speechDebounceRef.current = setTimeout(() => {
-          const chunk = speechBufferRef.current.trim();
+          const chunk = liveText;
           speechBufferRef.current = '';
-          if (chunk.length > 10) commitAnswer(chunk);
-        }, 600);
+          setInterimTranscript('');
+          if (chunk.length > 8) commitAnswer(chunk);
+        }, 1800);
       };
       recognition.onerror = (event: any) => {
         if (event.error !== 'aborted' && event.error !== 'no-speech') {
@@ -706,6 +795,13 @@ public class Solution {
     setStarted(true);
     startRef.current = Date.now();
     setMessages([]);
+    setCurrentPhase({
+      key: 'warm-intro',
+      number: 1,
+      label: 'Phase 1 • Warm Intro & Calibration'
+    });
+    setInterimTranscript('');
+    setShowEndCallConfirm(false);
     const resolvedCompany = context.company.trim() || 'General Tech Company';
     const resolvedRole = context.role.trim() || 'Software Engineer';
     const resolvedFocus = context.focus.trim() || 'Distributed systems and engineering algorithms';
@@ -713,7 +809,7 @@ public class Solution {
       ...context,
       company: resolvedCompany,
       role: resolvedRole,
-      persona: 'Alex (AI Interviewer)',
+      persona: 'Alex Rivera (Staff Software Engineer)',
       focus: resolvedFocus,
       resume: context.resume || '',
       jobDescription: context.jobDescription || ''
@@ -1112,6 +1208,50 @@ public class Solution {
             </div>
           </div>
 
+          {/* 5-Phase Interactive Visual Progress Bar */}
+          <div className="meet-phase-timeline-bar">
+            {[
+              { id: 1, key: 'warm-intro', label: '1. Warm Welcome', desc: 'Icebreaker & Format' },
+              { id: 2, key: 'cv-deep-dive', label: '2. CV & Projects', desc: 'Architecture Deep-Dive' },
+              { id: 3, key: 'technical-challenge', label: '3. Technical Challenge', desc: 'Core Problem & Coding' },
+              { id: 4, key: 'edge-cases', label: '4. Scale & Trade-Offs', desc: 'Edge Cases & Stress Tests' },
+              { id: 5, key: 'candidate-qa', label: '5. Candidate Q&A', desc: 'Culture & Next Steps' }
+            ].map(step => {
+              const isActive = currentPhase.number === step.id;
+              const isPast = currentPhase.number > step.id;
+              return (
+                <div key={step.id} className={`phase-step-item ${isActive ? 'active' : isPast ? 'completed' : 'upcoming'}`}>
+                  <div className="phase-step-indicator">
+                    {isPast ? <Check size={12} strokeWidth={3} /> : <span>0{step.id}</span>}
+                  </div>
+                  <div className="phase-step-details">
+                    <span className="phase-step-title">{step.label}</span>
+                    <span className="phase-step-sub">{step.desc}</span>
+                  </div>
+                  {isActive && <div className="phase-live-pulse-glow" />}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Technical Challenge Live Banner */}
+          {currentPhase.challenge && (currentPhase.number === 3 || currentPhase.number === 4) && (
+            <div className="phase-challenge-banner">
+              <div className="challenge-banner-info">
+                <span className="challenge-badge">🎯 LIVE CHALLENGE</span>
+                <strong>{currentPhase.challenge.title}</strong>
+                <p>{currentPhase.challenge.problemScenario}</p>
+              </div>
+              <button
+                type="button"
+                className="challenge-open-scratchpad-btn"
+                onClick={() => setShowScratchpad(true)}
+              >
+                <Code2 size={14} /> Open Problem Workbench
+              </button>
+            </div>
+          )}
+
           {configOpen && (
             <div className="brutalist-field-box" style={{ margin: '0 0 14px', background: 'var(--paper)' }}>
               <div className="brutalist-field-header">
@@ -1174,16 +1314,13 @@ public class Solution {
               <VoiceOrbVisualizer
                 state={interviewerState}
                 subtitles={subtitles ? latestPanel : undefined}
-                interviewerName="Alex"
+                interviewerName="Alex Rivera"
                 companyName={context.company || activeCompany.name}
+                roleTitle="Staff Software Engineer"
               />
 
               <div className="meet-phase-indicator">
-                {messages.filter(m => m.speaker === 'YOU').length < 2
-                  ? 'PHASE 1 • WARM INTRO & CV DISCOVERY'
-                  : messages.filter(m => m.speaker === 'YOU').length < 5
-                    ? 'PHASE 2 • ARCHITECTURAL & SYSTEM DEEP-DIVE'
-                    : 'PHASE 3 • TECHNICAL REASONING & CHALLENGE'}
+                {currentPhase.label.toUpperCase()}
               </div>
             </div>
 
@@ -1213,6 +1350,31 @@ public class Solution {
                   <b>Camera Inactive</b>
                   <button className="lobby-btn" onClick={() => void startCamera()}>
                     <Video size={14} /> Turn on Camera
+                  </button>
+                </div>
+              )}
+
+              {/* Live Interim Speech Transcription HUD */}
+              {interimTranscript && (
+                <div className="candidate-live-speech-hud">
+                  <div className="live-speech-status">
+                    <span className="live-speech-wave-dot" />
+                    <small>TRANSCRIBING YOUR SPEECH IN REAL-TIME...</small>
+                  </div>
+                  <p>"{interimTranscript}"</p>
+                  <button
+                    type="button"
+                    className="live-speech-done-btn"
+                    onClick={() => {
+                      const text = (speechBufferRef.current + ' ' + interimTranscript).trim();
+                      if (text.length > 5) {
+                        speechBufferRef.current = '';
+                        setInterimTranscript('');
+                        commitAnswer(text);
+                      }
+                    }}
+                  >
+                    Done Speaking ⏎
                   </button>
                 </div>
               )}
@@ -1317,7 +1479,7 @@ public class Solution {
             </div>
 
             <div className="control-group-right">
-              <button className="call-action-btn end-call-btn" onClick={() => { stopMic(); stopCamera(); setReport(true); }}>
+              <button className="call-action-btn end-call-btn" onClick={() => setShowEndCallConfirm(true)}>
                 <Square size={14} /> End Call
               </button>
             </div>
@@ -1369,6 +1531,36 @@ public class Solution {
             >
               <CheckCircle2 size={13} /> 🧪 Edge Cases &amp; Tests
             </button>
+
+            {/* Phase 5 Candidate Q&A Action Chips */}
+            {currentPhase.number === 5 && (
+              <>
+                <button
+                  type="button"
+                  className="quick-action-btn highlight"
+                  onClick={() => commitAnswer(`Could you share more about the engineering culture, developer autonomy, and deployment rituals on the team at ${context.company || 'your company'}?`)}
+                  disabled={thinking}
+                >
+                  <HelpCircle size={13} /> ❓ Ask About Culture &amp; Autonomy
+                </button>
+                <button
+                  type="button"
+                  className="quick-action-btn highlight"
+                  onClick={() => commitAnswer(`What does the CI/CD pipeline and release cadence look like for services running in production at ${context.company || 'your company'}?`)}
+                  disabled={thinking}
+                >
+                  <Zap size={13} /> ❓ Ask About Deployments &amp; CI/CD
+                </button>
+                <button
+                  type="button"
+                  className="quick-action-btn highlight"
+                  onClick={() => commitAnswer(`How does the team balance new feature velocity with technical debt and on-call operational load at ${context.company || 'your company'}?`)}
+                  disabled={thinking}
+                >
+                  <ShieldCheck size={13} /> ❓ Ask About On-Call &amp; Tech Debt
+                </button>
+              </>
+            )}
           </div>
 
           {/* Live In-call Explanation & Answer Bar */}
@@ -1389,6 +1581,38 @@ public class Solution {
               <Send size={15} /> Send Answer
             </button>
           </div>
+
+          {/* End Call Confirmation Modal */}
+          {showEndCallConfirm && (
+            <div className="end-call-confirm-overlay" onClick={() => setShowEndCallConfirm(false)}>
+              <div className="end-call-confirm-modal" onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <ShieldCheck size={22} color="#6e54f6" />
+                  <h3 style={{ margin: 0 }}>End Interview &amp; Generate Debrief Report?</h3>
+                </div>
+                <p>
+                  Alex has observed your technical responses across all 5 dimensions (Architecture, Algorithmic Depth, Trade-offs, Edge-case Rigor, and Communication). Ending now will analyze your entire transcript to produce a 100% personalized debrief report.
+                </p>
+                <div className="end-call-confirm-actions">
+                  <button type="button" className="btn-cancel" onClick={() => setShowEndCallConfirm(false)}>
+                    Resume Call
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-confirm"
+                    onClick={() => {
+                      stopMic();
+                      stopCamera();
+                      setShowEndCallConfirm(false);
+                      setReport(true);
+                    }}
+                  >
+                    End Call &amp; View Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
       )}
 

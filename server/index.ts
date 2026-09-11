@@ -560,9 +560,15 @@ app.post('/api/interviewer/next/stream', async (req, res, next) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders?.();
-    await intelligence.streamQuestion(req.body, (chunk: string) => {
-      res.write(`event: delta\ndata: ${JSON.stringify({ text: chunk })}\n\n`);
-    });
+    await intelligence.streamQuestion(
+      req.body,
+      (chunk: string) => {
+        res.write(`event: delta\ndata: ${JSON.stringify({ text: chunk })}\n\n`);
+      },
+      (meta: any) => {
+        res.write(`event: meta\ndata: ${JSON.stringify(meta)}\n\n`);
+      }
+    );
     res.write('event: done\ndata: {}\n\n');
     res.end();
   } catch (error) { next(error); }

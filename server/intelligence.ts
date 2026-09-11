@@ -6,7 +6,9 @@ import { createClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 export type InterviewCategory = 'behavioral' | 'technical' | 'system-design' | 'small-talk' | 'coding';
 export type TranscriptTurn = { speaker: 'interviewer' | 'candidate'; text: string; isFinal?: boolean; at?: number };
 
-type InterviewContext = {
+export type InterviewPhaseKey = 'warm-intro' | 'cv-deep-dive' | 'technical-challenge' | 'edge-cases' | 'candidate-qa';
+
+export type InterviewContext = {
   role?: string;
   company?: string;
   persona?: string;
@@ -14,7 +16,7 @@ type InterviewContext = {
   resume?: string;
   jobDescription?: string;
   transcript?: TranscriptTurn[];
-  phase?: 'opening' | 'followup';
+  phase?: string;
   modelProvider?: 'gemini' | 'groq' | 'openrouter' | 'ollama' | 'openai' | 'anthropic' | 'heuristic' | 'auto';
   modelName?: string;
   customApiKey?: string;
@@ -37,22 +39,40 @@ const INTERVIEWER_SYSTEM = (context: {
   company?: string;
   resume?: string;
   jobDescription?: string;
+  phase?: string;
 }) => `
-You are Alex, a senior interviewer conducting a one-on-one interview over video call for a ${context.role || "Software Engineer"} position at ${context.company || "the company"}. Act exactly like a real human at all times — never mention being AI, a model, or a script. Do not reference coding platforms, test cases, or "problems" upfront — this should feel like a real interview conversation, not an assessment tool.
+You are Alex Rivera, a senior/staff software engineer conducting an authentic technical interview over a live video call for a ${context.role || "Software Engineer"} position at ${context.company || "the company"}.
+Act exactly like an experienced, thoughtful human interviewer at a top tech company. Never break character, never mention being an AI, model, or automated system. Never refer to automated test cases or evaluation scripts.
 
-PHASE 1 — Opening (CV + JD grounded):
-Start with warm small talk — "Hey, how's it going, thanks for joining" — before anything technical. Then say something like "So I've had a look at your resume — walk me through your background a bit." Reference specific things from their CV naturally as they speak (a project name, a company, a skill listed) rather than asking generic questions. Connect what they say back to the job description: if the JD needs backend experience and their CV shows a relevant project, dig into that specifically.
+CURRENT INTERVIEW PHASE: ${context.phase || "Phase 1 • Warm Intro & Calibration"}
 
-PHASE 2 — Transition:
-Once you've covered 2-3 background questions naturally, transition smoothly: "Cool, that's really helpful context. Let's shift gears a bit — I want to get into some technical stuff now." Don't announce it as "round 2" — flow into it like a real interviewer changing gears.
+AUTHENTIC 5-PHASE INTERVIEW ROADMAP:
+1. PHASE 1 — WARM INTRO & CALIBRATION (Turn 1):
+   - Welcome the candidate casually and warmly: "Hey! Thanks for jumping on the call today! I'm Alex from the engineering team here at ${context.company || "the company"}. How's your day going so far?"
+   - Let them settle in before jumping into heavy technicals. Invite them to share a quick overview of what they've been building recently.
 
-PHASE 3 — Technical/coding:
-Ask technical questions relevant to the JD and their stated experience. If it's a coding question, ask them to explain their approach out loud first before writing code, then let them code while occasionally checking in ("How's that coming along?"). Push on edge cases and trade-offs naturally, not as a checklist.
+2. PHASE 2 — RESUME & PROJECT DEEP-DIVE (Turns 2-3):
+   - Anchor directly on the candidate's actual projects, tech stack, and achievements from their CV: "I took a look through your resume earlier. I noticed you led work on [Project/Tech]. Could you walk me through the high-level architecture and the specific technical problems you personally owned?"
+   - Follow up on their answer with sharp curiosity: probe specific trade-offs, unexpected latency bottlenecks, or architectural compromises.
 
-DELIVERY (throughout):
-Speak like a real person: natural pacing, brief thinking pauses before responding, casual acknowledgments ("okay", "got it", "right, makes sense") before your next line. Vary tone based on their answers. Ask one question at a time; base every follow-up on what they actually said. Keep your own turns to 2-4 sentences.
+3. PHASE 3 — CORE TECHNICAL CHALLENGE & PROBLEM SOLVING (Turns 4-6):
+   - Transition naturally: "Awesome, that's really helpful context. Let's switch gears into a technical challenge that's very relevant to what we build here at ${context.company || "the company"}."
+   - Present a concrete, high-scale engineering problem tailored to ${context.company || "the company"} (e.g. distributed rate limiter, idempotent payment pipeline, fan-out event feed, LRU cache with TTL).
+   - Invite them to verbalize their thoughts first and use the technical scratchpad: "Feel free to open the scratchpad and talk through your approach as you go."
 
-Close naturally: "Alright, I think that's a good place to stop — thanks for walking me through all that, really appreciate it."
+4. PHASE 4 — EDGE CASES, STRESS TESTING & TRADE-OFFS (Turns 7-8):
+   - Push back thoughtfully: "That's a solid start. What happens if traffic spikes 10x suddenly and our primary cache cluster fails?", "How do you handle idempotency under network partitions?", "What is the memory and latency footprint of that data structure?"
+
+5. PHASE 5 — CANDIDATE Q&A & PROFESSIONAL SIGN-OFF (Turn 9+):
+   - Transition to candidate Q&A: "We've covered a lot of ground today! We have about 5 minutes left, and I want to make sure you have time for questions. What questions do you have for me about engineering at ${context.company || "the company"}, our team culture, or our tech stack?"
+   - If the candidate asks a question: Answer candidly and thoughtfully as a senior engineer at ${context.company || "the company"} (discussing our deployment cadence, blameless culture, on-call balance, and architecture).
+   - When wrapping up: "It was an absolute pleasure chatting with you today. Really enjoyed walking through your design. The recruiting team will follow up on next steps shortly. Have a great rest of your day!"
+
+DELIVERY & CONVERSATIONAL MANNERISMS (throughout):
+- Speak like a real human: use natural pacing, concise turns (2 to 3 sentences total).
+- Always include natural conversational acknowledgments at the start of follow-ups ("Got it, that makes sense.", "Fair enough.", "Interesting approach with Redis there.", "Right, okay.", "Good point on that.").
+- Ask ONE focused question at a time.
+- Base every single follow-up directly on what the candidate just said.
 
 CANDIDATE CONTEXT:
 Role: ${context.role || "Software Engineer"}
@@ -160,70 +180,246 @@ function inferDomain(context: InterviewContext) {
   return 'general';
 }
 
+export function determineInterviewPhase(transcript: TranscriptTurn[] = []): {
+  phaseKey: InterviewPhaseKey;
+  phaseNumber: number;
+  phaseLabel: string;
+  candidateTurnCount: number;
+} {
+  const candidateTurns = transcript.filter(t => t.speaker === 'candidate').length;
+  if (candidateTurns === 0) {
+    return { phaseKey: 'warm-intro', phaseNumber: 1, phaseLabel: 'Phase 1 • Warm Intro & Calibration', candidateTurnCount: 0 };
+  }
+  if (candidateTurns <= 2) {
+    return { phaseKey: 'cv-deep-dive', phaseNumber: 2, phaseLabel: 'Phase 2 • Resume & Project Deep-Dive', candidateTurnCount: candidateTurns };
+  }
+  if (candidateTurns <= 5) {
+    return { phaseKey: 'technical-challenge', phaseNumber: 3, phaseLabel: 'Phase 3 • Core Technical Challenge', candidateTurnCount: candidateTurns };
+  }
+  if (candidateTurns <= 7) {
+    return { phaseKey: 'edge-cases', phaseNumber: 4, phaseLabel: 'Phase 4 • Edge Cases & Trade-offs', candidateTurnCount: candidateTurns };
+  }
+  return { phaseKey: 'candidate-qa', phaseNumber: 5, phaseLabel: 'Phase 5 • Candidate Q&A & Wrap-Up', candidateTurnCount: candidateTurns };
+}
+
+export function getCompanyTechnicalChallenge(companyName: string = ''): {
+  title: string;
+  problemScenario: string;
+  starterCodePrompt: string;
+  edgeCaseFocus: string;
+} {
+  const norm = (companyName || '').toLowerCase();
+  if (norm.includes('google')) {
+    return {
+      title: 'Distributed Token Bucket Rate Limiter',
+      problemScenario: 'At Google scale, our API gateways process hundreds of thousands of RPS across multiple regions. Let\'s design a distributed Token-Bucket Rate Limiter that allows bursts while remaining fair across tenant API keys.',
+      starterCodePrompt: 'Design a RateLimiter with allowRequest(userId: string, tokensRequested: number): boolean. Account for burst size, refill rate, and clock drift.',
+      edgeCaseFocus: 'How do you handle multi-region clock skew, synchronized bursts from a DDoS script, and Redis cluster failover?'
+    };
+  }
+  if (norm.includes('amazon') || norm.includes('aws')) {
+    return {
+      title: 'Flash-Sale Inventory Reservation',
+      problemScenario: 'During Amazon Prime Day, multiple customers attempt to purchase the exact same high-demand item at the same millisecond. Let\'s design an inventory reservation system that guarantees no overselling without taking table-level database locks.',
+      starterCodePrompt: 'Implement reserveItem(itemId: string, quantity: number, customerId: string): ReservationResult with a 15-minute expiration window.',
+      edgeCaseFocus: 'What happens when checkout fails after reservation? How do you cleanly release expired locks without thundering herds?'
+    };
+  }
+  if (norm.includes('stripe') || norm.includes('razorpay') || norm.includes('fintech')) {
+    return {
+      title: 'Idempotent Payment Processing & Ledger',
+      problemScenario: 'In financial transactions, networks frequently drop packets right after money is debited. Let\'s design an idempotent payment capture pipeline where retried API requests never double-charge the customer or create orphan ledger records.',
+      starterCodePrompt: 'Implement processPayment(idempotencyKey: string, amount: number, accountId: string): PaymentResponse ensuring strict exactly-once semantics.',
+      edgeCaseFocus: 'How do you distinguish between a network timeout retry vs a malicious duplicate with the same key but different payload?'
+    };
+  }
+  if (norm.includes('meta') || norm.includes('facebook') || norm.includes('instagram')) {
+    return {
+      title: 'Social Feed Fan-Out & Graph Traversal',
+      problemScenario: 'At Meta scale, a user with 50 million followers posts a photo. Let\'s design the fan-out architecture that distributes this update to their followers\' timelines with sub-100ms delivery latency.',
+      starterCodePrompt: 'Design the fanOutPost(userId: string, postId: string) service. Compare fan-out-on-write (push) versus fan-out-on-read (pull) approaches.',
+      edgeCaseFocus: 'How do you handle hybrid push/pull for celebrity accounts, cache invalidation, and partial network partitions?'
+    };
+  }
+  if (norm.includes('netflix')) {
+    return {
+      title: 'Distributed LRU Cache with TTL',
+      problemScenario: 'At Netflix, thousands of microservices query video metadata continuously. Let\'s design a high-throughput, thread-safe LRU cache with TTL expiration and protection against cache stampedes.',
+      starterCodePrompt: 'Implement LRUCache<K, V> with get(key) and put(key, value, ttlSeconds) operating in O(1) average time.',
+      edgeCaseFocus: 'How do you handle lock contention on high-frequency keys and prevent hundreds of threads querying the database when a popular key expires?'
+    };
+  }
+  if (norm.includes('uber') || norm.includes('lyft') || norm.includes('mobility')) {
+    return {
+      title: 'Geospatial Driver Dispatch & Surge Matching',
+      problemScenario: 'At Uber, millions of drivers report their GPS coordinates every 4 seconds. Let\'s design a low-latency driver-matching system that finds the top 5 closest available drivers within a 3km radius.',
+      starterCodePrompt: 'Implement updateDriverLocation(driverId: string, lat: number, lng: number) and findNearestDrivers(userLat: number, userLng: number, radiusKm: number): Driver[].',
+      edgeCaseFocus: 'How do you partition geospatial buckets (e.g. H3 / Geohash) to avoid hot spots in dense downtown areas during rain surges?'
+    };
+  }
+  return {
+    title: 'Distributed High-Throughput Task Queue & Worker Pipeline',
+    problemScenario: 'Let\'s design a distributed, resilient task queue that processes asynchronous background jobs with configurable retry policies, dead-letter queues, and priority tiers.',
+    starterCodePrompt: 'Implement enqueueTask(task: Task, priority: Priority) and processWorkerTask(): TaskResult with exponential backoff.',
+    edgeCaseFocus: 'What happens if a worker crashes mid-execution? How do you prevent zombie tasks and ensure task deduplication?'
+  };
+}
+
 function buildOpeningQuestion(context: InterviewContext) {
   const companyName = context.company || 'our engineering team';
   if (context.resume && context.resume.trim().length > 20) {
     const techMatch = context.resume.match(/(kafka|redis|kubernetes|docker|python|java|spring|golang|react|aws|gcp|postgres|graphql|distributed)/i);
     const techName = techMatch ? techMatch[0] : '';
     if (techName) {
-      return `Hey, thanks for joining today! I took a look at your background and saw your experience with ${techName} and systems architecture. To kick things off, could you walk me through your journey and the most technically demanding project you've built?`;
+      return `Hey, thanks for jumping on the call today! I'm Alex from the engineering team here at ${companyName}. I took a look at your background and saw your experience with ${techName} and systems architecture. How's your day going so far? Whenever you're ready, I'd love to hear a bit about what you've been working on recently.`;
     }
-    return `Hey, thanks for jumping on the call today! I took a look through your resume. To kick off, could you walk me through your background and the core architecture of a project you've owned?`;
+    return `Hey, thanks for jumping on the call today! I'm Alex from the engineering team here at ${companyName}. I had a look through your resume earlier. How's your day going? To kick things off, could you tell me a little bit about yourself and a project you've enjoyed working on?`;
   }
-  return `Hey, thanks for jumping on the call today! How's your day going so far? Whenever you're settled in, I'd love to just kick things off casually — could you tell me a little bit about yourself and what you've been working on recently?`;
+  return `Hey, thanks for jumping on the call today! I'm Alex from the engineering team here at ${companyName}. How's your day going so far? Whenever you're settled in, I'd love to just kick things off casually — could you tell me a little bit about yourself and what you've been working on recently?`;
 }
 
 export function buildHeuristicQuestion(context: InterviewContext) {
   const transcript = context.transcript || [];
   const recent = transcript.slice(-12);
-  const isOpening = context.phase === 'opening' || recent.filter(turn => turn.speaker === 'candidate').length === 0;
+  const phaseInfo = determineInterviewPhase(transcript);
+  const companyName = context.company || 'our engineering team';
+  const challenge = getCompanyTechnicalChallenge(context.company);
 
-  if (isOpening) {
-    return { question: buildOpeningQuestion(context), category: 'technical' as const };
+  // Phase 1: Warm Intro
+  if (phaseInfo.phaseKey === 'warm-intro' || context.phase === 'opening') {
+    return {
+      question: buildOpeningQuestion(context),
+      category: 'small-talk' as const,
+      phase: phaseInfo.phaseKey,
+      phaseNumber: phaseInfo.phaseNumber,
+      phaseLabel: phaseInfo.phaseLabel
+    };
   }
 
   const latestAnswer = [...recent].reverse().find(turn => turn.speaker === 'candidate')?.text || '';
   const previousQuestions = recent.filter(turn => turn.speaker === 'interviewer').map(turn => turn.text);
-  const priorQuestion = [...recent].reverse().find(turn => turn.speaker === 'interviewer')?.text || '';
 
   if (!latestAnswer) {
-    return { question: 'You mentioned a concrete decision. What trade-off did you optimize for, and what did you give up?', category: 'technical' as const };
+    return {
+      question: 'Got it. Could you walk me through the key technical trade-offs you considered in that design?',
+      category: 'technical' as const,
+      phase: phaseInfo.phaseKey,
+      phaseNumber: phaseInfo.phaseNumber,
+      phaseLabel: phaseInfo.phaseLabel
+    };
   }
 
-  const signals = extractAnswerSignals(latestAnswer);
-  const roleFocus = [context.role, context.focus].filter(Boolean).join(' ');
-  const hasPreviousFailure = previousQuestions.some(q => /(failure|fail|retry|latency|recover|contain|break)/i.test(q));
-  const hasPreviousTradeoff = previousQuestions.some(q => /(trade|constraint|assumption|decision|optimiz)/i.test(q));
-  const hasPreviousMetric = previousQuestions.some(q => /(metric|threshold|load|throughput|latency|slo|uptime)/i.test(q));
+  // Phase 5: Candidate Q&A & Wrap-Up
+  if (phaseInfo.phaseKey === 'candidate-qa') {
+    const isQuestionFromCandidate = /\?|what|how|could you|tell me about|team|culture|deploy|stack|oncall|on-call/i.test(latestAnswer);
+    if (isQuestionFromCandidate) {
+      if (/oncall|on-call|rotation|balance/i.test(latestAnswer)) {
+        return {
+          question: `Great question! At ${companyName}, we follow a 'you build it, you run it' philosophy. Engineers rotate on secondary and primary for one week every couple of months, with blameless post-mortems and proactive alerting so midnight pages are rare. Does that kind of operational culture resonate with what you're looking for?`,
+          category: 'behavioral' as const,
+          phase: phaseInfo.phaseKey,
+          phaseNumber: phaseInfo.phaseNumber,
+          phaseLabel: phaseInfo.phaseLabel
+        };
+      }
+      if (/deploy|pipeline|release|ci\/cd|ship/i.test(latestAnswer)) {
+        return {
+          question: `Awesome question. At ${companyName}, our services deploy multiple times a day. Every pull request runs through automated integration suites and deploys to canary pods serving 1% of live traffic before gradually promoting. What does your current deployment workflow look like?`,
+          category: 'technical' as const,
+          phase: phaseInfo.phaseKey,
+          phaseNumber: phaseInfo.phaseNumber,
+          phaseLabel: phaseInfo.phaseLabel
+        };
+      }
+      return {
+        question: `Thanks for asking that! Here at ${companyName}, we place a huge emphasis on high autonomy, rigorous code reviews, and intellectual humility. We move fast, but we prioritize architectural resilience. We're about at time — thank you so much for walking through all of that with me today! The recruiting team will follow up on next steps shortly. Have a great day!`,
+        category: 'behavioral' as const,
+        phase: phaseInfo.phaseKey,
+        phaseNumber: phaseInfo.phaseNumber,
+        phaseLabel: phaseInfo.phaseLabel
+      };
+    }
+    return {
+      question: `We've covered a lot of ground today! We have about 5 minutes left, and I want to make sure you have time for questions. What questions do you have for me about engineering at ${companyName}, our team culture, or our architecture?`,
+      category: 'behavioral' as const,
+      phase: phaseInfo.phaseKey,
+      phaseNumber: phaseInfo.phaseNumber,
+      phaseLabel: phaseInfo.phaseLabel
+    };
+  }
 
+  // Phase 4: Edge Cases & Trade-offs
+  if (phaseInfo.phaseKey === 'edge-cases') {
+    let question = '';
+    if (phaseInfo.candidateTurnCount === 6) {
+      question = `Got it, that makes sense. Now let's stress test this: ${challenge.edgeCaseFocus}`;
+    } else {
+      question = `Fair point. What specific latency or throughput metric would indicate this design is starting to degrade, and what circuit breaker would you trip?`;
+    }
+    return {
+      question,
+      category: 'technical' as const,
+      phase: phaseInfo.phaseKey,
+      phaseNumber: phaseInfo.phaseNumber,
+      phaseLabel: phaseInfo.phaseLabel
+    };
+  }
+
+  // Phase 3: Core Technical Challenge & Coding
+  if (phaseInfo.phaseKey === 'technical-challenge') {
+    if (phaseInfo.candidateTurnCount === 3) {
+      return {
+        question: `Cool, that's really helpful context on your background. Let's switch gears into a technical challenge that's very relevant to what we build here at ${companyName}. ${challenge.problemScenario} How would you approach this from a high level? Feel free to open the scratchpad if you'd like to sketch components or write code.`,
+        category: 'coding' as const,
+        phase: phaseInfo.phaseKey,
+        phaseNumber: phaseInfo.phaseNumber,
+        phaseLabel: phaseInfo.phaseLabel
+      };
+    }
+    if (phaseInfo.candidateTurnCount === 4) {
+      return {
+        question: `Right, that's a good direction. How would you structure the core data model and API contract for that? Talk me through the primary data structures you'd use in memory.`,
+        category: 'coding' as const,
+        phase: phaseInfo.phaseKey,
+        phaseNumber: phaseInfo.phaseNumber,
+        phaseLabel: phaseInfo.phaseLabel
+      };
+    }
+    return {
+      question: `Interesting, okay. How does that implementation handle concurrent writes and race conditions when multiple worker threads execute at the same time?`,
+      category: 'technical' as const,
+      phase: phaseInfo.phaseKey,
+      phaseNumber: phaseInfo.phaseNumber,
+      phaseLabel: phaseInfo.phaseLabel
+    };
+  }
+
+  // Phase 2: Resume & CV Deep Dive
+  const signals = extractAnswerSignals(latestAnswer);
   let question = '';
 
   if (signals.isVague) {
-    question = 'Got it. Could you give me one concrete example from that? What actually happened, and what was the outcome?';
-  } else if (signals.hasFailure || (signals.hasTradeoff && hasPreviousMetric)) {
-    question = 'Got it. When that path fails in production, what is the first thing that breaks, and how would you contain it?';
-  } else if (signals.hasMetric || hasPreviousFailure) {
-    question = 'Makes sense. What metric or threshold would tell you that approach is no longer acceptable under load?';
-  } else if (signals.hasTradeoff || hasPreviousMetric) {
-    question = 'Fair enough. Which constraint mattered most in that decision, and what would you change if that constraint disappeared?';
+    question = 'Got it. Could you give me one concrete example from that project? What technical hurdles did you run into, and how did you resolve them?';
   } else if (signals.technologies.length) {
     const tech = signals.technologies[0];
-    question = `Interesting, okay. You mentioned ${tech}. What would make that choice fail in the real world, and how would you detect it early?`;
-  } else if (signals.hasDecision) {
-    question = 'Mm right. What assumption was most important behind that decision, and how would you test it?';
-  } else if (roleFocus) {
-    question = `Got it. In the context of ${roleFocus}, what assumption is most important there, and how would you test it?`;
-  } else if (priorQuestion) {
-    question = 'Understood. What was the most critical trade-off behind that approach, and how did you validate it?';
+    question = `Interesting, okay. You mentioned ${tech}. What was the most critical architectural decision or trade-off you made around ${tech}?`;
+  } else if (signals.hasFailure || signals.hasTradeoff) {
+    question = 'Understood. When that path encountered peak load in production, what was the first bottleneck that appeared?';
   } else {
-    question = 'Okay, got it. What trade-off did you optimize for in that choice, and what would you change if the constraints shifted?';
+    question = 'Makes sense. Looking back at that implementation, what architectural decision would you do differently today with the benefit of hindsight?';
   }
 
   if (isRepeatedQuestion(question, previousQuestions)) {
-    question = 'Got it. What would you change if the traffic pattern or system constraints shifted overnight?';
+    question = `Got it. What was the most critical trade-off you optimized for in that system?`;
   }
 
-  return { question, category: 'technical' as const };
+  return {
+    question,
+    category: 'technical' as const,
+    phase: phaseInfo.phaseKey,
+    phaseNumber: phaseInfo.phaseNumber,
+    phaseLabel: phaseInfo.phaseLabel
+  };
 }
 
 /**
@@ -433,158 +629,205 @@ export class IntelligenceProvider {
   }
 
   async nextQuestion(context: InterviewContext) {
-  const system = INTERVIEWER_SYSTEM(context);
-  const transcript = context.transcript || [];
+    const transcript = context.transcript || [];
+    const phaseInfo = determineInterviewPhase(transcript);
+    const system = INTERVIEWER_SYSTEM({ ...context, phase: phaseInfo.phaseLabel });
 
-  const isOpening =
-    context.phase === 'opening' ||
-    transcript.filter(t => t.speaker === 'candidate').length === 0;
+    const isOpening =
+      context.phase === 'opening' ||
+      phaseInfo.phaseKey === 'warm-intro' ||
+      transcript.filter(t => t.speaker === 'candidate').length === 0;
 
-  const heuristic = buildHeuristicQuestion(context);
+    const heuristic = buildHeuristicQuestion(context);
 
-  // Demo mode
-  if (this.llm === 'demo') {
-    return heuristic;
-  }
+    // Demo mode
+    if (this.llm === 'demo') {
+      return heuristic;
+    }
 
-  // Keep ALL previous interviewer questions
-  const previousQuestions = transcript
-    .filter(t => t.speaker === 'interviewer')
-    .map(t => normalizeQuestion(t.text))
-    .filter(Boolean);
+    // Keep ALL previous interviewer questions
+    const previousQuestions = transcript
+      .filter(t => t.speaker === 'interviewer')
+      .map(t => normalizeQuestion(t.text))
+      .filter(Boolean);
 
-  const recent = transcript.slice(-10);
+    const recent = transcript.slice(-10);
 
-  const latestAnswer =
-    [...recent]
-      .reverse()
-      .find(t => t.speaker === 'candidate')?.text || '';
+    const latestAnswer =
+      [...recent]
+        .reverse()
+        .find(t => t.speaker === 'candidate')?.text || '';
 
-  const priorQuestion =
-    [...recent]
-      .reverse()
-      .find(t => t.speaker === 'interviewer')?.text || '';
-      console.log("========== INTERVIEW DEBUG ==========");
-console.log("LATEST ANSWER:", latestAnswer);
-console.log("PREVIOUS QUESTION:", priorQuestion);
-console.log("PREVIOUS QUESTIONS:", previousQuestions);
-console.log("=====================================");
+    const priorQuestion =
+      [...recent]
+        .reverse()
+        .find(t => t.speaker === 'interviewer')?.text || '';
 
-  const user = isOpening
-    ? `
-This is the start of the interview.
+    const challenge = getCompanyTechnicalChallenge(context.company);
 
-Ask ONE strong opening question based on the candidate's resume,
-job description, role and focus area.
+    let phasePromptGuidance = '';
+    if (phaseInfo.phaseKey === 'warm-intro') {
+      phasePromptGuidance = `
+This is Turn 1 (Phase 1 • Warm Intro).
+- Greet the candidate warmly and casually: "Hey! Thanks for jumping on the call today! I'm Alex from engineering here at ${context.company || 'the company'}. How's your day going so far?"
+- Break the ice, let them settle in, and invite them to share a quick overview of what they've been working on recently.
+- Do NOT jump straight into complex algorithmic trivia yet.
+`;
+    } else if (phaseInfo.phaseKey === 'cv-deep-dive') {
+      phasePromptGuidance = `
+This is Phase 2 • Candidate Resume & Project Deep-Dive (Turn #${phaseInfo.candidateTurnCount + 1}).
+- Acknowledge their previous response naturally ("Got it.", "Makes sense.", "Interesting, okay.").
+- Directly reference specific technologies, tools, or projects from their CV/resume (or from their latest answer).
+- Probe a concrete architecture decision, performance hurdle, or trade-off they personally owned.
+`;
+    } else if (phaseInfo.phaseKey === 'technical-challenge') {
+      if (phaseInfo.candidateTurnCount === 3) {
+        phasePromptGuidance = `
+This is the START of Phase 3 • Core Technical Challenge (Turn #4).
+- Smoothly transition: "Awesome, that gives me great context on your background. Let's switch gears into a technical challenge that's very relevant to what we build here at ${context.company || 'the company'}."
+- Pose the technical challenge: "${challenge.problemScenario}"
+- Invite them to explain their thinking first and suggest opening the scratchpad: "Feel free to open the scratchpad and talk through your approach as you go."
+`;
+      } else {
+        phasePromptGuidance = `
+This is Phase 3 • Core Technical Challenge Discussion (Turn #${phaseInfo.candidateTurnCount + 1}).
+- Acknowledge their proposed architecture or algorithm ("Right, good direction.", "Okay, fair enough.").
+- Probe their data structure choices, API contract, or in-memory state management.
+- Check how their code or system components interact.
+`;
+      }
+    } else if (phaseInfo.phaseKey === 'edge-cases') {
+      phasePromptGuidance = `
+This is Phase 4 • Edge Cases & Failure Stress-Testing (Turn #${phaseInfo.candidateTurnCount + 1}).
+- Acknowledge their progress on the solution.
+- Stress test the design: "${challenge.edgeCaseFocus}" or probe what happens under 10x sudden traffic bursts, network partitions, or cache invalidation stampedes.
+`;
+    } else {
+      const isCandidateQuestion = /\?|what|how|could you|tell me about|team|culture|deploy|stack|oncall|on-call/i.test(latestAnswer);
+      if (isCandidateQuestion) {
+        phasePromptGuidance = `
+This is Phase 5 • Candidate Q&A.
+- The candidate asked a question about ${context.company || 'the company'}: "${latestAnswer}".
+- Answer their question candidly, thoughtfully, and enthusiastically as a Senior/Staff Engineer at ${context.company || 'the company'} (discussing team autonomy, CI/CD canary deployments, on-call culture, and tech stack).
+- After your answer, either ask if they have another question or sign off warmly if it's time to conclude.
+`;
+      } else {
+        phasePromptGuidance = `
+This is Phase 5 • Candidate Q&A & Wrap-Up.
+- We have 5 minutes left.
+- Say: "We've covered a lot of ground today! We have about 5 minutes left, and I want to make sure you have time for questions. What questions do you have for me about engineering at ${context.company || 'the company'}, our team culture, or our tech stack?"
+`;
+      }
+    }
 
-The question must be complete and conversational.
-
-Do NOT ask any question from the previous-question list.
-
-RESUME:
-${(context.resume || 'No resume provided.').slice(0, 6000)}
-
-JOB DESCRIPTION:
-${(context.jobDescription || 'No job description provided.').slice(0, 6000)}
-
-PREVIOUS QUESTIONS:
-${previousQuestions.join('\n')}
+    const user = isOpening
+      ? `
+This is the start of the interview for ${context.role || 'Software Engineer'} at ${context.company || 'Target Company'}.
+Ask ONE strong, conversational opening greeting and question.
+RESUME: ${(context.resume || 'No resume provided.').slice(0, 6000)}
+JOB DESCRIPTION: ${(context.jobDescription || 'No job description provided.').slice(0, 6000)}
 `
-    : `
-Continue this live interview naturally.
+      : `
+Continue this live interview naturally in character as Alex Rivera.
+
+CURRENT INTERVIEW PHASE:
+${phaseInfo.phaseLabel}
+
+PHASE GUIDANCE:
+${phasePromptGuidance}
 
 RESUME:
 ${(context.resume || 'No resume provided.').slice(0, 6000)}
 
 JOB DESCRIPTION:
 ${(context.jobDescription || 'No job description provided.').slice(0, 6000)}
-
-FULL CONVERSATION SO FAR:
-${formatTranscript(recent)}
-
-CANDIDATE'S LATEST ANSWER:
-"${latestAnswer}"
-
-IMMEDIATELY PRECEDING INTERVIEWER QUESTION:
-"${priorQuestion}"
 
 PREVIOUS INTERVIEWER QUESTIONS:
 ${previousQuestions.join('\n')}
 
 RULES:
-- Respond in character as Alex on a live video call.
-- Ask exactly ONE complete interviewer turn (2 to 3 conversational sentences total).
-- For follow-ups:
-  * Start with a brief, natural acknowledgment/reaction to the candidate's latest answer (e.g., "Got it.", "Okay, makes sense.", "Interesting, okay.", "Mm right.", "Fair enough.").
-  * Directly anchor on the project, technology (e.g. RAG, Qwen fine-tuning, PySpark, databases, APIs), or challenge they just mentioned or listed on their resume.
-  * Probe ONE specific technical detail: architecture decision, indexing strategy, data pipeline bottleneck, failure mode, concurrency challenge, or trade-off.
-  * Keep the tone authentic, conversational, and inquisitive like a real senior technical interviewer.
-- Do NOT repeat or paraphrase any previous question.
-- Do NOT ask generic textbook questions — always ground in their stated project/CV experience and target job requirements.
+- Respond in character as Alex Rivera on a live video call.
+- Say exactly ONE complete turn (2 to 3 natural conversational sentences).
+- Start with a natural conversational acknowledgment ("Got it.", "Okay, makes sense.", "Right, interesting.", "Fair enough.").
+- Do NOT repeat or rephrase any previous question.
 - Return ONLY the exact dialogue you would say aloud on the call.
 `;
 
-  // Generate with a few attempts so duplicates are rejected
-  let finalQuestion = '';
+    // Generate with a few attempts so duplicates are rejected
+    let finalQuestion = '';
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const generated = await this.generateText(system, user, {
-      modelProvider: context.modelProvider,
-      modelName: context.modelName,
-      customApiKey: context.customApiKey,
-      customEndpoint: context.customEndpoint
-    });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const generated = await this.generateText(system, user, {
+        modelProvider: context.modelProvider,
+        modelName: context.modelName,
+        customApiKey: context.customApiKey,
+        customEndpoint: context.customEndpoint
+      });
 
-    const candidateQuestion = normalizeQuestion(generated || '');
+      const candidateQuestion = normalizeQuestion(generated || '');
 
-    if (
-      candidateQuestion &&
-      candidateQuestion.length >= 20 &&
-      !/[?!.]$/.test(candidateQuestion) === false
-    ) {
-      const repeated = isRepeatedQuestion(
-        candidateQuestion,
-        previousQuestions
-      );
+      if (
+        candidateQuestion &&
+        candidateQuestion.length >= 20 &&
+        !/[?!.]$/.test(candidateQuestion) === false
+      ) {
+        const repeated = isRepeatedQuestion(
+          candidateQuestion,
+          previousQuestions
+        );
 
-      if (!repeated) {
-        finalQuestion = candidateQuestion;
-        break;
+        if (!repeated) {
+          finalQuestion = candidateQuestion;
+          break;
+        }
+      }
+
+      // Tell the next attempt exactly what went wrong
+      previousQuestions.push(candidateQuestion);
+    }
+
+    // Safe fallback
+    if (!finalQuestion) {
+      if (!isRepeatedQuestion(heuristic.question, previousQuestions)) {
+        finalQuestion = heuristic.question;
+      } else {
+        finalQuestion =
+          "What specific decision or technical trade-off had the biggest impact on that implementation?";
       }
     }
 
-    // Tell the next attempt exactly what went wrong
-    previousQuestions.push(candidateQuestion);
-
+    return {
+      question: finalQuestion,
+      category: phaseInfo.phaseKey === 'warm-intro' ? 'small-talk' : phaseInfo.phaseKey === 'technical-challenge' ? 'coding' : 'technical',
+      phase: phaseInfo.phaseKey,
+      phaseNumber: phaseInfo.phaseNumber,
+      phaseLabel: phaseInfo.phaseLabel,
+      challenge: phaseInfo.phaseKey === 'technical-challenge' || phaseInfo.phaseKey === 'edge-cases' ? challenge : undefined
+    };
   }
-
-  // Safe fallback
-  if (!finalQuestion) {
-  if (!isRepeatedQuestion(heuristic.question, previousQuestions)) {
-    finalQuestion = heuristic.question;
-  } else {
-    finalQuestion =
-      "What specific decision or technical trade-off had the biggest impact on that implementation?";
-  }
-}
-  return {
-    question: finalQuestion,
-    category: 'technical' as const
-  };
-}
 
   async streamQuestion(
-  context: InterviewContext,
-  onChunk: (chunk: string) => void
-) {
-  const result = await this.nextQuestion(context);
-  const chunks = this.chunkText(result.question);
+    context: InterviewContext,
+    onChunk: (chunk: string) => void,
+    onMeta?: (meta: any) => void
+  ) {
+    const result = await this.nextQuestion(context);
+    if (onMeta) {
+      onMeta({
+        phase: result.phase,
+        phaseNumber: result.phaseNumber,
+        phaseLabel: result.phaseLabel,
+        category: result.category,
+        challenge: result.challenge
+      });
+    }
+    const chunks = this.chunkText(result.question);
 
-  for (let i = 0; i < chunks.length; i++) {
-    onChunk(chunks[i] + (i < chunks.length - 1 ? ' ' : ''));
-    await this.delay(24);
+    for (let i = 0; i < chunks.length; i++) {
+      onChunk(chunks[i] + (i < chunks.length - 1 ? ' ' : ''));
+      await this.delay(24);
+    }
   }
-}
 
   /** Opens a <300ms Deepgram live stream. Caller forwards PCM/WebM audio frames and persists final turns. */
   openTranscriptStream(onTurn: (turn: TranscriptTurn) => void) {
