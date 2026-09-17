@@ -351,15 +351,15 @@ function buildCodeHtml(title, subtitle, filename, badge, codeHtml) {
   await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
 
   const dummyUser = {
-    id: 'usr-aarav',
-    name: 'Aarav Sharma',
-    email: 'aarav.sharma@gmail.com',
-    provider: 'email',
-    bio: 'Staff Systems Architect specializing in distributed consensus, low-latency messaging, and fault-tolerant cloud infrastructure.',
-    linkedin: 'linkedin.com/in/aarav-sharma',
-    github: 'github.com/aarav-sharma',
-    experience: 'Staff Systems Architect @ Tech • 8+ years distributed systems',
-    projects: 'RaftKV — Distributed Consensus Store\nEventStream — High-throughput Kafka ingestion engine'
+    id: 'usr-piyush',
+    name: 'Piyush',
+    email: 'piyush@telos.ai',
+    provider: 'github',
+    bio: 'Full-Stack Systems Architect & AI Engineer specializing in distributed consensus, low-latency audio pipelines, and high-performance infrastructure.',
+    linkedin: 'linkedin.com/in/piyush',
+    github: 'github.com/piyush23-eng',
+    experience: 'Staff Systems Architect • 8+ years distributed systems & real-time AI',
+    projects: 'TeLos — Autonomous Technical Interview Platform\nRaftKV — Distributed Consensus Store'
   };
 
   console.log("📸 Navigating to TeLos local app...");

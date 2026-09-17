@@ -4,11 +4,14 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
+    healthCheckPath: /ping
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 8787
+      - key: APP_URL
+        sync: false
       - key: AUTH_SESSION_SECRET
         generateValue: true
       - key: OPENROUTER_API_KEY

@@ -3,8 +3,8 @@ dist
 .env
 .env.local
 .env.*.local
-dev.db
-dev.db-journal
+*.db
+*.db-journal
 *.log
 *.tsbuildinfo
 .DS_Store

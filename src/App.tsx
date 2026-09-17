@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './roadmap.css';
-import { safeStorage } from './apiConfig';
+import { apiUrl, safeStorage } from './apiConfig';
 import type { Page } from './types';
 import { TopNav } from './components/layout/TopNav';
 import { SiteFooter } from './components/layout/SiteFooter';
@@ -24,6 +24,11 @@ export default function App() {
       return null;
     }
   });
+
+  // Automatically pre-warm backend on page load to eliminate cold-starts
+  useEffect(() => {
+    fetch(apiUrl('/ping')).catch(() => {});
+  }, []);
 
   const handleAssessmentActivity = useCallback((active: boolean) => setAssessmentLocked(active), []);
   const syncUser = useCallback((nextUser: AuthUser) => {

@@ -10,6 +10,7 @@ import { codingRouter } from './routes/coding.routes';
 import { communityRouter } from './routes/community.routes';
 import { analyticsRouter } from './routes/analytics.routes';
 import { errorHandler } from './middleware/errorHandler';
+import { startKeepAliveService } from './lib/keepAlive';
 
 const app = express();
 
@@ -19,6 +20,15 @@ app.use(express.json());
 
 // Initialize database connection
 void bootstrapDatabase();
+
+// Lightweight Keep-Alive Ping (Instant 200 OK, zero DB/AI overhead for Render keepalive)
+app.get('/ping', (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: Math.floor(process.uptime()),
+    timestamp: Date.now()
+  });
+});
 
 // System Health & Diagnostics
 app.get(['/health', '/api/health'], async (_req, res) => {
@@ -58,7 +68,7 @@ if (fs.existsSync(distPath)) {
     }
   }));
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path === '/health') return next();
+    if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/ping') return next();
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.sendFile(path.join(distPath, 'index.html'));
   });
@@ -70,6 +80,7 @@ app.use(errorHandler);
 // Start server
 app.listen(config.port, '0.0.0.0', () => {
   console.log(`TeLos API listening on port ${config.port}`);
+  startKeepAliveService();
 });
 
 export default app;

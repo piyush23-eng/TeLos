@@ -124,7 +124,7 @@ export function AuthModal({ onClose, onAuthenticated }: Props) {
                 minLength={2}
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Aarav Sharma"
+                placeholder="Piyush"
                 autoComplete="name"
               />
             </label>

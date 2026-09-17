@@ -1,30 +1,31 @@
-name: TeLos Cloud Keep-Alive
+name: TeLos Render & Cloud Keep-Alive
 
 on:
   schedule:
-    # Runs every 2 days at 06:00 UTC (prevents Supabase 7-day inactivity pause)
-    - cron: "0 6 */2 * *"
+    # Runs every 10 minutes (prevents Render free tier 15m inactivity sleep)
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 jobs:
   keepalive:
-    name: Ping Database & App
+    name: Keep Render Active (Zero Cold Start)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Run Keep-Alive Ping
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          APP_URL: ${{ secrets.APP_URL }}
-        run: npx tsx scripts/keepalive.ts
+      - name: Send Heartbeat Ping
+        run: |
+          # Priority: GitHub Secret APP_URL -> GitHub Variable APP_URL -> Default Render URL
+          TARGET_URL="${{ secrets.APP_URL || vars.APP_URL || 'https://telos.onrender.com' }}"
+          CLEAN_URL="${TARGET_URL%/}"
+          
+          echo "⚡ Sending Keep-Alive heartbeat to: $CLEAN_URL/ping"
+          
+          # Ping /ping with timeout
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 20 --max-time 60 "$CLEAN_URL/ping" || echo "000")
+          
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "✅ Render instance is awake and responsive (HTTP 200 OK)."
+          else
+            echo "⚠️ Instance returned HTTP $HTTP_STATUS or timed out. Triggering wake-up via /health..."
+            curl -sS --connect-timeout 30 --max-time 90 "$CLEAN_URL/health" || true
+          fi
